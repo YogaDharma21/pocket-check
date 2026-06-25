@@ -6,6 +6,8 @@ import { ConvexReactClient } from "convex/react";
 import "./index.css";
 import App from "./App.tsx";
 import { ErrorBoundary } from "./ErrorBoundary.tsx";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 createRoot(document.getElementById("root")!).render(
@@ -16,6 +18,8 @@ createRoot(document.getElementById("root")!).render(
       >
         <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
           <App />
+          <Analytics />
+          <SpeedInsights />
         </ConvexProviderWithClerk>
       </ClerkProvider>
     </ErrorBoundary>
