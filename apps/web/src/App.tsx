@@ -105,7 +105,7 @@ function Dashboard() {
   const deleteItem = useMutation(api.pocketcheck.deleteItem);
   const resetItems = useMutation(api.pocketcheck.resetItems);
   const reorderItems = useMutation(api.pocketcheck.reorderItems);
-  const reorderRoutine = useMutation(api.pocketcheck.reorderRoutine);
+  const reorderRoutines = useMutation(api.pocketcheck.reorderRoutines);
 
   const items = useQuery(api.pocketcheck.listItems, { routine: selectedRoutine }) ?? [];
   const customRoutines = useQuery(api.pocketcheck.listRoutines) ?? [];
@@ -189,7 +189,10 @@ function Dashboard() {
     const targetIndex = index + direction;
     if (targetIndex < 0 || targetIndex >= routinesList.length) return;
     try {
-      await reorderRoutine({ idA: routinesList[index]._id, idB: routinesList[targetIndex]._id });
+      const ids = routinesList.map((r) => r._id);
+      const [moved] = ids.splice(index, 1);
+      ids.splice(targetIndex, 0, moved);
+      await reorderRoutines({ ids });
     } catch (err) {
       console.error("Failed to reorder routine", err);
     }

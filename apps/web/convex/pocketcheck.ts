@@ -261,24 +261,17 @@ export const reorderItems = mutation({
   },
 });
 
-/** Swap the order of two routines (move one up or down). */
-export const reorderRoutine = mutation({
+/** Reorder routines by writing sequential order values for the full sorted list. */
+export const reorderRoutines = mutation({
   args: {
-    idA: v.id("routines"),
-    idB: v.id("routines"),
+    ids: v.array(v.id("routines")),
   },
-  handler: async (ctx, { idA, idB }) => {
+  handler: async (ctx, { ids }) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
 
-    const a = await ctx.db.get(idA);
-    const b = await ctx.db.get(idB);
-    if (!a || !b) throw new Error("Routine not found");
-
-    const orderA = a.order ?? 0;
-    const orderB = b.order ?? 0;
-
-    await ctx.db.patch(idA, { order: orderB });
-    await ctx.db.patch(idB, { order: orderA });
+    for (let i = 0; i < ids.length; i++) {
+      await ctx.db.patch(ids[i], { order: i });
+    }
   },
 });
