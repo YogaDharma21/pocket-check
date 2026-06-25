@@ -246,25 +246,18 @@ export const resetItems = mutation({
   },
 });
 
-/** Swap the order of two items (move one up or down). */
-export const reorderItem = mutation({
+/** Reorder items by writing sequential order values for the full sorted list. */
+export const reorderItems = mutation({
   args: {
-    idA: v.id("items"),
-    idB: v.id("items"),
+    ids: v.array(v.id("items")),
   },
-  handler: async (ctx, { idA, idB }) => {
+  handler: async (ctx, { ids }) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
 
-    const a = await ctx.db.get(idA);
-    const b = await ctx.db.get(idB);
-    if (!a || !b) throw new Error("Item not found");
-
-    const orderA = a.order ?? 0;
-    const orderB = b.order ?? 0;
-
-    await ctx.db.patch(idA, { order: orderB });
-    await ctx.db.patch(idB, { order: orderA });
+    for (let i = 0; i < ids.length; i++) {
+      await ctx.db.patch(ids[i], { order: i });
+    }
   },
 });
 

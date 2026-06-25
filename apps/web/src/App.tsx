@@ -100,7 +100,7 @@ function Dashboard() {
   const toggleItem = useMutation(api.pocketcheck.toggleItem);
   const deleteItem = useMutation(api.pocketcheck.deleteItem);
   const resetItems = useMutation(api.pocketcheck.resetItems);
-  const reorderItem = useMutation(api.pocketcheck.reorderItem);
+  const reorderItems = useMutation(api.pocketcheck.reorderItems);
   const reorderRoutine = useMutation(api.pocketcheck.reorderRoutine);
 
   const items = useQuery(api.pocketcheck.listItems, { routine: selectedRoutine }) ?? [];
@@ -169,7 +169,12 @@ function Dashboard() {
     const targetIndex = index + direction;
     if (targetIndex < 0 || targetIndex >= items.length) return;
     try {
-      await reorderItem({ idA: items[index]._id, idB: items[targetIndex]._id });
+      // Build reordered ID list and write sequential orders in one shot.
+      // This also normalises items that were created before the order field existed.
+      const ids = items.map((i) => i._id);
+      const [moved] = ids.splice(index, 1);
+      ids.splice(targetIndex, 0, moved);
+      await reorderItems({ ids });
     } catch (err) {
       console.error("Failed to reorder item", err);
     }
