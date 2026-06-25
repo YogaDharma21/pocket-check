@@ -90,6 +90,10 @@ function Dashboard() {
   const [editRoutineName, setEditRoutineName] = useState("");
   const [editRoutineIcon, setEditRoutineIcon] = useState("");
 
+  // Active controls state
+  const [activeDestinationControl, setActiveDestinationControl] = useState<string | null>(null);
+  const [activeItemControl, setActiveItemControl] = useState<string | null>(null);
+
   // Convex mutations & queries
   const ensureInitialized = useMutation(api.pocketcheck.ensureInitialized);
   const addRoutine = useMutation(api.pocketcheck.addRoutine);
@@ -313,7 +317,6 @@ function Dashboard() {
                   className="bg-[#58cc02] h-4 rounded-full transition-all duration-300 border-b-4 border-[#46a302]"
                   style={{ width: `${percentage}%` }}
                 >
-                  <div className="w-full h-1 bg-white/20 rounded-full mt-0.5 px-1"></div>
                 </div>
               </div>
               <p id="progress-text" className="text-sm font-bold text-[#afbbbf]">
@@ -340,53 +343,82 @@ function Dashboard() {
                       setShowCustomInput(false);
                       setEditingRoutineId(null);
                     }}
-                    className={`routine-btn w-full flex flex-col items-center gap-1.5 p-3.5 pt-5 rounded-2xl bg-[#202f36] border-2 text-sm font-black transition-all cursor-pointer ${
+                    className={`routine-btn w-full flex flex-col items-center gap-1.5 p-3.5 pt-5 rounded-2xl bg-[#202f36] border-2 text-sm font-black transition-all cursor-pointer select-none ${
                       isActive
                         ? "border-b-4 border-[#58cc02] text-[#58cc02] translate-y-[2px]"
                         : "border-b-6 border-[#37464f] hover:bg-[#283840] text-white active:translate-y-[2px] active:border-b-4"
                     }`}
                   >
-                    <span className="text-xl block">{routine.icon}</span>
-                    <span className="truncate max-w-full">{routine.name}</span>
+                    <span className="text-xl block select-none">{routine.icon}</span>
+                    <span className="truncate max-w-full select-none">{routine.name}</span>
                   </button>
 
-                  {/* Top-left: move up/down */}
-                  <div className="absolute top-1 left-1 flex gap-0.5">
-                    <button
-                      onClick={(e) => { void handleMoveRoutine(e, rIndex, -1); }}
-                      disabled={rIndex === 0}
-                      className="w-5 h-5 flex items-center justify-center rounded bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:cursor-not-allowed text-white text-[10px] transition-colors cursor-pointer"
-                      title="Move left"
-                    >
-                      ◀
-                    </button>
-                    <button
-                      onClick={(e) => { void handleMoveRoutine(e, rIndex, 1); }}
-                      disabled={rIndex === routinesList.length - 1}
-                      className="w-5 h-5 flex items-center justify-center rounded bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:cursor-not-allowed text-white text-[10px] transition-colors cursor-pointer"
-                      title="Move right"
-                    >
-                      ▶
-                    </button>
-                  </div>
+                  {/* Settings gear toggle button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveDestinationControl(
+                        activeDestinationControl === routine._id ? null : routine._id
+                      );
+                    }}
+                    className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center rounded-lg bg-[#37464f] hover:bg-[#58cc02] text-white text-[11px] transition-colors cursor-pointer z-10"
+                    title="Control"
+                  >
+                    ⚙️
+                  </button>
 
-                  {/* Top-right: edit/delete */}
-                  <div className="absolute top-1 right-1 flex gap-0.5">
-                    <button
-                      onClick={(e) => startEditRoutine(routine, e)}
-                      className="w-5 h-5 flex items-center justify-center rounded bg-[#37464f] hover:bg-[#1cb0f6] text-white text-[10px] transition-colors cursor-pointer"
-                      title="Edit destination"
-                    >
-                      ✏
-                    </button>
-                    <button
-                      onClick={(e) => { void handleDeleteRoutine(routine, e); }}
-                      className="w-5 h-5 flex items-center justify-center rounded bg-[#37464f] hover:bg-[#ff4b4b] text-white text-[10px] transition-colors cursor-pointer"
-                      title="Delete destination"
-                    >
-                      ✕
-                    </button>
-                  </div>
+                  {/* Control overlay */}
+                  {activeDestinationControl === routine._id && (
+                    <div className="absolute inset-0 bg-[#202f36]/95 border-2 border-[#1cb0f6] rounded-2xl flex flex-col justify-center items-center p-2 z-20 gap-2 select-none">
+                      <div className="flex gap-1.5 justify-center">
+                        <button
+                          onClick={(e) => { void handleMoveRoutine(e, rIndex, -1); }}
+                          disabled={rIndex === 0}
+                          className="w-7 h-7 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:cursor-not-allowed text-white text-xs transition-colors cursor-pointer"
+                          title="Move left"
+                        >
+                          ◀
+                        </button>
+                        <button
+                          onClick={(e) => { void handleMoveRoutine(e, rIndex, 1); }}
+                          disabled={rIndex === routinesList.length - 1}
+                          className="w-7 h-7 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:cursor-not-allowed text-white text-xs transition-colors cursor-pointer"
+                          title="Move right"
+                        >
+                          ▶
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            setActiveDestinationControl(null);
+                            startEditRoutine(routine, e);
+                          }}
+                          className="w-7 h-7 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#1cb0f6] text-white text-xs transition-colors cursor-pointer"
+                          title="Edit destination"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            setActiveDestinationControl(null);
+                            void handleDeleteRoutine(routine, e);
+                          }}
+                          className="w-7 h-7 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#ff4b4b] text-white text-xs transition-colors cursor-pointer"
+                          title="Delete destination"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveDestinationControl(null);
+                        }}
+                        className="text-[10px] font-black uppercase text-[#afbbbf] hover:text-white transition-colors cursor-pointer"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -542,35 +574,35 @@ function Dashboard() {
                     /* ── Normal view mode ── */
                     <div
                       onClick={() => { void handleToggle(item._id, item.isPacked); }}
-                      className={`item-row flex items-center justify-between p-4 border-2 border-b-6 rounded-2xl cursor-pointer transition-all ${
+                      className={`item-row flex items-center justify-between p-4 border-2 border-b-6 rounded-2xl cursor-pointer transition-all select-none ${
                         item.isPacked
                           ? "is-packed bg-[#243b14] border-[#46a302]"
                           : "bg-[#202f36] border-[#37464f] hover:bg-[#283840]"
                       }`}
                     >
-                      <div className="flex items-center gap-3.5">
+                      <div className="flex items-center gap-3.5 select-none">
                         <div
-                          className={`checkbox-ui w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all shrink-0 ${
+                          className={`checkbox-ui w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all shrink-0 select-none ${
                             item.isPacked
                               ? "border-[#46a302] bg-[#58cc02]"
                               : "border-[#37464f] border-b-4 bg-[#131f24]"
                           }`}
                         >
-                          <span className={`text-xs ${item.isPacked ? "block" : "hidden"}`}>✅</span>
+                          <span className={`text-xs select-none ${item.isPacked ? "block" : "hidden"}`}>✅</span>
                         </div>
-                        <div>
+                        <div className="select-none">
                           <p
-                            className={`item-name font-extrabold text-lg text-white ${
+                            className={`item-name font-extrabold text-lg text-white select-none ${
                               item.isPacked ? "text-[#afbbbf] line-through decoration-[#46a302] decoration-2" : ""
                             }`}
                           >
                             {item.emoji && (
-                              <span className="not-italic mr-1.5">{item.emoji}</span>
+                              <span className="not-italic mr-1.5 select-none">{item.emoji}</span>
                             )}
-                            {item.name}
+                            <span className="select-none">{item.name}</span>
                           </p>
                           <p
-                            className={`item-status text-xs font-black uppercase tracking-wider ${
+                            className={`item-status text-xs font-black uppercase tracking-wider select-none ${
                               item.isPacked ? "text-[#58cc02]" : "text-[#afbbbf]"
                             }`}
                           >
@@ -579,40 +611,62 @@ function Dashboard() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1 shrink-0">
-                        {/* Move up/down */}
-                        <div className="flex flex-col gap-0.5">
+                      <div className="flex items-center gap-1.5 shrink-0 select-none" onClick={(e) => e.stopPropagation()}>
+                        {activeItemControl === item._id ? (
+                          <>
+                            {/* Move up/down */}
+                            <div className="flex gap-1">
+                              <button
+                                onClick={(e) => { void handleMoveItem(e, iIndex, -1); }}
+                                disabled={iIndex === 0}
+                                className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:cursor-not-allowed text-white text-[11px] transition-colors cursor-pointer"
+                                title="Move up"
+                              >
+                                ▲
+                              </button>
+                              <button
+                                onClick={(e) => { void handleMoveItem(e, iIndex, 1); }}
+                                disabled={iIndex === items.length - 1}
+                                className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:cursor-not-allowed text-white text-[11px] transition-colors cursor-pointer"
+                                title="Move down"
+                              >
+                                ▼
+                              </button>
+                            </div>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); startEditItem(item); }}
+                              className="text-[#afbbbf] hover:text-[#1cb0f6] w-8 h-8 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#131f24] transition-all cursor-pointer"
+                              title="Edit Item"
+                            >
+                              <span className="text-sm block">✏️</span>
+                            </button>
+                            <button
+                              onClick={(e) => { void handleDelete(e, item._id); }}
+                              className="text-[#afbbbf] hover:text-[#ff4b4b] w-8 h-8 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#131f24] transition-all cursor-pointer"
+                              title="Delete Item"
+                            >
+                              <span className="text-base block">🗑️</span>
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setActiveItemControl(null); }}
+                              className="text-[#afbbbf] hover:text-white w-8 h-8 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#131f24] transition-all cursor-pointer"
+                              title="Close controls"
+                            >
+                              <span className="text-base block">✕</span>
+                            </button>
+                          </>
+                        ) : (
                           <button
-                            onClick={(e) => { void handleMoveItem(e, iIndex, -1); }}
-                            disabled={iIndex === 0}
-                            className="w-6 h-5 flex items-center justify-center rounded bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:cursor-not-allowed text-white text-[9px] transition-colors cursor-pointer"
-                            title="Move up"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveItemControl(item._id);
+                            }}
+                            className="text-[#afbbbf] hover:text-[#58cc02] w-8 h-8 flex items-center justify-center rounded-xl hover:bg-[#131f24] transition-all cursor-pointer"
+                            title="Control Item"
                           >
-                            ▲
+                            <span className="text-lg block">⚙️</span>
                           </button>
-                          <button
-                            onClick={(e) => { void handleMoveItem(e, iIndex, 1); }}
-                            disabled={iIndex === items.length - 1}
-                            className="w-6 h-5 flex items-center justify-center rounded bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:cursor-not-allowed text-white text-[9px] transition-colors cursor-pointer"
-                            title="Move down"
-                          >
-                            ▼
-                          </button>
-                        </div>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); startEditItem(item); }}
-                          className="text-[#afbbbf] hover:text-[#1cb0f6] p-2 rounded-xl transition-colors hover:bg-[#131f24] cursor-pointer"
-                          title="Edit Item"
-                        >
-                          <span className="text-base block">✏️</span>
-                        </button>
-                        <button
-                          onClick={(e) => { void handleDelete(e, item._id); }}
-                          className="text-[#afbbbf] hover:text-[#ff4b4b] p-2 rounded-xl transition-colors hover:bg-[#131f24] cursor-pointer"
-                          title="Delete Item"
-                        >
-                          <span className="text-xl block">🗑️</span>
-                        </button>
+                        )}
                       </div>
                     </div>
                   )}
