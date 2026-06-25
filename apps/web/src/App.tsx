@@ -77,19 +77,14 @@ function Dashboard() {
   const [newCustomItemName, setNewCustomItemName] = useState("");
   const [newItemEmoji, setNewItemEmoji] = useState("");
 
-  // Item editing state
-  const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [editItemName, setEditItemName] = useState("");
-  const [editItemEmoji, setEditItemEmoji] = useState("");
 
-  // Routine editing state
-  const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
-  const [editRoutineName, setEditRoutineName] = useState("");
-  const [editRoutineIcon, setEditRoutineIcon] = useState("");
 
-  // Active controls state
-  const [activeDestinationControl, setActiveDestinationControl] = useState<string | null>(null);
-  const [activeItemControl, setActiveItemControl] = useState<string | null>(null);
+  // Modal active configuration states
+  const [manageRoutine, setManageRoutine] = useState<(typeof customRoutines)[0] | null>(null);
+  const [manageItem, setManageItem] = useState<(typeof items)[0] | null>(null);
+
+  const [editModalName, setEditModalName] = useState("");
+  const [editModalIconEmoji, setEditModalIconEmoji] = useState("");
 
   // Convex mutations & queries
   const ensureInitialized = useMutation(api.pocketcheck.ensureInitialized);
@@ -147,15 +142,7 @@ function Dashboard() {
     }
   };
 
-  const handleDelete = async (e: React.MouseEvent, itemId: Id<"items">) => {
-    e.stopPropagation();
-    try {
-      await deleteItem({ id: itemId });
-      if (editingItemId === itemId) setEditingItemId(null);
-    } catch (err) {
-      console.error("Failed to delete item", err);
-    }
-  };
+
 
   const handleReset = async () => {
     try {
@@ -165,13 +152,12 @@ function Dashboard() {
     }
   };
 
-  const handleMoveItem = async (e: React.MouseEvent, index: number, direction: -1 | 1) => {
-    e.stopPropagation();
+  const handleMoveItemById = async (id: Id<"items">, direction: -1 | 1) => {
+    const index = items.findIndex((i) => i._id === id);
+    if (index === -1) return;
     const targetIndex = index + direction;
     if (targetIndex < 0 || targetIndex >= items.length) return;
     try {
-      // Build reordered ID list and write sequential orders in one shot.
-      // This also normalises items that were created before the order field existed.
       const ids = items.map((i) => i._id);
       const [moved] = ids.splice(index, 1);
       ids.splice(targetIndex, 0, moved);
@@ -181,8 +167,9 @@ function Dashboard() {
     }
   };
 
-  const handleMoveRoutine = async (e: React.MouseEvent, index: number, direction: -1 | 1) => {
-    e.stopPropagation();
+  const handleMoveRoutineById = async (id: Id<"routines">, direction: -1 | 1) => {
+    const index = routinesList.findIndex((r) => r._id === id);
+    if (index === -1) return;
     const targetIndex = index + direction;
     if (targetIndex < 0 || targetIndex >= routinesList.length) return;
     try {
@@ -224,63 +211,7 @@ function Dashboard() {
     }
   };
 
-  const startEditItem = (item: (typeof items)[0]) => {
-    setEditingItemId(item._id);
-    setEditItemName(item.name);
-    setEditItemEmoji(item.emoji ?? "");
-  };
 
-  const handleSaveItem = async () => {
-    if (!editItemName.trim() || !editingItemId) return;
-    try {
-      await editItemMutation({
-        id: editingItemId as Id<"items">,
-        name: editItemName.trim(),
-        emoji: editItemEmoji.trim() || undefined,
-      });
-      setEditingItemId(null);
-    } catch (err) {
-      console.error("Failed to save item", err);
-    }
-  };
-
-  const startEditRoutine = (routine: (typeof customRoutines)[0], e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowCustomInput(false);
-    setEditingRoutineId(routine._id);
-    setEditRoutineName(routine.name);
-    setEditRoutineIcon(routine.icon);
-  };
-
-  const handleSaveRoutine = async () => {
-    if (!editRoutineName.trim() || !editingRoutineId) return;
-    const oldName = customRoutines.find((r) => r._id === editingRoutineId)?.name;
-    try {
-      await updateRoutine({
-        id: editingRoutineId as Id<"routines">,
-        name: editRoutineName.trim(),
-        icon: editRoutineIcon || "📍",
-      });
-      if (oldName && selectedRoutine === oldName) {
-        setSelectedRoutine(editRoutineName.trim());
-      }
-      setEditingRoutineId(null);
-    } catch (err) {
-      console.error("Failed to update routine", err);
-    }
-  };
-
-  const handleDeleteRoutine = async (routine: (typeof customRoutines)[0], e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!confirm(`Delete "${routine.name}" and all its items?`)) return;
-    try {
-      await deleteRoutine({ id: routine._id });
-      // selectedRoutine will be auto-corrected by the useEffect above
-      if (editingRoutineId === routine._id) setEditingRoutineId(null);
-    } catch (err) {
-      console.error("Failed to delete routine", err);
-    }
-  };
 
   return (
     <>
@@ -332,7 +263,7 @@ function Dashboard() {
             Where are we heading today?
           </h3>
           <div className="grid grid-cols-3 gap-3">
-            {routinesList.map((routine, rIndex) => {
+            {routinesList.map((routine) => {
               const isActive = routine.name === selectedRoutine;
 
               return (
@@ -341,7 +272,6 @@ function Dashboard() {
                     onClick={() => {
                       setSelectedRoutine(routine.name);
                       setShowCustomInput(false);
-                      setEditingRoutineId(null);
                     }}
                     className={`routine-btn w-full flex flex-col items-center gap-1.5 p-3.5 pt-5 rounded-2xl bg-[#202f36] border-2 text-sm font-black transition-all cursor-pointer select-none ${
                       isActive
@@ -353,72 +283,19 @@ function Dashboard() {
                     <span className="truncate max-w-full select-none">{routine.name}</span>
                   </button>
 
-                  {/* Settings gear toggle button */}
+                  {/* Settings gear button */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      setActiveDestinationControl(
-                        activeDestinationControl === routine._id ? null : routine._id
-                      );
+                      setManageRoutine(routine);
+                      setEditModalName(routine.name);
+                      setEditModalIconEmoji(routine.icon);
                     }}
                     className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center rounded-lg bg-[#37464f] hover:bg-[#58cc02] text-white text-[11px] transition-colors cursor-pointer z-10"
                     title="Control"
                   >
                     ⚙️
                   </button>
-
-                  {/* Control overlay */}
-                  {activeDestinationControl === routine._id && (
-                    <div className="absolute inset-0 bg-[#202f36]/95 border-2 border-[#1cb0f6] rounded-2xl flex flex-col justify-center items-center p-2 z-20 gap-2 select-none">
-                      <div className="flex gap-1.5 justify-center">
-                        <button
-                          onClick={(e) => { void handleMoveRoutine(e, rIndex, -1); }}
-                          disabled={rIndex === 0}
-                          className="w-7 h-7 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:cursor-not-allowed text-white text-xs transition-colors cursor-pointer"
-                          title="Move left"
-                        >
-                          ◀
-                        </button>
-                        <button
-                          onClick={(e) => { void handleMoveRoutine(e, rIndex, 1); }}
-                          disabled={rIndex === routinesList.length - 1}
-                          className="w-7 h-7 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:cursor-not-allowed text-white text-xs transition-colors cursor-pointer"
-                          title="Move right"
-                        >
-                          ▶
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            setActiveDestinationControl(null);
-                            startEditRoutine(routine, e);
-                          }}
-                          className="w-7 h-7 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#1cb0f6] text-white text-xs transition-colors cursor-pointer"
-                          title="Edit destination"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            setActiveDestinationControl(null);
-                            void handleDeleteRoutine(routine, e);
-                          }}
-                          className="w-7 h-7 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#ff4b4b] text-white text-xs transition-colors cursor-pointer"
-                          title="Delete destination"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveDestinationControl(null);
-                        }}
-                        className="text-[10px] font-black uppercase text-[#afbbbf] hover:text-white transition-colors cursor-pointer"
-                      >
-                        Close
-                      </button>
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -427,7 +304,6 @@ function Dashboard() {
             <button
               onClick={() => {
                 setShowCustomInput(!showCustomInput);
-                setEditingRoutineId(null);
               }}
               className={`routine-btn flex flex-col items-center gap-1.5 p-3.5 rounded-2xl bg-[#202f36] border-2 text-sm font-black transition-all cursor-pointer ${
                 showCustomInput
@@ -440,46 +316,7 @@ function Dashboard() {
             </button>
           </div>
 
-          {/* Edit routine inline form */}
-          {editingRoutineId && (
-            <div className="animate-fadeIn mt-2">
-              <div className="flex gap-2 bg-[#202f36] border-2 border-[#1cb0f6] rounded-xl p-2 items-center">
-                <input
-                  type="text"
-                  value={editRoutineIcon}
-                  onChange={(e) => setEditRoutineIcon(e.target.value)}
-                  placeholder="📍"
-                  maxLength={2}
-                  className="bg-[#131f24] border-2 border-[#37464f] rounded-lg text-center text-xl w-12 h-10 shrink-0 focus:outline-none focus:border-[#1cb0f6] transition-colors"
-                  title="Destination emoji"
-                />
-                <input
-                  type="text"
-                  value={editRoutineName}
-                  onChange={(e) => setEditRoutineName(e.target.value)}
-                  placeholder="Destination name..."
-                  className="bg-transparent text-white font-bold text-sm px-2 flex-1 focus:outline-none placeholder-[#afbbbf]"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") void handleSaveRoutine();
-                    if (e.key === "Escape") setEditingRoutineId(null);
-                  }}
-                  autoFocus
-                />
-                <button
-                  onClick={() => { void handleSaveRoutine(); }}
-                  className="bg-[#58cc02] border-b-4 border-[#46a302] text-white font-extrabold text-xs px-3 py-1.5 rounded-xl uppercase tracking-wider active:translate-y-[2px] active:border-b-2 cursor-pointer shrink-0"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => setEditingRoutineId(null)}
-                  className="bg-[#37464f] hover:bg-[#455a64] text-white font-extrabold text-xs px-3 py-1.5 rounded-xl cursor-pointer shrink-0"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          )}
+
 
           {/* New custom destination form */}
           {showCustomInput && (
@@ -530,146 +367,63 @@ function Dashboard() {
           </div>
 
           <div className="space-y-3" id="checklist-container">
-            {items.map((item, iIndex) => {
-              const isEditing = editingItemId === item._id;
+            {items.map((item) => {
               return (
                 <div key={item._id}>
-                  {isEditing ? (
-                    /* ── Edit mode ── */
-                    <div className="flex gap-2 bg-[#202f36] border-2 border-[#1cb0f6] border-b-4 rounded-2xl p-3 items-center">
-                      <input
-                        type="text"
-                        value={editItemEmoji}
-                        onChange={(e) => setEditItemEmoji(e.target.value)}
-                        placeholder="😀"
-                        maxLength={2}
-                        className="bg-[#131f24] border-2 border-[#37464f] rounded-lg text-center text-xl w-12 h-10 shrink-0 focus:outline-none focus:border-[#1cb0f6] transition-colors"
-                        title="Item emoji (optional)"
-                      />
-                      <input
-                        type="text"
-                        value={editItemName}
-                        onChange={(e) => setEditItemName(e.target.value)}
-                        className="flex-1 bg-[#131f24] border-2 border-[#37464f] px-3 py-2 rounded-xl font-bold text-sm text-white focus:outline-none focus:border-[#1cb0f6] transition-colors"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") void handleSaveItem();
-                          if (e.key === "Escape") setEditingItemId(null);
-                        }}
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => { void handleSaveItem(); }}
-                        className="bg-[#58cc02] border-b-4 border-[#46a302] text-white font-extrabold text-xs px-3 py-2 rounded-xl uppercase shrink-0 cursor-pointer active:translate-y-[2px] active:border-b-2"
+                  <div
+                    onClick={() => { void handleToggle(item._id, item.isPacked); }}
+                    className={`item-row flex items-center justify-between p-4 border-2 border-b-6 rounded-2xl cursor-pointer transition-all select-none ${
+                      item.isPacked
+                        ? "is-packed bg-[#243b14] border-[#46a302]"
+                        : "bg-[#202f36] border-[#37464f] hover:bg-[#283840]"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5 select-none">
+                      <div
+                        className={`checkbox-ui w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all shrink-0 select-none ${
+                          item.isPacked
+                            ? "border-[#46a302] bg-[#58cc02]"
+                            : "border-[#37464f] border-b-4 bg-[#131f24]"
+                        }`}
                       >
-                        Save
-                      </button>
-                      <button
-                        onClick={() => setEditingItemId(null)}
-                        className="bg-[#37464f] hover:bg-[#455a64] text-white font-extrabold text-xs px-3 py-2 rounded-xl shrink-0 cursor-pointer"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    /* ── Normal view mode ── */
-                    <div
-                      onClick={() => { void handleToggle(item._id, item.isPacked); }}
-                      className={`item-row flex items-center justify-between p-4 border-2 border-b-6 rounded-2xl cursor-pointer transition-all select-none ${
-                        item.isPacked
-                          ? "is-packed bg-[#243b14] border-[#46a302]"
-                          : "bg-[#202f36] border-[#37464f] hover:bg-[#283840]"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3.5 select-none">
-                        <div
-                          className={`checkbox-ui w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all shrink-0 select-none ${
-                            item.isPacked
-                              ? "border-[#46a302] bg-[#58cc02]"
-                              : "border-[#37464f] border-b-4 bg-[#131f24]"
+                        <span className={`text-xs select-none ${item.isPacked ? "block" : "hidden"}`}>✅</span>
+                      </div>
+                      <div className="select-none">
+                        <p
+                          className={`item-name font-extrabold text-lg text-white select-none ${
+                            item.isPacked ? "text-[#afbbbf] line-through decoration-[#46a302] decoration-2" : ""
                           }`}
                         >
-                          <span className={`text-xs select-none ${item.isPacked ? "block" : "hidden"}`}>✅</span>
-                        </div>
-                        <div className="select-none">
-                          <p
-                            className={`item-name font-extrabold text-lg text-white select-none ${
-                              item.isPacked ? "text-[#afbbbf] line-through decoration-[#46a302] decoration-2" : ""
-                            }`}
-                          >
-                            {item.emoji && (
-                              <span className="not-italic mr-1.5 select-none">{item.emoji}</span>
-                            )}
-                            <span className="select-none">{item.name}</span>
-                          </p>
-                          <p
-                            className={`item-status text-xs font-black uppercase tracking-wider select-none ${
-                              item.isPacked ? "text-[#58cc02]" : "text-[#afbbbf]"
-                            }`}
-                          >
-                            {item.isPacked ? "Packed" : "Missing"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0 select-none" onClick={(e) => e.stopPropagation()}>
-                        {activeItemControl === item._id ? (
-                          <>
-                            {/* Move up/down */}
-                            <div className="flex gap-1">
-                              <button
-                                onClick={(e) => { void handleMoveItem(e, iIndex, -1); }}
-                                disabled={iIndex === 0}
-                                className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:cursor-not-allowed text-white text-[11px] transition-colors cursor-pointer"
-                                title="Move up"
-                              >
-                                ▲
-                              </button>
-                              <button
-                                onClick={(e) => { void handleMoveItem(e, iIndex, 1); }}
-                                disabled={iIndex === items.length - 1}
-                                className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:cursor-not-allowed text-white text-[11px] transition-colors cursor-pointer"
-                                title="Move down"
-                              >
-                                ▼
-                              </button>
-                            </div>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); startEditItem(item); }}
-                              className="text-[#afbbbf] hover:text-[#1cb0f6] w-8 h-8 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#131f24] transition-all cursor-pointer"
-                              title="Edit Item"
-                            >
-                              <span className="text-sm block">✏️</span>
-                            </button>
-                            <button
-                              onClick={(e) => { void handleDelete(e, item._id); }}
-                              className="text-[#afbbbf] hover:text-[#ff4b4b] w-8 h-8 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#131f24] transition-all cursor-pointer"
-                              title="Delete Item"
-                            >
-                              <span className="text-base block">🗑️</span>
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setActiveItemControl(null); }}
-                              className="text-[#afbbbf] hover:text-white w-8 h-8 flex items-center justify-center rounded-xl bg-[#37464f] hover:bg-[#131f24] transition-all cursor-pointer"
-                              title="Close controls"
-                            >
-                              <span className="text-base block">✕</span>
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveItemControl(item._id);
-                            }}
-                            className="text-[#afbbbf] hover:text-[#58cc02] w-8 h-8 flex items-center justify-center rounded-xl hover:bg-[#131f24] transition-all cursor-pointer"
-                            title="Control Item"
-                          >
-                            <span className="text-lg block">⚙️</span>
-                          </button>
-                        )}
+                          {item.emoji && (
+                            <span className="not-italic mr-1.5 select-none">{item.emoji}</span>
+                          )}
+                          <span className="select-none">{item.name}</span>
+                        </p>
+                        <p
+                          className={`item-status text-xs font-black uppercase tracking-wider select-none ${
+                            item.isPacked ? "text-[#58cc02]" : "text-[#afbbbf]"
+                          }`}
+                        >
+                          {item.isPacked ? "Packed" : "Missing"}
+                        </p>
                       </div>
                     </div>
-                  )}
+
+                    <div className="flex items-center gap-1.5 shrink-0 select-none" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setManageItem(item);
+                          setEditModalName(item.name);
+                          setEditModalIconEmoji(item.emoji ?? "");
+                        }}
+                        className="text-[#afbbbf] hover:text-[#58cc02] w-8 h-8 flex items-center justify-center rounded-xl hover:bg-[#131f24] transition-all cursor-pointer"
+                        title="Control Item"
+                      >
+                        <span className="text-lg block">⚙️</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -709,6 +463,245 @@ function Dashboard() {
           </form>
         </div>
       </main>
+
+      {/* ─── Manage Routine Modal ────────────────────────────────────── */}
+      {manageRoutine && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-[100] animate-fadeIn p-4">
+          <div className="bg-[#202f36] border-2 border-[#37464f] border-b-6 rounded-2xl p-6 w-full max-w-md shadow-2xl relative animate-scaleIn select-none">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-black text-white select-none">Destination Settings</h2>
+              <button
+                onClick={() => setManageRoutine(null)}
+                className="text-[#afbbbf] hover:text-white text-xl font-bold cursor-pointer transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Edit icon + name */}
+              <div className="flex gap-3">
+                <div className="flex flex-col gap-1.5 shrink-0">
+                  <label className="text-xs font-black text-[#afbbbf] uppercase tracking-wider select-none">Icon</label>
+                  <input
+                    type="text"
+                    value={editModalIconEmoji}
+                    onChange={(e) => setEditModalIconEmoji(e.target.value)}
+                    maxLength={2}
+                    className="bg-[#131f24] border-2 border-[#37464f] rounded-xl text-center text-2xl w-14 h-12 focus:outline-none focus:border-[#1cb0f6] transition-colors"
+                    title="Destination Icon"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5 flex-1">
+                  <label className="text-xs font-black text-[#afbbbf] uppercase tracking-wider select-none">Name</label>
+                  <input
+                    type="text"
+                    value={editModalName}
+                    onChange={(e) => setEditModalName(e.target.value)}
+                    className="bg-[#131f24] border-2 border-[#37464f] rounded-xl px-4 h-12 font-bold text-sm text-white focus:outline-none focus:border-[#1cb0f6] transition-colors"
+                    placeholder="Destination name..."
+                  />
+                </div>
+              </div>
+
+              {/* Reordering */}
+              <div className="flex flex-col gap-1.5 pt-2">
+                <label className="text-xs font-black text-[#afbbbf] uppercase tracking-wider select-none">Change Order</label>
+                <div className="flex gap-2">
+                  {(() => {
+                    const rIndex = routinesList.findIndex((r) => r._id === manageRoutine._id);
+                    return (
+                      <>
+                        <button
+                          onClick={() => { void handleMoveRoutineById(manageRoutine._id, -1); }}
+                          disabled={rIndex <= 0}
+                          className="flex-1 py-3 rounded-xl bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:hover:bg-[#37464f] disabled:cursor-not-allowed text-white font-extrabold text-sm transition-colors cursor-pointer flex justify-center items-center gap-1.5"
+                        >
+                          ◀ Move Left
+                        </button>
+                        <button
+                          onClick={() => { void handleMoveRoutineById(manageRoutine._id, 1); }}
+                          disabled={rIndex === -1 || rIndex >= routinesList.length - 1}
+                          className="flex-1 py-3 rounded-xl bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:hover:bg-[#37464f] disabled:cursor-not-allowed text-white font-extrabold text-sm transition-colors cursor-pointer flex justify-center items-center gap-1.5"
+                        >
+                          Move Right ▶
+                        </button>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Save & Actions */}
+              <div className="flex flex-col gap-2 pt-4 border-t border-[#37464f]">
+                <button
+                  onClick={async () => {
+                    if (!editModalName.trim()) return;
+                    try {
+                      await updateRoutine({
+                        id: manageRoutine._id,
+                        name: editModalName.trim(),
+                        icon: editModalIconEmoji || "📍",
+                      });
+                      const oldName = manageRoutine.name;
+                      if (selectedRoutine === oldName) {
+                        setSelectedRoutine(editModalName.trim());
+                      }
+                      setManageRoutine(null);
+                    } catch (err) {
+                      console.error("Failed to update routine", err);
+                    }
+                  }}
+                  className="w-full py-3.5 rounded-xl bg-[#58cc02] border-b-4 border-[#46a302] text-white font-black text-sm uppercase tracking-wider transition-all active:translate-y-[2px] active:border-b-2 cursor-pointer hover:brightness-110"
+                >
+                  Save Changes
+                </button>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`Delete "${manageRoutine.name}" and all its items?`)) return;
+                      try {
+                        await deleteRoutine({ id: manageRoutine._id });
+                        setManageRoutine(null);
+                      } catch (err) {
+                        console.error("Failed to delete routine", err);
+                      }
+                    }}
+                    className="flex-1 py-3 rounded-xl bg-[#ff4b4b]/10 hover:bg-[#ff4b4b]/20 text-[#ff4b4b] border-2 border-[#ff4b4b]/30 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer flex justify-center items-center gap-1"
+                  >
+                    🗑️ Delete Destination
+                  </button>
+                  <button
+                    onClick={() => setManageRoutine(null)}
+                    className="flex-1 py-3 rounded-xl bg-[#37464f] hover:bg-[#455a64] text-white font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Manage Item Modal ───────────────────────────────────────── */}
+      {manageItem && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-[100] animate-fadeIn p-4">
+          <div className="bg-[#202f36] border-2 border-[#37464f] border-b-6 rounded-2xl p-6 w-full max-w-md shadow-2xl relative animate-scaleIn select-none">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-black text-white select-none">Item Settings</h2>
+              <button
+                onClick={() => setManageItem(null)}
+                className="text-[#afbbbf] hover:text-white text-xl font-bold cursor-pointer transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Edit emoji + name */}
+              <div className="flex gap-3">
+                <div className="flex flex-col gap-1.5 shrink-0">
+                  <label className="text-xs font-black text-[#afbbbf] uppercase tracking-wider select-none">Emoji</label>
+                  <input
+                    type="text"
+                    value={editModalIconEmoji}
+                    onChange={(e) => setEditModalIconEmoji(e.target.value)}
+                    placeholder="😀"
+                    maxLength={2}
+                    className="bg-[#131f24] border-2 border-[#37464f] rounded-xl text-center text-2xl w-14 h-12 focus:outline-none focus:border-[#1cb0f6] transition-colors"
+                    title="Item Emoji"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5 flex-1">
+                  <label className="text-xs font-black text-[#afbbbf] uppercase tracking-wider select-none">Name</label>
+                  <input
+                    type="text"
+                    value={editModalName}
+                    onChange={(e) => setEditModalName(e.target.value)}
+                    className="bg-[#131f24] border-2 border-[#37464f] rounded-xl px-4 h-12 font-bold text-sm text-white focus:outline-none focus:border-[#1cb0f6] transition-colors"
+                    placeholder="Item name..."
+                  />
+                </div>
+              </div>
+
+              {/* Reordering */}
+              <div className="flex flex-col gap-1.5 pt-2">
+                <label className="text-xs font-black text-[#afbbbf] uppercase tracking-wider select-none">Change Order</label>
+                <div className="flex gap-2">
+                  {(() => {
+                    const iIndex = items.findIndex((i) => i._id === manageItem._id);
+                    return (
+                      <>
+                        <button
+                          onClick={() => { void handleMoveItemById(manageItem._id, -1); }}
+                          disabled={iIndex <= 0}
+                          className="flex-1 py-3 rounded-xl bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:hover:bg-[#37464f] disabled:cursor-not-allowed text-white font-extrabold text-sm transition-colors cursor-pointer flex justify-center items-center gap-1.5"
+                        >
+                          ▲ Move Up
+                        </button>
+                        <button
+                          onClick={() => { void handleMoveItemById(manageItem._id, 1); }}
+                          disabled={iIndex === -1 || iIndex >= items.length - 1}
+                          className="flex-1 py-3 rounded-xl bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:hover:bg-[#37464f] disabled:cursor-not-allowed text-white font-extrabold text-sm transition-colors cursor-pointer flex justify-center items-center gap-1.5"
+                        >
+                          Move Down ▼
+                        </button>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Save & Actions */}
+              <div className="flex flex-col gap-2 pt-4 border-t border-[#37464f]">
+                <button
+                  onClick={async () => {
+                    if (!editModalName.trim()) return;
+                    try {
+                      await editItemMutation({
+                        id: manageItem._id,
+                        name: editModalName.trim(),
+                        emoji: editModalIconEmoji.trim() || undefined,
+                      });
+                      setManageItem(null);
+                    } catch (err) {
+                      console.error("Failed to update item", err);
+                    }
+                  }}
+                  className="w-full py-3.5 rounded-xl bg-[#58cc02] border-b-4 border-[#46a302] text-white font-black text-sm uppercase tracking-wider transition-all active:translate-y-[2px] active:border-b-2 cursor-pointer hover:brightness-110"
+                >
+                  Save Changes
+                </button>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`Delete "${manageItem.name}"?`)) return;
+                      try {
+                        await deleteItem({ id: manageItem._id });
+                        setManageItem(null);
+                      } catch (err) {
+                        console.error("Failed to delete item", err);
+                      }
+                    }}
+                    className="flex-1 py-3 rounded-xl bg-[#ff4b4b]/10 hover:bg-[#ff4b4b]/20 text-[#ff4b4b] border-2 border-[#ff4b4b]/30 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer flex justify-center items-center gap-1"
+                  >
+                    🗑️ Delete Item
+                  </button>
+                  <button
+                    onClick={() => setManageItem(null)}
+                    className="flex-1 py-3 rounded-xl bg-[#37464f] hover:bg-[#455a64] text-white font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
