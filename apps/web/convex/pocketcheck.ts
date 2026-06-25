@@ -10,7 +10,7 @@ export const ensureInitialized = mutation({
 });
 
 
-/** List all items for a given routine (for the current user). */
+/** List all items for a given routine (for the current user), sorted by order. */
 export const listItems = query({
   args: { routine: v.string() },
   handler: async (ctx, { routine }) => {
@@ -18,16 +18,23 @@ export const listItems = query({
     if (!identity) return [];
     const userId = identity.subject;
 
-    return await ctx.db
+    const items = await ctx.db
       .query("items")
       .withIndex("by_user_routine", (q) =>
         q.eq("userId", userId).eq("routine", routine)
       )
       .collect();
+
+    // Sort by order field; items without order fall back to creation order (_id)
+    return items.sort((a, b) => {
+      const ao = a.order ?? 0;
+      const bo = b.order ?? 0;
+      return ao - bo;
+    });
   },
 });
 
-/** List all custom routines created by the current user. */
+/** List all custom routines created by the current user, sorted by order. */
 export const listRoutines = query({
   args: {},
   handler: async (ctx) => {
@@ -35,10 +42,16 @@ export const listRoutines = query({
     if (!identity) return [];
     const userId = identity.subject;
 
-    return await ctx.db
+    const routines = await ctx.db
       .query("routines")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
+
+    return routines.sort((a, b) => {
+      const ao = a.order ?? 0;
+      const bo = b.order ?? 0;
+      return ao - bo;
+    });
   },
 });
 
@@ -63,7 +76,14 @@ export const addRoutine = mutation({
 
     if (existing) return existing._id;
 
-    return await ctx.db.insert("routines", { userId, name, icon });
+    // Assign next order value
+    const allRoutines = await ctx.db
+      .query("routines")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+    const maxOrder = allRoutines.reduce((m, r) => Math.max(m, r.order ?? 0), -1);
+
+    return await ctx.db.insert("routines", { userId, name, icon, order: maxOrder + 1 });
   },
 });
 
@@ -79,11 +99,21 @@ export const addItem = mutation({
     if (!identity) throw new Error("Not authenticated");
     const userId = identity.subject;
 
+    // Assign next order value within the routine
+    const existing = await ctx.db
+      .query("items")
+      .withIndex("by_user_routine", (q) =>
+        q.eq("userId", userId).eq("routine", routine)
+      )
+      .collect();
+    const maxOrder = existing.reduce((m, i) => Math.max(m, i.order ?? 0), -1);
+
     return await ctx.db.insert("items", {
       userId,
       routine,
       name,
       isPacked: false,
+      order: maxOrder + 1,
       ...(emoji ? { emoji } : {}),
     });
   },
@@ -213,5 +243,49 @@ export const resetItems = mutation({
     for (const item of items) {
       await ctx.db.patch(item._id, { isPacked: false });
     }
+  },
+});
+
+/** Swap the order of two items (move one up or down). */
+export const reorderItem = mutation({
+  args: {
+    idA: v.id("items"),
+    idB: v.id("items"),
+  },
+  handler: async (ctx, { idA, idB }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const a = await ctx.db.get(idA);
+    const b = await ctx.db.get(idB);
+    if (!a || !b) throw new Error("Item not found");
+
+    const orderA = a.order ?? 0;
+    const orderB = b.order ?? 0;
+
+    await ctx.db.patch(idA, { order: orderB });
+    await ctx.db.patch(idB, { order: orderA });
+  },
+});
+
+/** Swap the order of two routines (move one up or down). */
+export const reorderRoutine = mutation({
+  args: {
+    idA: v.id("routines"),
+    idB: v.id("routines"),
+  },
+  handler: async (ctx, { idA, idB }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const a = await ctx.db.get(idA);
+    const b = await ctx.db.get(idB);
+    if (!a || !b) throw new Error("Routine not found");
+
+    const orderA = a.order ?? 0;
+    const orderB = b.order ?? 0;
+
+    await ctx.db.patch(idA, { order: orderB });
+    await ctx.db.patch(idB, { order: orderA });
   },
 });

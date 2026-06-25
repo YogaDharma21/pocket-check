@@ -100,6 +100,8 @@ function Dashboard() {
   const toggleItem = useMutation(api.pocketcheck.toggleItem);
   const deleteItem = useMutation(api.pocketcheck.deleteItem);
   const resetItems = useMutation(api.pocketcheck.resetItems);
+  const reorderItem = useMutation(api.pocketcheck.reorderItem);
+  const reorderRoutine = useMutation(api.pocketcheck.reorderRoutine);
 
   const items = useQuery(api.pocketcheck.listItems, { routine: selectedRoutine }) ?? [];
   const customRoutines = useQuery(api.pocketcheck.listRoutines) ?? [];
@@ -159,6 +161,28 @@ function Dashboard() {
       await resetItems({ routine: selectedRoutine });
     } catch (err) {
       console.error("Failed to reset list", err);
+    }
+  };
+
+  const handleMoveItem = async (e: React.MouseEvent, index: number, direction: -1 | 1) => {
+    e.stopPropagation();
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= items.length) return;
+    try {
+      await reorderItem({ idA: items[index]._id, idB: items[targetIndex]._id });
+    } catch (err) {
+      console.error("Failed to reorder item", err);
+    }
+  };
+
+  const handleMoveRoutine = async (e: React.MouseEvent, index: number, direction: -1 | 1) => {
+    e.stopPropagation();
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= routinesList.length) return;
+    try {
+      await reorderRoutine({ idA: routinesList[index]._id, idB: routinesList[targetIndex]._id });
+    } catch (err) {
+      console.error("Failed to reorder routine", err);
     }
   };
 
@@ -300,7 +324,7 @@ function Dashboard() {
             Where are we heading today?
           </h3>
           <div className="grid grid-cols-3 gap-3">
-            {routinesList.map((routine) => {
+            {routinesList.map((routine, rIndex) => {
               const isActive = routine.name === selectedRoutine;
 
               return (
@@ -311,7 +335,7 @@ function Dashboard() {
                       setShowCustomInput(false);
                       setEditingRoutineId(null);
                     }}
-                    className={`routine-btn w-full flex flex-col items-center gap-1.5 p-3.5 rounded-2xl bg-[#202f36] border-2 text-sm font-black transition-all cursor-pointer ${
+                    className={`routine-btn w-full flex flex-col items-center gap-1.5 p-3.5 pt-5 rounded-2xl bg-[#202f36] border-2 text-sm font-black transition-all cursor-pointer ${
                       isActive
                         ? "border-b-4 border-[#58cc02] text-[#58cc02] translate-y-[2px]"
                         : "border-b-6 border-[#37464f] hover:bg-[#283840] text-white active:translate-y-[2px] active:border-b-4"
@@ -321,7 +345,27 @@ function Dashboard() {
                     <span className="truncate max-w-full">{routine.name}</span>
                   </button>
 
-                  {/* Edit/Delete overlay — every destination is editable */}
+                  {/* Top-left: move up/down */}
+                  <div className="absolute top-1 left-1 flex gap-0.5">
+                    <button
+                      onClick={(e) => { void handleMoveRoutine(e, rIndex, -1); }}
+                      disabled={rIndex === 0}
+                      className="w-5 h-5 flex items-center justify-center rounded bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:cursor-not-allowed text-white text-[10px] transition-colors cursor-pointer"
+                      title="Move left"
+                    >
+                      ◀
+                    </button>
+                    <button
+                      onClick={(e) => { void handleMoveRoutine(e, rIndex, 1); }}
+                      disabled={rIndex === routinesList.length - 1}
+                      className="w-5 h-5 flex items-center justify-center rounded bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:cursor-not-allowed text-white text-[10px] transition-colors cursor-pointer"
+                      title="Move right"
+                    >
+                      ▶
+                    </button>
+                  </div>
+
+                  {/* Top-right: edit/delete */}
                   <div className="absolute top-1 right-1 flex gap-0.5">
                     <button
                       onClick={(e) => startEditRoutine(routine, e)}
@@ -449,7 +493,7 @@ function Dashboard() {
           </div>
 
           <div className="space-y-3" id="checklist-container">
-            {items.map((item) => {
+            {items.map((item, iIndex) => {
               const isEditing = editingItemId === item._id;
               return (
                 <div key={item._id}>
@@ -531,6 +575,25 @@ function Dashboard() {
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
+                        {/* Move up/down */}
+                        <div className="flex flex-col gap-0.5">
+                          <button
+                            onClick={(e) => { void handleMoveItem(e, iIndex, -1); }}
+                            disabled={iIndex === 0}
+                            className="w-6 h-5 flex items-center justify-center rounded bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:cursor-not-allowed text-white text-[9px] transition-colors cursor-pointer"
+                            title="Move up"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            onClick={(e) => { void handleMoveItem(e, iIndex, 1); }}
+                            disabled={iIndex === items.length - 1}
+                            className="w-6 h-5 flex items-center justify-center rounded bg-[#37464f] hover:bg-[#58cc02] disabled:opacity-30 disabled:cursor-not-allowed text-white text-[9px] transition-colors cursor-pointer"
+                            title="Move down"
+                          >
+                            ▼
+                          </button>
+                        </div>
                         <button
                           onClick={(e) => { e.stopPropagation(); startEditItem(item); }}
                           className="text-[#afbbbf] hover:text-[#1cb0f6] p-2 rounded-xl transition-colors hover:bg-[#131f24] cursor-pointer"

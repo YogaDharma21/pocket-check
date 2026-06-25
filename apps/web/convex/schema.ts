@@ -9,6 +9,7 @@ export default defineSchema({
     isPacked: v.boolean(),
     isDefault: v.optional(v.boolean()),
     emoji: v.optional(v.string()),
+    order: v.optional(v.number()),
   })
     .index("by_user_routine", ["userId", "routine"])
     .index("by_user", ["userId"]),
@@ -17,6 +18,7 @@ export default defineSchema({
     userId: v.string(),
     name: v.string(),
     icon: v.string(),
+    order: v.optional(v.number()),
   })
     .index("by_user", ["userId"])
     .index("by_user_name", ["userId", "name"]),
