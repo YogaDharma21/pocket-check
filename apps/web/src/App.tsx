@@ -218,7 +218,7 @@ function Dashboard() {
       {/* ─── Header ─────────────────────────────────────────────────────── */}
       <header className="bg-[#131f24] border-b-2 border-[#37464f] sticky top-0 z-50">
         <div className="max-w-xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 select-none">
             {/* Changed from ✨ to 🎒 — much more visible on dark bg */}
             <div className="bg-[#58cc02] text-white p-2 rounded-xl border-b-4 border-[#46a302]">
               <span className="text-xl block">🎒</span>
@@ -236,7 +236,7 @@ function Dashboard() {
 
         {/* ─── Owl progress block ──────────────────────────────────────── */}
         <div className="bg-[#202f36] border-2 border-[#37464f] border-b-6 rounded-2xl p-5 relative overflow-hidden">
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-4 select-none">
             <div className="hidden sm:block text-4xl mt-1">🦉</div>
             <div className="flex-1 space-y-3">
               <h2 id="status-headline" className="text-xl font-extrabold tracking-wide text-white">
