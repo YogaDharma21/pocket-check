@@ -44,9 +44,6 @@ function WelcomeScreen() {
         <h1 className="text-4xl font-black tracking-wide text-white">
           POCKET<span className="text-[#58cc02]">CHECK</span>
         </h1>
-        <p className="text-xs uppercase tracking-widest text-[#58cc02] font-black">
-          Duo Edition
-        </p>
         <p className="text-[#afbbbf] font-bold text-base leading-relaxed">
           Double-check your pockets before you step out! Create packing lists for work, the gym, or your custom routines.
         </p>
