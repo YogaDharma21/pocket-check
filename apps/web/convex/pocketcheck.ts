@@ -1,52 +1,14 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-const DEFAULT_ITEMS: Record<string, { name: string }[]> = {
-  Work: [
-    { name: "Laptop" },
-    { name: "Charger" },
-    { name: "ID Badge" },
-    { name: "Wallet" },
-    { name: "Phone" },
-    { name: "Keys" },
-    { name: "Headphones" },
-    { name: "Water Bottle" },
-  ],
-};
-
-/**
- * Ensures the user has default items seeded for built-in routines.
- * Safe to call multiple times — will skip if items already exist.
- */
+/** No-op kept for API compatibility — new users start with an empty slate. */
 export const ensureInitialized = mutation({
   args: {},
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) return;
-    const userId = identity.subject;
-
-    for (const [routine, items] of Object.entries(DEFAULT_ITEMS)) {
-      const existing = await ctx.db
-        .query("items")
-        .withIndex("by_user_routine", (q) =>
-          q.eq("userId", userId).eq("routine", routine)
-        )
-        .collect();
-
-      if (existing.length === 0) {
-        for (const item of items) {
-          await ctx.db.insert("items", {
-            userId,
-            routine,
-            name: item.name,
-            isPacked: false,
-            isDefault: true,
-          });
-        }
-      }
-    }
+  handler: async (_ctx) => {
+    // Nothing to seed — users create their own destinations and items.
   },
 });
+
 
 /** List all items for a given routine (for the current user). */
 export const listItems = query({

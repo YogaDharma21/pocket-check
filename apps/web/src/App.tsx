@@ -104,17 +104,20 @@ function Dashboard() {
   const items = useQuery(api.pocketcheck.listItems, { routine: selectedRoutine }) ?? [];
   const customRoutines = useQuery(api.pocketcheck.listRoutines) ?? [];
 
-  // Seed default lists if they are empty
+  // Seed default routines + items on first login
   useEffect(() => {
     void ensureInitialized();
   }, [ensureInitialized]);
 
-  // Combine standard and custom routines
-  const defaultRoutines = [
-    { name: "Work", icon: "💼" },
-    { name: "Gym", icon: "🏋️" },
-  ];
-  const routinesList = [...defaultRoutines, ...customRoutines];
+  // All routines come from the database — no hardcoded defaults
+  const routinesList = customRoutines;
+
+  // Auto-select first available routine when the current one no longer exists
+  useEffect(() => {
+    if (routinesList.length > 0 && !routinesList.find((r) => r.name === selectedRoutine)) {
+      setSelectedRoutine(routinesList[0].name);
+    }
+  }, [routinesList, selectedRoutine]);
 
   // Calculate progress metrics
   const totalItems = items.length;
@@ -239,7 +242,7 @@ function Dashboard() {
     if (!confirm(`Delete "${routine.name}" and all its items?`)) return;
     try {
       await deleteRoutine({ id: routine._id });
-      if (selectedRoutine === routine.name) setSelectedRoutine("Work");
+      // selectedRoutine will be auto-corrected by the useEffect above
       if (editingRoutineId === routine._id) setEditingRoutineId(null);
     } catch (err) {
       console.error("Failed to delete routine", err);
@@ -299,8 +302,6 @@ function Dashboard() {
           <div className="grid grid-cols-3 gap-3">
             {routinesList.map((routine) => {
               const isActive = routine.name === selectedRoutine;
-              const customRoutineObj = customRoutines.find((r) => r.name === routine.name);
-              const isCustom = !!customRoutineObj;
 
               return (
                 <div key={routine.name} className="relative">
@@ -320,25 +321,23 @@ function Dashboard() {
                     <span className="truncate max-w-full">{routine.name}</span>
                   </button>
 
-                  {/* Edit/Delete overlay for custom routines */}
-                  {isCustom && customRoutineObj && (
-                    <div className="absolute top-1 right-1 flex gap-0.5">
-                      <button
-                        onClick={(e) => startEditRoutine(customRoutineObj, e)}
-                        className="w-5 h-5 flex items-center justify-center rounded bg-[#37464f] hover:bg-[#1cb0f6] text-white text-[10px] transition-colors cursor-pointer"
-                        title="Edit destination"
-                      >
-                        ✏
-                      </button>
-                      <button
-                        onClick={(e) => { void handleDeleteRoutine(customRoutineObj, e); }}
-                        className="w-5 h-5 flex items-center justify-center rounded bg-[#37464f] hover:bg-[#ff4b4b] text-white text-[10px] transition-colors cursor-pointer"
-                        title="Delete destination"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  )}
+                  {/* Edit/Delete overlay — every destination is editable */}
+                  <div className="absolute top-1 right-1 flex gap-0.5">
+                    <button
+                      onClick={(e) => startEditRoutine(routine, e)}
+                      className="w-5 h-5 flex items-center justify-center rounded bg-[#37464f] hover:bg-[#1cb0f6] text-white text-[10px] transition-colors cursor-pointer"
+                      title="Edit destination"
+                    >
+                      ✏
+                    </button>
+                    <button
+                      onClick={(e) => { void handleDeleteRoutine(routine, e); }}
+                      className="w-5 h-5 flex items-center justify-center rounded bg-[#37464f] hover:bg-[#ff4b4b] text-white text-[10px] transition-colors cursor-pointer"
+                      title="Delete destination"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -560,26 +559,28 @@ function Dashboard() {
           <h3 className="text-xs font-black text-[#afbbbf] uppercase tracking-wider mb-3">
             Add target item to bring:
           </h3>
-          <form onSubmit={(e) => { void handleAddItem(e); }} className="flex gap-2">
-            <input
-              type="text"
-              value={newItemEmoji}
-              onChange={(e) => setNewItemEmoji(e.target.value)}
-              placeholder="😀"
-              maxLength={2}
-              className="bg-[#131f24] border-2 border-[#37464f] rounded-xl text-center text-xl w-14 shrink-0 focus:outline-none focus:border-[#1cb0f6] transition-colors"
-              title="Optional emoji"
-            />
-            <input
-              type="text"
-              value={newCustomItemName}
-              onChange={(e) => setNewCustomItemName(e.target.value)}
-              placeholder="e.g., Umbrella, AirPods..."
-              className="flex-1 bg-[#131f24] border-2 border-[#37464f] px-4 py-3 rounded-xl font-bold text-sm text-white focus:outline-none focus:border-[#1cb0f6] placeholder-[#afbbbf] transition-colors"
-            />
+          <form onSubmit={(e) => { void handleAddItem(e); }} className="flex flex-col sm:flex-row gap-2">
+            <div className="flex gap-2 sm:flex-1">
+              <input
+                type="text"
+                value={newItemEmoji}
+                onChange={(e) => setNewItemEmoji(e.target.value)}
+                placeholder="😀"
+                maxLength={2}
+                className="bg-[#131f24] border-2 border-[#37464f] rounded-xl text-center text-xl w-14 shrink-0 focus:outline-none focus:border-[#1cb0f6] transition-colors"
+                title="Optional emoji"
+              />
+              <input
+                type="text"
+                value={newCustomItemName}
+                onChange={(e) => setNewCustomItemName(e.target.value)}
+                placeholder="e.g., Umbrella, AirPods..."
+                className="flex-1 bg-[#131f24] border-2 border-[#37464f] px-4 py-3 rounded-xl font-bold text-sm text-white focus:outline-none focus:border-[#1cb0f6] placeholder-[#afbbbf] transition-colors"
+              />
+            </div>
             <button
               type="submit"
-              className="bg-[#1cb0f6] border-b-6 border-[#1899d6] hover:brightness-110 text-white px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all active:translate-y-[2px] active:border-b-4 shrink-0 cursor-pointer"
+              className="bg-[#1cb0f6] border-b-6 border-[#1899d6] hover:brightness-110 text-white py-3 sm:py-0 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all active:translate-y-[2px] active:border-b-4 shrink-0 cursor-pointer w-full sm:w-auto"
             >
               Add
             </button>
