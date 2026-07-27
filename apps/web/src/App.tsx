@@ -103,11 +103,18 @@ function WelcomeScreen() {
         </SignUpButton>
       </div>
 
-      <p className="text-xs text-muted-foreground font-bold text-center pt-4">
-        "Double-check your pockets before you step out."
-      </p>
-
-      <AboutCard />
+      <a
+        href="https://github.com/YogaDharma21/pocket-check"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="pt-2 block"
+      >
+        <Button variant="outline" size="sm" className="gap-2 font-bold text-xs">
+          <GitBranch className="w-4 h-4 text-primary" />
+          <span>github.com/yogaDharma21/pocket-check</span>
+          <ExternalLink className="w-3 h-3 opacity-60" />
+        </Button>
+      </a>
     </div>
   );
 }
@@ -143,6 +150,7 @@ function Dashboard() {
 
   const [editModalName, setEditModalName] = useState("");
   const [editModalIconTag, setEditModalIconTag] = useState("");
+  const [showAboutDialog, setShowAboutDialog] = useState(false);
 
   // Convex mutations & queries
   const ensureInitialized = useMutation(api.pocketcheck.ensureInitialized);
@@ -279,6 +287,16 @@ function Dashboard() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowAboutDialog(true)}
+              title="About PocketCheck"
+              className="w-9 h-9 rounded-xl text-foreground hover:bg-muted"
+            >
+              <Info className="w-5 h-5" />
+              <span className="sr-only">About</span>
+            </Button>
             <ThemeToggle />
             <UserButton afterSignOutUrl="/" />
           </div>
@@ -522,9 +540,6 @@ function Dashboard() {
             </form>
           </CardContent>
         </Card>
-
-        {/* ─── About Section ───────────────────────────────────────────── */}
-        <AboutCard />
       </main>
 
       {/* ─── Manage Routine Modal ────────────────────────────────────── */}
@@ -731,49 +746,41 @@ function Dashboard() {
                   >
                     <Trash2 className="w-4 h-4" /> Delete Item
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setManageItem(null)}
-                    className="flex-1 text-xs uppercase tracking-wider"
-                  >
-                    Cancel
-                  </Button>
                 </div>
               </DialogFooter>
             </div>
           </DialogContent>
         )}
       </Dialog>
-    </>
-  );
-}
+      {/* ─── About Project Modal ─────────────────────────────────────── */}
+      <Dialog open={showAboutDialog} onOpenChange={setShowAboutDialog}>
+        <DialogContent onClose={() => setShowAboutDialog(false)}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="w-5 h-5 text-primary" /> About PocketCheck
+            </DialogTitle>
+          </DialogHeader>
 
-function AboutCard() {
-  return (
-    <Card className="mt-8 border-dashed">
-      <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-        <div className="space-y-1">
-          <div className="flex items-center justify-center sm:justify-start gap-2 font-black text-sm text-foreground">
-            <Info className="w-4 h-4 text-primary" />
-            <span>About PocketCheck</span>
+          <div className="space-y-4 py-2 select-none">
+            <p className="text-sm font-bold text-foreground leading-relaxed">
+              PocketCheck is a minimal checklist tool designed to make sure you never forget your keys, wallet, phone, or essential items before stepping out for work, gym, or custom routines.
+            </p>
+
+            <a
+              href="https://github.com/YogaDharma21/pocket-check"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block pt-2"
+            >
+              <Button variant="outline" className="w-full gap-2 font-bold text-xs">
+                <GitBranch className="w-4 h-4 text-primary" />
+                <span>github.com/yogaDharma21/pocket-check</span>
+                <ExternalLink className="w-3 h-3 opacity-60" />
+              </Button>
+            </a>
           </div>
-          <p className="text-xs font-bold text-muted-foreground max-w-sm leading-relaxed">
-            PocketCheck is a minimal checklist tool to help you double-check your essential items before stepping out for work, gym, or custom routines.
-          </p>
-        </div>
-        <a
-          href="https://github.com/YogaDharma21/pocket-check"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0"
-        >
-          <Button variant="outline" size="sm" className="gap-2 font-bold text-xs">
-            <GitBranch className="w-4 h-4 text-primary" />
-            <span>github.com/yogaDharma21/pocket-check</span>
-            <ExternalLink className="w-3 h-3 opacity-60" />
-          </Button>
-        </a>
-      </CardContent>
-    </Card>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
