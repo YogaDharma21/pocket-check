@@ -27,33 +27,48 @@ import {
   ChevronRight,
   ChevronUp,
   ChevronDown,
-  X,
   Tag,
 } from "lucide-react";
+import { ThemeProvider } from "./components/theme-provider";
+import { ThemeToggle } from "./components/theme-toggle";
+import { Button } from "./components/ui/button";
+import { Card, CardContent, CardHeader, CardDescription } from "./components/ui/card";
+import { Input } from "./components/ui/input";
+import { Progress } from "./components/ui/progress";
+import { Badge } from "./components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "./components/ui/dialog";
 
 export default function App() {
   return (
-    <div className="bg-background text-foreground antialiased min-h-screen flex flex-col justify-between selection:bg-primary selection:text-primary-foreground">
-      {/* Loading State */}
-      <AuthLoading>
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-background">
-          <CheckSquare className="w-16 h-16 text-primary animate-bounce" />
-          <p className="font-extrabold text-xl tracking-wider text-muted-foreground animate-pulse">
-            LOADING POCKETCHECK...
-          </p>
-        </div>
-      </AuthLoading>
+    <ThemeProvider defaultTheme="dark" storageKey="pocketcheck-theme">
+      <div className="bg-background text-foreground antialiased min-h-screen flex flex-col justify-between selection:bg-primary selection:text-primary-foreground">
+        {/* Loading State */}
+        <AuthLoading>
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-background">
+            <CheckSquare className="w-16 h-16 text-primary animate-bounce" />
+            <p className="font-extrabold text-xl tracking-wider text-muted-foreground animate-pulse">
+              LOADING POCKETCHECK...
+            </p>
+          </div>
+        </AuthLoading>
 
-      {/* Unauthenticated State */}
-      <Unauthenticated>
-        <WelcomeScreen />
-      </Unauthenticated>
+        {/* Unauthenticated State */}
+        <Unauthenticated>
+          <WelcomeScreen />
+        </Unauthenticated>
 
-      {/* Authenticated State */}
-      <Authenticated>
-        <Dashboard />
-      </Authenticated>
-    </div>
+        {/* Authenticated State */}
+        <Authenticated>
+          <Dashboard />
+        </Authenticated>
+      </div>
+    </ThemeProvider>
   );
 }
 
@@ -74,14 +89,14 @@ function WelcomeScreen() {
 
       <div className="w-full space-y-4 pt-4">
         <SignInButton mode="modal">
-          <button className="w-full py-4 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-black text-lg uppercase tracking-wider transition-all cursor-pointer text-center block shadow-sm">
+          <Button className="w-full py-6 rounded-2xl text-lg uppercase tracking-wider">
             Log In
-          </button>
+          </Button>
         </SignInButton>
         <SignUpButton mode="modal">
-          <button className="w-full py-4 rounded-2xl bg-secondary hover:bg-secondary/80 text-secondary-foreground font-black text-lg uppercase tracking-wider transition-all cursor-pointer text-center block border border-border">
+          <Button variant="outline" className="w-full py-6 rounded-2xl text-lg uppercase tracking-wider">
             Create Account
-          </button>
+          </Button>
         </SignUpButton>
       </div>
 
@@ -139,11 +154,6 @@ function Dashboard() {
 
   const items = useQuery(api.pocketcheck.listItems, { routine: selectedRoutine }) ?? [];
   const customRoutines = useQuery(api.pocketcheck.listRoutines) ?? [];
-
-  // Ensure dark mode is default
-  useEffect(() => {
-    document.documentElement.classList.add("dark");
-  }, []);
 
   // Seed default routines + items on first login
   useEffect(() => {
@@ -263,32 +273,31 @@ function Dashboard() {
               POCKET<span className="text-primary">CHECK</span>
             </h1>
           </div>
-          <UserButton afterSignOutUrl="/" />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <UserButton afterSignOutUrl="/" />
+          </div>
         </div>
       </header>
 
       <main className="w-full max-w-xl mx-auto p-4 flex-1 space-y-6 pb-24 md:py-8">
         {/* ─── Progress Status Block ───────────────────────────────────── */}
-        <div className="bg-card border border-border rounded-2xl p-5 relative overflow-hidden shadow-sm">
-          <div className="flex items-start gap-4 select-none">
-            <ShieldCheck className="w-10 h-10 text-primary shrink-0 hidden sm:block mt-1" />
-            <div className="flex-1 space-y-3">
-              <h2 id="status-headline" className="text-xl font-extrabold tracking-wide text-card-foreground">
-                {headline}
-              </h2>
-              <div className="w-full bg-muted rounded-full h-4 relative overflow-hidden">
-                <div
-                  id="progress-bar"
-                  className="bg-primary h-4 rounded-full transition-all duration-300"
-                  style={{ width: `${percentage}%` }}
-                ></div>
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-start gap-4 select-none">
+              <ShieldCheck className="w-10 h-10 text-primary shrink-0 hidden sm:block mt-1" />
+              <div className="flex-1 space-y-3">
+                <h2 id="status-headline" className="text-xl font-extrabold tracking-wide text-card-foreground">
+                  {headline}
+                </h2>
+                <Progress value={percentage} />
+                <p id="progress-text" className="text-sm font-bold text-muted-foreground">
+                  {packedItems} of {totalItems} items safely pocketed
+                </p>
               </div>
-              <p id="progress-text" className="text-sm font-bold text-muted-foreground">
-                {packedItems} of {totalItems} items safely pocketed
-              </p>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* ─── Routine Switcher ────────────────────────────────────────── */}
         <div className="space-y-3">
@@ -301,80 +310,79 @@ function Dashboard() {
 
               return (
                 <div key={routine.name} className="relative">
-                  <button
+                  <Button
+                    variant={isActive ? "default" : "outline"}
                     onClick={() => {
                       setSelectedRoutine(routine.name);
                       setShowCustomInput(false);
                     }}
-                    className={`routine-btn w-full flex flex-col items-center gap-2 p-3.5 pt-5 rounded-2xl border text-sm font-black transition-all cursor-pointer select-none ${
-                      isActive
-                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                        : "bg-card text-card-foreground border-border hover:bg-accent hover:text-accent-foreground"
-                    }`}
+                    className="w-full h-auto flex flex-col items-center gap-2 p-3.5 pt-5 rounded-2xl text-sm font-black"
                   >
                     <span className="block select-none">{renderRoutineIcon(routine.name)}</span>
                     <span className="truncate max-w-full select-none">{routine.name}</span>
-                  </button>
+                  </Button>
 
                   {/* Settings gear button */}
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={(e) => {
                       e.stopPropagation();
                       setManageRoutine(routine);
                       setEditModalName(routine.name);
                       setEditModalIconTag(routine.icon);
                     }}
-                    className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center rounded-lg bg-muted hover:bg-primary hover:text-primary-foreground text-muted-foreground text-xs transition-colors cursor-pointer z-10"
+                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-lg bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground"
                     title="Control"
                   >
                     <Settings className="w-3.5 h-3.5" />
-                  </button>
+                  </Button>
                 </div>
               );
             })}
 
             {/* Add custom destination button */}
-            <button
+            <Button
+              variant={showCustomInput ? "default" : "outline"}
               onClick={() => {
                 setShowCustomInput(!showCustomInput);
               }}
-              className={`routine-btn flex flex-col items-center gap-2 p-3.5 rounded-2xl border text-sm font-black transition-all cursor-pointer ${
-                showCustomInput
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card text-card-foreground border-border hover:bg-accent hover:text-accent-foreground"
-              }`}
+              className="h-auto flex flex-col items-center gap-2 p-3.5 rounded-2xl text-sm font-black"
             >
               <Plus className="w-5 h-5" />
               <span>Custom</span>
-            </button>
+            </Button>
           </div>
 
           {/* New custom destination form */}
           {showCustomInput && (
             <div className="animate-fadeIn mt-2">
-              <div className="flex gap-2 bg-card border border-border rounded-xl p-2 items-center shadow-sm">
-                <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0 text-muted-foreground">
-                  <Tag className="w-4 h-4" />
-                </div>
-                <input
-                  type="text"
-                  value={customRoutineName}
-                  onChange={(e) => setCustomRoutineName(e.target.value)}
-                  placeholder="Name your destination..."
-                  className="bg-transparent text-foreground font-bold text-sm px-2 flex-1 focus:outline-none placeholder:text-muted-foreground"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") void handleCreateRoutine();
-                  }}
-                />
-                <button
-                  onClick={() => {
-                    void handleCreateRoutine();
-                  }}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-extrabold text-xs px-4 py-2 rounded-xl uppercase tracking-wider cursor-pointer shrink-0"
-                >
-                  Set
-                </button>
-              </div>
+              <Card>
+                <CardContent className="p-2 flex gap-2 items-center">
+                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0 text-muted-foreground">
+                    <Tag className="w-4 h-4" />
+                  </div>
+                  <Input
+                    type="text"
+                    value={customRoutineName}
+                    onChange={(e) => setCustomRoutineName(e.target.value)}
+                    placeholder="Name your destination..."
+                    className="border-0 bg-transparent"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") void handleCreateRoutine();
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      void handleCreateRoutine();
+                    }}
+                    className="uppercase tracking-wider font-extrabold shrink-0"
+                  >
+                    Set
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           )}
         </div>
@@ -385,30 +393,31 @@ function Dashboard() {
             <h3 className="text-sm font-black text-muted-foreground uppercase tracking-wider">
               Should Bring vs. Have Brought
             </h3>
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 void handleReset();
               }}
-              className="text-sm text-primary font-black uppercase tracking-wider hover:opacity-80 flex items-center gap-1.5 cursor-pointer"
+              className="text-primary hover:text-primary/80 font-black uppercase tracking-wider gap-1.5"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Reset
-            </button>
+            </Button>
           </div>
 
           <div className="space-y-3" id="checklist-container">
             {items.map((item) => {
               return (
-                <div key={item._id}>
-                  <div
-                    onClick={() => {
-                      void handleToggle(item._id, item.isPacked);
-                    }}
-                    className={`item-row flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition-all select-none shadow-sm ${
-                      item.isPacked
-                        ? "bg-muted/50 border-border"
-                        : "bg-card border-border hover:bg-accent/40"
-                    }`}
-                  >
+                <Card
+                  key={item._id}
+                  onClick={() => {
+                    void handleToggle(item._id, item.isPacked);
+                  }}
+                  className={`cursor-pointer transition-all ${
+                    item.isPacked ? "bg-muted/40" : "hover:bg-accent/40"
+                  }`}
+                >
+                  <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3.5 select-none">
                       <div
                         className={`checkbox-ui w-7 h-7 rounded-xl border flex items-center justify-center transition-all shrink-0 select-none ${
@@ -434,13 +443,11 @@ function Dashboard() {
                           )}
                           <span className="select-none">{item.name}</span>
                         </p>
-                        <p
-                          className={`item-status text-xs font-black uppercase tracking-wider select-none ${
-                            item.isPacked ? "text-primary" : "text-muted-foreground"
-                          }`}
-                        >
-                          {item.isPacked ? "Packed" : "Missing"}
-                        </p>
+                        <div className="mt-1">
+                          <Badge variant={item.isPacked ? "default" : "outline"}>
+                            {item.isPacked ? "Packed" : "Missing"}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
 
@@ -448,95 +455,94 @@ function Dashboard() {
                       className="flex items-center gap-1.5 shrink-0 select-none"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={(e) => {
                           e.stopPropagation();
                           setManageItem(item);
                           setEditModalName(item.name);
                           setEditModalIconTag(item.emoji ?? "");
                         }}
-                        className="text-muted-foreground hover:text-primary w-8 h-8 flex items-center justify-center rounded-xl hover:bg-muted transition-all cursor-pointer"
+                        className="text-muted-foreground hover:text-primary rounded-xl"
                         title="Control Item"
                       >
                         <Settings className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
         </div>
 
         {/* ─── Add Item Form ───────────────────────────────────────────── */}
-        <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
-          <h3 className="text-xs font-black text-muted-foreground uppercase tracking-wider mb-3">
-            Add target item to bring:
-          </h3>
-          <form
-            onSubmit={(e) => {
-              void handleAddItem(e);
-            }}
-            className="flex flex-col sm:flex-row gap-2"
-          >
-            <div className="flex gap-2 sm:flex-1">
-              <input
-                type="text"
-                value={newItemTag}
-                onChange={(e) => setNewItemTag(e.target.value)}
-                placeholder="Category/Tag"
-                className="bg-background border border-input rounded-xl px-3 text-xs font-bold text-foreground w-28 shrink-0 focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
-                title="Optional item tag or category"
-              />
-              <input
-                type="text"
-                value={newCustomItemName}
-                onChange={(e) => setNewCustomItemName(e.target.value)}
-                placeholder="e.g., Umbrella, Wallet, Keys..."
-                className="flex-1 bg-background border border-input px-4 py-3 rounded-xl font-bold text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
-              />
-            </div>
-            <button
-              type="submit"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground py-3 sm:py-0 px-6 rounded-xl font-black text-sm uppercase tracking-wider transition-all shrink-0 cursor-pointer w-full sm:w-auto shadow-sm"
+        <Card>
+          <CardHeader className="p-4 pb-2">
+            <CardDescription className="uppercase tracking-wider text-xs font-black">
+              Add target item to bring:
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <form
+              onSubmit={(e) => {
+                void handleAddItem(e);
+              }}
+              className="flex flex-col sm:flex-row gap-2"
             >
-              Add
-            </button>
-          </form>
-        </div>
+              <div className="flex gap-2 sm:flex-1">
+                <Input
+                  type="text"
+                  value={newItemTag}
+                  onChange={(e) => setNewItemTag(e.target.value)}
+                  placeholder="Tag"
+                  className="w-24 text-xs shrink-0"
+                  title="Optional item tag or category"
+                />
+                <Input
+                  type="text"
+                  value={newCustomItemName}
+                  onChange={(e) => setNewCustomItemName(e.target.value)}
+                  placeholder="e.g., Umbrella, Wallet, Keys..."
+                  className="flex-1"
+                />
+              </div>
+              <Button
+                type="submit"
+                className="uppercase tracking-wider font-black w-full sm:w-auto"
+              >
+                Add
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </main>
 
       {/* ─── Manage Routine Modal ────────────────────────────────────── */}
-      {manageRoutine && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-[100] animate-fadeIn p-4">
-          <div className="bg-card text-card-foreground border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl relative animate-scaleIn select-none">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-black select-none">Destination Settings</h2>
-              <button
-                onClick={() => setManageRoutine(null)}
-                className="text-muted-foreground hover:text-foreground p-1 rounded-lg transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <Dialog open={!!manageRoutine} onOpenChange={(open) => !open && setManageRoutine(null)}>
+        {manageRoutine && (
+          <DialogContent onClose={() => setManageRoutine(null)}>
+            <DialogHeader>
+              <DialogTitle>Destination Settings</DialogTitle>
+            </DialogHeader>
 
             <div className="space-y-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-black text-muted-foreground uppercase tracking-wider select-none">
+                <label className="text-xs font-black text-muted-foreground uppercase tracking-wider">
                   Name
                 </label>
-                <input
+                <Input
                   type="text"
                   value={editModalName}
                   onChange={(e) => setEditModalName(e.target.value)}
-                  className="bg-background border border-input rounded-xl px-4 h-12 font-bold text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
                   placeholder="Destination name..."
                 />
               </div>
 
               {/* Reordering */}
               <div className="flex flex-col gap-1.5 pt-2">
-                <label className="text-xs font-black text-muted-foreground uppercase tracking-wider select-none">
+                <label className="text-xs font-black text-muted-foreground uppercase tracking-wider">
                   Change Order
                 </label>
                 <div className="flex gap-2">
@@ -544,33 +550,34 @@ function Dashboard() {
                     const rIndex = routinesList.findIndex((r) => r._id === manageRoutine._id);
                     return (
                       <>
-                        <button
+                        <Button
+                          variant="outline"
                           onClick={() => {
                             void handleMoveRoutineById(manageRoutine._id, -1);
                           }}
                           disabled={rIndex <= 0}
-                          className="flex-1 py-3 rounded-xl bg-muted hover:bg-accent disabled:opacity-40 text-foreground font-extrabold text-sm transition-colors cursor-pointer flex justify-center items-center gap-1.5 border border-border"
+                          className="flex-1"
                         >
                           <ChevronLeft className="w-4 h-4" /> Move Left
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="outline"
                           onClick={() => {
                             void handleMoveRoutineById(manageRoutine._id, 1);
                           }}
                           disabled={rIndex === -1 || rIndex >= routinesList.length - 1}
-                          className="flex-1 py-3 rounded-xl bg-muted hover:bg-accent disabled:opacity-40 text-foreground font-extrabold text-sm transition-colors cursor-pointer flex justify-center items-center gap-1.5 border border-border"
+                          className="flex-1"
                         >
                           Move Right <ChevronRight className="w-4 h-4" />
-                        </button>
+                        </Button>
                       </>
                     );
                   })()}
                 </div>
               </div>
 
-              {/* Save & Actions */}
-              <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                <button
+              <DialogFooter>
+                <Button
                   onClick={async () => {
                     if (!editModalName.trim()) return;
                     try {
@@ -588,13 +595,14 @@ function Dashboard() {
                       console.error("Failed to update routine", err);
                     }
                   }}
-                  className="w-full py-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-black text-sm uppercase tracking-wider transition-all cursor-pointer shadow-sm"
+                  className="w-full uppercase tracking-wider font-black"
                 >
                   Save Changes
-                </button>
+                </Button>
 
                 <div className="flex gap-2">
-                  <button
+                  <Button
+                    variant="destructive"
                     onClick={async () => {
                       if (!confirm(`Delete "${manageRoutine.name}" and all its items?`)) return;
                       try {
@@ -604,54 +612,48 @@ function Dashboard() {
                         console.error("Failed to delete routine", err);
                       }
                     }}
-                    className="flex-1 py-3 rounded-xl bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/30 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer flex justify-center items-center gap-1.5"
+                    className="flex-1 text-xs uppercase tracking-wider"
                   >
                     <Trash2 className="w-4 h-4" /> Delete Destination
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="outline"
                     onClick={() => setManageRoutine(null)}
-                    className="flex-1 py-3 rounded-xl bg-muted hover:bg-accent text-muted-foreground font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border border-border"
+                    className="flex-1 text-xs uppercase tracking-wider"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
-              </div>
+              </DialogFooter>
             </div>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+        )}
+      </Dialog>
 
       {/* ─── Manage Item Modal ───────────────────────────────────────── */}
-      {manageItem && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-[100] animate-fadeIn p-4">
-          <div className="bg-card text-card-foreground border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl relative animate-scaleIn select-none">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-black select-none">Item Settings</h2>
-              <button
-                onClick={() => setManageItem(null)}
-                className="text-muted-foreground hover:text-foreground p-1 rounded-lg transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <Dialog open={!!manageItem} onOpenChange={(open) => !open && setManageItem(null)}>
+        {manageItem && (
+          <DialogContent onClose={() => setManageItem(null)}>
+            <DialogHeader>
+              <DialogTitle>Item Settings</DialogTitle>
+            </DialogHeader>
 
             <div className="space-y-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-black text-muted-foreground uppercase tracking-wider select-none">
+                <label className="text-xs font-black text-muted-foreground uppercase tracking-wider">
                   Name
                 </label>
-                <input
+                <Input
                   type="text"
                   value={editModalName}
                   onChange={(e) => setEditModalName(e.target.value)}
-                  className="bg-background border border-input rounded-xl px-4 h-12 font-bold text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
                   placeholder="Item name..."
                 />
               </div>
 
               {/* Reordering */}
               <div className="flex flex-col gap-1.5 pt-2">
-                <label className="text-xs font-black text-muted-foreground uppercase tracking-wider select-none">
+                <label className="text-xs font-black text-muted-foreground uppercase tracking-wider">
                   Change Order
                 </label>
                 <div className="flex gap-2">
@@ -659,33 +661,34 @@ function Dashboard() {
                     const iIndex = items.findIndex((i) => i._id === manageItem._id);
                     return (
                       <>
-                        <button
+                        <Button
+                          variant="outline"
                           onClick={() => {
                             void handleMoveItemById(manageItem._id, -1);
                           }}
                           disabled={iIndex <= 0}
-                          className="flex-1 py-3 rounded-xl bg-muted hover:bg-accent disabled:opacity-40 text-foreground font-extrabold text-sm transition-colors cursor-pointer flex justify-center items-center gap-1.5 border border-border"
+                          className="flex-1"
                         >
                           <ChevronUp className="w-4 h-4" /> Move Up
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="outline"
                           onClick={() => {
                             void handleMoveItemById(manageItem._id, 1);
                           }}
                           disabled={iIndex === -1 || iIndex >= items.length - 1}
-                          className="flex-1 py-3 rounded-xl bg-muted hover:bg-accent disabled:opacity-40 text-foreground font-extrabold text-sm transition-colors cursor-pointer flex justify-center items-center gap-1.5 border border-border"
+                          className="flex-1"
                         >
                           Move Down <ChevronDown className="w-4 h-4" />
-                        </button>
+                        </Button>
                       </>
                     );
                   })()}
                 </div>
               </div>
 
-              {/* Save & Actions */}
-              <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                <button
+              <DialogFooter>
+                <Button
                   onClick={async () => {
                     if (!editModalName.trim()) return;
                     try {
@@ -699,13 +702,14 @@ function Dashboard() {
                       console.error("Failed to update item", err);
                     }
                   }}
-                  className="w-full py-3.5 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-black text-sm uppercase tracking-wider transition-all cursor-pointer shadow-sm"
+                  className="w-full uppercase tracking-wider font-black"
                 >
                   Save Changes
-                </button>
+                </Button>
 
                 <div className="flex gap-2">
-                  <button
+                  <Button
+                    variant="destructive"
                     onClick={async () => {
                       if (!confirm(`Delete "${manageItem.name}"?`)) return;
                       try {
@@ -715,22 +719,23 @@ function Dashboard() {
                         console.error("Failed to delete item", err);
                       }
                     }}
-                    className="flex-1 py-3 rounded-xl bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/30 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer flex justify-center items-center gap-1.5"
+                    className="flex-1 text-xs uppercase tracking-wider"
                   >
                     <Trash2 className="w-4 h-4" /> Delete Item
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="outline"
                     onClick={() => setManageItem(null)}
-                    className="flex-1 py-3 rounded-xl bg-muted hover:bg-accent text-muted-foreground font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer border border-border"
+                    className="flex-1 text-xs uppercase tracking-wider"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
-              </div>
+              </DialogFooter>
             </div>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+        )}
+      </Dialog>
     </>
   );
 }
