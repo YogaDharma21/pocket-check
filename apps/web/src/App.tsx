@@ -28,6 +28,9 @@ import {
   ChevronUp,
   ChevronDown,
   Tag,
+  Github,
+  Info,
+  ExternalLink,
 } from "lucide-react";
 import { ThemeProvider } from "./components/theme-provider";
 import { ThemeToggle } from "./components/theme-toggle";
@@ -100,9 +103,11 @@ function WelcomeScreen() {
         </SignUpButton>
       </div>
 
-      <p className="text-xs text-muted-foreground font-bold text-center pt-8">
+      <p className="text-xs text-muted-foreground font-bold text-center pt-4">
         "Double-check your pockets before you step out."
       </p>
+
+      <AboutCard />
     </div>
   );
 }
@@ -517,6 +522,9 @@ function Dashboard() {
             </form>
           </CardContent>
         </Card>
+
+        {/* ─── About Section ───────────────────────────────────────────── */}
+        <AboutCard />
       </main>
 
       {/* ─── Manage Routine Modal ────────────────────────────────────── */}
@@ -737,5 +745,35 @@ function Dashboard() {
         )}
       </Dialog>
     </>
+  );
+}
+
+function AboutCard() {
+  return (
+    <Card className="mt-8 border-dashed">
+      <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+        <div className="space-y-1">
+          <div className="flex items-center justify-center sm:justify-start gap-2 font-black text-sm text-foreground">
+            <Info className="w-4 h-4 text-primary" />
+            <span>About PocketCheck</span>
+          </div>
+          <p className="text-xs font-bold text-muted-foreground max-w-sm leading-relaxed">
+            PocketCheck is a minimal checklist tool to help you double-check your essential items before stepping out for work, gym, or custom routines.
+          </p>
+        </div>
+        <a
+          href="https://github.com/YogaDharma21/pocket-check"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0"
+        >
+          <Button variant="outline" size="sm" className="gap-2 font-bold text-xs">
+            <Github className="w-4 h-4" />
+            <span>github.com/yogaDharma21/pocket-check</span>
+            <ExternalLink className="w-3 h-3 opacity-60" />
+          </Button>
+        </a>
+      </CardContent>
+    </Card>
   );
 }
