@@ -9,12 +9,17 @@ import { ErrorBoundary } from "./ErrorBoundary.tsx";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
+import { dark } from "@clerk/themes";
+
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ErrorBoundary>
       <ClerkProvider
         publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
+        appearance={{
+          baseTheme: dark,
+        }}
       >
         <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
           <App />
