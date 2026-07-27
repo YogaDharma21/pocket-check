@@ -28,7 +28,7 @@ import {
   ChevronUp,
   ChevronDown,
   Tag,
-  Github,
+  GitBranch,
   Info,
   ExternalLink,
 } from "lucide-react";
@@ -768,7 +768,7 @@ function AboutCard() {
           className="shrink-0"
         >
           <Button variant="outline" size="sm" className="gap-2 font-bold text-xs">
-            <Github className="w-4 h-4" />
+            <GitBranch className="w-4 h-4 text-primary" />
             <span>github.com/yogaDharma21/pocket-check</span>
             <ExternalLink className="w-3 h-3 opacity-60" />
           </Button>
