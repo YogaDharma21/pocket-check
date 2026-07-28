@@ -31,6 +31,9 @@ import {
   GitBranch,
   Info,
   ExternalLink,
+  GripVertical,
+  Filter,
+  AlertTriangle,
 } from "lucide-react";
 import { ThemeProvider } from "./components/theme-provider";
 import { ThemeToggle } from "./components/theme-toggle";
@@ -162,11 +165,19 @@ function Dashboard() {
   const toggleItem = useMutation(api.pocketcheck.toggleItem);
   const deleteItem = useMutation(api.pocketcheck.deleteItem);
   const resetItems = useMutation(api.pocketcheck.resetItems);
+  const deleteAllItems = useMutation(api.pocketcheck.deleteAllItems);
+  const resetAllRoutines = useMutation(api.pocketcheck.resetAllRoutines);
   const reorderItems = useMutation(api.pocketcheck.reorderItems);
   const reorderRoutines = useMutation(api.pocketcheck.reorderRoutines);
 
   const items = useQuery(api.pocketcheck.listItems, { routine: selectedRoutine }) ?? [];
   const customRoutines = useQuery(api.pocketcheck.listRoutines) ?? [];
+
+  // Filter & Drag State
+  const [filter, setFilter] = useState<"all" | "packed" | "missing">("all");
+  const [draggedItemId, setDraggedItemId] = useState<Id<"items"> | null>(null);
+  const [dragOverItemId, setDragOverItemId] = useState<Id<"items"> | null>(null);
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
 
   // Seed default routines + items on first login
   useEffect(() => {
@@ -211,6 +222,52 @@ function Dashboard() {
       await resetItems({ routine: selectedRoutine });
     } catch (err) {
       console.error("Failed to reset list", err);
+    }
+  };
+
+  const handleResetAll = async () => {
+    try {
+      await resetAllRoutines();
+    } catch (err) {
+      console.error("Failed to reset all routines", err);
+    }
+  };
+
+  const handleDeleteAllCreatedItems = async () => {
+    try {
+      await deleteAllItems({ routine: selectedRoutine });
+      setShowDeleteAllConfirm(false);
+    } catch (err) {
+      console.error("Failed to delete all items", err);
+    }
+  };
+
+  const handleDropItem = async (targetId: Id<"items">) => {
+    if (!draggedItemId || draggedItemId === targetId) {
+      setDraggedItemId(null);
+      setDragOverItemId(null);
+      return;
+    }
+
+    const sourceIndex = items.findIndex((i) => i._id === draggedItemId);
+    const targetIndex = items.findIndex((i) => i._id === targetId);
+
+    if (sourceIndex === -1 || targetIndex === -1) {
+      setDraggedItemId(null);
+      setDragOverItemId(null);
+      return;
+    }
+
+    try {
+      const ids = items.map((i) => i._id);
+      const [moved] = ids.splice(sourceIndex, 1);
+      ids.splice(targetIndex, 0, moved);
+      await reorderItems({ ids });
+    } catch (err) {
+      console.error("Failed to reorder item via drag & drop", err);
+    } finally {
+      setDraggedItemId(null);
+      setDragOverItemId(null);
     }
   };
 
@@ -410,95 +467,233 @@ function Dashboard() {
           )}
         </div>
 
-        {/* ─── Checklist ───────────────────────────────────────────────── */}
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <h3 className="text-sm font-black text-muted-foreground uppercase tracking-wider">
-              Should Bring vs. Have Brought
-            </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                void handleReset();
-              }}
-              className="text-primary hover:text-primary/80 font-black uppercase tracking-wider gap-1.5"
-            >
-              <RotateCcw className="w-3.5 h-3.5" /> Reset
-            </Button>
-          </div>
+        {/* ─── Filter & Checklist Section ───────────────────────────── */}
+        {(() => {
+          const packedCount = items.filter((i) => i.isPacked).length;
+          const missingCount = items.filter((i) => !i.isPacked).length;
 
-          <div className="space-y-3" id="checklist-container">
-            {items.map((item) => {
-              return (
-                <Card
-                  key={item._id}
-                  onClick={() => {
-                    void handleToggle(item._id, item.isPacked);
-                  }}
-                  className={`cursor-pointer transition-all ${
-                    item.isPacked ? "bg-muted/40" : "hover:bg-accent/40"
-                  }`}
-                >
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3.5 select-none">
-                      <div
-                        className={`checkbox-ui w-7 h-7 rounded-xl border flex items-center justify-center transition-all shrink-0 select-none ${
-                          item.isPacked
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border bg-background"
+          const filteredItems = items.filter((item) => {
+            if (filter === "packed") return item.isPacked;
+            if (filter === "missing") return !item.isPacked;
+            return true;
+          });
+
+          return (
+            <div className="space-y-4">
+              {/* Quick Filter Tabs */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Filter className="w-3.5 h-3.5 text-primary" /> Filter List
+                  </h3>
+                  <div className="flex items-center gap-1 flex-wrap justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => void handleReset()}
+                      className="text-primary hover:text-primary/80 font-black uppercase text-[11px] tracking-wider gap-1 h-7 px-2"
+                      title="Reset items in this routine to Missing position"
+                    >
+                      <RotateCcw className="w-3 h-3" /> Uncheck All
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => void handleResetAll()}
+                      className="text-muted-foreground hover:text-foreground font-black uppercase text-[11px] tracking-wider gap-1 h-7 px-2"
+                      title="Reset all items across all routines for a fresh day"
+                    >
+                      <RotateCcw className="w-3 h-3" /> Reset All Routines
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowDeleteAllConfirm(true)}
+                      className="text-destructive hover:text-destructive/80 font-black uppercase text-[11px] tracking-wider gap-1 h-7 px-2"
+                      title="Delete all created items in this routine"
+                    >
+                      <Trash2 className="w-3 h-3" /> Clear List
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-1.5 p-1 bg-muted/60 rounded-2xl select-none">
+                  <button
+                    type="button"
+                    onClick={() => setFilter("all")}
+                    className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                      filter === "all"
+                        ? "bg-card text-foreground shadow-sm ring-1 ring-border"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                    }`}
+                  >
+                    <span>All</span>
+                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-extrabold rounded-md">
+                      {items.length}
+                    </Badge>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFilter("missing")}
+                    className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                      filter === "missing"
+                        ? "bg-card text-destructive shadow-sm ring-1 ring-destructive/30"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                    }`}
+                  >
+                    <span>Missing</span>
+                    <Badge variant="destructive" className="px-1.5 py-0 text-[10px] font-extrabold rounded-md">
+                      {missingCount}
+                    </Badge>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFilter("packed")}
+                    className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                      filter === "packed"
+                        ? "bg-card text-primary shadow-sm ring-1 ring-primary/30"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                    }`}
+                  >
+                    <span>Packed</span>
+                    <Badge variant="default" className="px-1.5 py-0 text-[10px] font-extrabold rounded-md">
+                      {packedCount}
+                    </Badge>
+                  </button>
+                </div>
+              </div>
+
+              {/* Items List with Drag-and-Drop */}
+              <div className="space-y-3" id="checklist-container">
+                {filteredItems.length === 0 ? (
+                  <Card className="border-dashed">
+                    <CardContent className="p-6 text-center text-muted-foreground text-sm font-bold">
+                      {filter === "all"
+                        ? "No items added to this routine yet."
+                        : filter === "packed"
+                        ? "No items are packed yet. Tap items to mark them as packed!"
+                        : "All items are packed! Great job!"}
+                    </CardContent>
+                  </Card>
+                ) : (
+                  filteredItems.map((item) => {
+                    const isDragging = draggedItemId === item._id;
+                    const isDragOver = dragOverItemId === item._id;
+
+                    return (
+                      <Card
+                        key={item._id}
+                        draggable
+                        onDragStart={(e) => {
+                          setDraggedItemId(item._id);
+                          e.dataTransfer.effectAllowed = "move";
+                          e.dataTransfer.setData("text/plain", item._id);
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          if (draggedItemId && draggedItemId !== item._id) {
+                            setDragOverItemId(item._id);
+                          }
+                        }}
+                        onDragLeave={() => {
+                          if (dragOverItemId === item._id) {
+                            setDragOverItemId(null);
+                          }
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          void handleDropItem(item._id);
+                        }}
+                        onDragEnd={() => {
+                          setDraggedItemId(null);
+                          setDragOverItemId(null);
+                        }}
+                        onClick={() => {
+                          void handleToggle(item._id, item.isPacked);
+                        }}
+                        className={`cursor-pointer transition-all relative ${
+                          item.isPacked ? "bg-muted/40" : "hover:bg-accent/40"
+                        } ${isDragging ? "opacity-40 scale-[0.98] border-primary border-dashed" : ""} ${
+                          isDragOver ? "ring-2 ring-primary ring-offset-2 scale-[1.01]" : ""
                         }`}
                       >
-                        {item.isPacked && <Check className="w-4 h-4 stroke-[3]" />}
-                      </div>
-                      <div className="select-none">
-                        <p
-                          className={`item-name font-extrabold text-lg select-none ${
-                            item.isPacked
-                              ? "text-muted-foreground line-through decoration-muted-foreground decoration-2"
-                              : "text-foreground"
-                          }`}
-                        >
-                          {item.emoji && !item.emoji.match(/\p{Emoji}/u) && (
-                            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-md mr-2 font-mono">
-                              {item.emoji}
-                            </span>
-                          )}
-                          <span className="select-none">{item.name}</span>
-                        </p>
-                        <div className="mt-1">
-                          <Badge variant={item.isPacked ? "default" : "outline"}>
-                            {item.isPacked ? "Packed" : "Missing"}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
+                        <CardContent className="p-3.5 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 select-none flex-1 min-w-0">
+                            {/* Drag Handle */}
+                            <div
+                              className="cursor-grab active:cursor-grabbing p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-lg transition-colors shrink-0"
+                              title="Drag to reorder"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <GripVertical className="w-4 h-4" />
+                            </div>
 
-                    <div
-                      className="flex items-center gap-1.5 shrink-0 select-none"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setManageItem(item);
-                          setEditModalName(item.name);
-                          setEditModalIconTag(item.emoji ?? "");
-                        }}
-                        className="text-muted-foreground hover:text-primary rounded-xl"
-                        title="Control Item"
-                      >
-                        <Settings className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
+                            {/* Checkbox */}
+                            <div
+                              className={`checkbox-ui w-7 h-7 rounded-xl border flex items-center justify-center transition-all shrink-0 select-none ${
+                                item.isPacked
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-border bg-background"
+                              }`}
+                            >
+                              {item.isPacked && <Check className="w-4 h-4 stroke-[3]" />}
+                            </div>
+
+                            {/* Details */}
+                            <div className="select-none flex-1 min-w-0">
+                              <p
+                                className={`item-name font-extrabold text-base sm:text-lg select-none truncate ${
+                                  item.isPacked
+                                    ? "text-muted-foreground line-through decoration-muted-foreground decoration-2"
+                                    : "text-foreground"
+                                }`}
+                              >
+                                {item.emoji && !item.emoji.match(/\p{Emoji}/u) && (
+                                  <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-md mr-2 font-mono">
+                                    {item.emoji}
+                                  </span>
+                                )}
+                                <span className="select-none">{item.name}</span>
+                              </p>
+                              <div className="mt-0.5">
+                                <Badge variant={item.isPacked ? "default" : "outline"} className="text-[10px] py-0 px-2 font-black">
+                                  {item.isPacked ? "Packed" : "Missing"}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Control settings */}
+                          <div
+                            className="flex items-center gap-1 shrink-0 select-none"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setManageItem(item);
+                                setEditModalName(item.name);
+                                setEditModalIconTag(item.emoji ?? "");
+                              }}
+                              className="text-muted-foreground hover:text-primary rounded-xl w-8 h-8"
+                              title="Control Item"
+                            >
+                              <Settings className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ─── Add Item Form ───────────────────────────────────────────── */}
         <Card>
@@ -778,6 +973,38 @@ function Dashboard() {
                 <ExternalLink className="w-3 h-3 opacity-60" />
               </Button>
             </a>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* ─── Delete All Items Confirmation Modal ───────────────────── */}
+      <Dialog open={showDeleteAllConfirm} onOpenChange={setShowDeleteAllConfirm}>
+        <DialogContent onClose={() => setShowDeleteAllConfirm(false)}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" /> Clear All Items
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm font-bold text-foreground leading-relaxed">
+              Are you sure you want to delete all created items in{" "}
+              <span className="text-primary font-black">"{selectedRoutine}"</span>? This action cannot be undone.
+            </p>
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="destructive"
+                onClick={() => void handleDeleteAllCreatedItems()}
+                className="flex-1 uppercase font-black tracking-wider text-xs"
+              >
+                Yes, Delete All
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteAllConfirm(false)}
+                className="flex-1 uppercase font-black tracking-wider text-xs"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
