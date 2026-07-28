@@ -246,6 +246,48 @@ export const resetItems = mutation({
   },
 });
 
+/** Delete all items in a routine for the current user. */
+export const deleteAllItems = mutation({
+  args: {
+    routine: v.string(),
+  },
+  handler: async (ctx, { routine }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+    const userId = identity.subject;
+
+    const items = await ctx.db
+      .query("items")
+      .withIndex("by_user_routine", (q) =>
+        q.eq("userId", userId).eq("routine", routine)
+      )
+      .collect();
+
+    for (const item of items) {
+      await ctx.db.delete(item._id);
+    }
+  },
+});
+
+/** Reset all items across all routines for the current user (mark all as unpacked). */
+export const resetAllRoutines = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+    const userId = identity.subject;
+
+    const items = await ctx.db
+      .query("items")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+
+    for (const item of items) {
+      await ctx.db.patch(item._id, { isPacked: false });
+    }
+  },
+});
+
 /** Reorder items by writing sequential order values for the full sorted list. */
 export const reorderItems = mutation({
   args: {
