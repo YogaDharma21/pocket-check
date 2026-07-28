@@ -32,8 +32,38 @@ import {
   Info,
   ExternalLink,
   GripVertical,
-  Filter,
   AlertTriangle,
+  Search,
+  X,
+  Key,
+  Wallet,
+  CreditCard,
+  Smartphone,
+  Laptop,
+  Headphones,
+  Tablet,
+  Watch,
+  Camera,
+  BatteryCharging,
+  Plug,
+  Backpack,
+  ShoppingBag,
+  Luggage,
+  Umbrella,
+  Glasses,
+  Sun,
+  Pill,
+  Heart,
+  Shield,
+  Activity,
+  FileText,
+  BookOpen,
+  Coffee,
+  Utensils,
+  Smile,
+  Star,
+  Flame,
+  Zap,
 } from "lucide-react";
 import { ThemeProvider } from "./components/theme-provider";
 import { ThemeToggle } from "./components/theme-toggle";
@@ -139,6 +169,160 @@ function renderRoutineIcon(iconStr: string) {
   return <MapPin className="w-5 h-5" />;
 }
 
+const ITEM_ICONS: { name: string; key: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { name: "Key", key: "key", icon: Key },
+  { name: "Wallet", key: "wallet", icon: Wallet },
+  { name: "Card", key: "card", icon: CreditCard },
+  { name: "Phone", key: "phone", icon: Smartphone },
+  { name: "Laptop", key: "laptop", icon: Laptop },
+  { name: "Headphones", key: "headphones", icon: Headphones },
+  { name: "Tablet", key: "tablet", icon: Tablet },
+  { name: "Watch", key: "watch", icon: Watch },
+  { name: "Camera", key: "camera", icon: Camera },
+  { name: "Battery", key: "battery", icon: BatteryCharging },
+  { name: "Plug", key: "plug", icon: Plug },
+  { name: "Backpack", key: "backpack", icon: Backpack },
+  { name: "Briefcase", key: "briefcase", icon: Briefcase },
+  { name: "Bag", key: "bag", icon: ShoppingBag },
+  { name: "Luggage", key: "luggage", icon: Luggage },
+  { name: "Umbrella", key: "umbrella", icon: Umbrella },
+  { name: "Glasses", key: "glasses", icon: Glasses },
+  { name: "Sun", key: "sun", icon: Sun },
+  { name: "Pill", key: "pill", icon: Pill },
+  { name: "Heart", key: "heart", icon: Heart },
+  { name: "Shield", key: "shield", icon: Shield },
+  { name: "Activity", key: "activity", icon: Activity },
+  { name: "File", key: "file", icon: FileText },
+  { name: "Book", key: "book", icon: BookOpen },
+  { name: "Coffee", key: "coffee", icon: Coffee },
+  { name: "Utensils", key: "utensils", icon: Utensils },
+  { name: "Smile", key: "smile", icon: Smile },
+  { name: "Star", key: "star", icon: Star },
+  { name: "Tag", key: "tag", icon: Tag },
+  { name: "Flame", key: "flame", icon: Flame },
+  { name: "Zap", key: "zap", icon: Zap },
+];
+
+const ITEM_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = ITEM_ICONS.reduce(
+  (acc, curr) => {
+    acc[curr.key] = curr.icon;
+    return acc;
+  },
+  {} as Record<string, React.ComponentType<{ className?: string }>>
+);
+
+function renderItemIcon(iconKey?: string) {
+  if (!iconKey) return null;
+  const key = iconKey.toLowerCase().trim();
+  const IconComp = ITEM_ICON_MAP[key];
+  if (IconComp) {
+    return <IconComp className="w-4 h-4 text-primary shrink-0 inline-block mr-1.5" />;
+  }
+  if (iconKey.match(/\p{Emoji}/u)) {
+    return <span className="mr-1.5">{iconKey}</span>;
+  }
+  return (
+    <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded mr-1.5 font-mono">
+      {iconKey}
+    </span>
+  );
+}
+
+function IconPickerModal({
+  open,
+  onOpenChange,
+  onSelectIcon,
+  selectedKey,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSelectIcon: (key: string) => void;
+  selectedKey?: string;
+}) {
+  const [search, setSearch] = useState("");
+
+  const filtered = ITEM_ICONS.filter(
+    (i) =>
+      i.name.toLowerCase().includes(search.toLowerCase()) ||
+      i.key.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md" onClose={() => onOpenChange(false)}>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base font-black">
+            <Tag className="w-4 h-4 text-primary" /> Select Item Icon
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3 py-1 select-none">
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
+            <Input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search icons (e.g. key, phone, wallet, bag)..."
+              className="pl-9 text-xs"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-60 overflow-y-auto p-1">
+            <button
+              type="button"
+              onClick={() => {
+                onSelectIcon("");
+                onOpenChange(false);
+              }}
+              className={`flex flex-col items-center justify-center p-2 rounded-xl border text-xs gap-1 transition-all cursor-pointer ${
+                !selectedKey
+                  ? "border-primary bg-primary/10 text-primary font-black"
+                  : "border-border hover:bg-muted text-muted-foreground"
+              }`}
+            >
+              <X className="w-4 h-4 opacity-50" />
+              <span className="text-[10px] truncate max-w-full">None</span>
+            </button>
+
+            {filtered.map((item) => {
+              const IconComp = item.icon;
+              const isSelected = selectedKey?.toLowerCase() === item.key;
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => {
+                    onSelectIcon(item.key);
+                    onOpenChange(false);
+                  }}
+                  className={`flex flex-col items-center justify-center p-2 rounded-xl border text-xs gap-1 transition-all cursor-pointer ${
+                    isSelected
+                      ? "border-primary bg-primary/10 text-primary font-black shadow-sm"
+                      : "border-border hover:bg-muted/80 text-foreground"
+                  }`}
+                >
+                  <IconComp className="w-4 h-4" />
+                  <span className="text-[10px] truncate max-w-full">{item.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function Dashboard() {
   const [selectedRoutine, setSelectedRoutine] = useState("Work");
   const [showCustomInput, setShowCustomInput] = useState(false);
@@ -166,7 +350,6 @@ function Dashboard() {
   const deleteItem = useMutation(api.pocketcheck.deleteItem);
   const resetItems = useMutation(api.pocketcheck.resetItems);
   const deleteAllItems = useMutation(api.pocketcheck.deleteAllItems);
-  const resetAllRoutines = useMutation(api.pocketcheck.resetAllRoutines);
   const reorderItems = useMutation(api.pocketcheck.reorderItems);
   const reorderRoutines = useMutation(api.pocketcheck.reorderRoutines);
 
@@ -178,6 +361,8 @@ function Dashboard() {
   const [draggedItemId, setDraggedItemId] = useState<Id<"items"> | null>(null);
   const [dragOverItemId, setDragOverItemId] = useState<Id<"items"> | null>(null);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [showIconPicker, setShowIconPicker] = useState(false);
+  const [iconPickerTarget, setIconPickerTarget] = useState<"newItem" | "editItem">("newItem");
 
   // Seed default routines + items on first login
   useEffect(() => {
@@ -222,14 +407,6 @@ function Dashboard() {
       await resetItems({ routine: selectedRoutine });
     } catch (err) {
       console.error("Failed to reset list", err);
-    }
-  };
-
-  const handleResetAll = async () => {
-    try {
-      await resetAllRoutines();
-    } catch (err) {
-      console.error("Failed to reset all routines", err);
     }
   };
 
@@ -334,24 +511,24 @@ function Dashboard() {
     <>
       {/* ─── Header ─────────────────────────────────────────────────────── */}
       <header className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
-        <div className="max-w-xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3 select-none">
-            <div className="bg-primary text-primary-foreground p-2 rounded-xl">
-              <PackageCheck className="w-6 h-6" />
+        <div className="max-w-xl mx-auto px-3 sm:px-4 py-2.5 sm:py-4 flex justify-between items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 select-none shrink-0">
+            <div className="bg-primary text-primary-foreground p-1.5 sm:p-2 rounded-xl">
+              <PackageCheck className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-            <h1 className="text-2xl font-black tracking-wide text-foreground">
+            <h1 className="text-base sm:text-2xl font-black tracking-wide text-foreground">
               POCKET<span className="text-primary">CHECK</span>
             </h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowAboutDialog(true)}
               title="About PocketCheck"
-              className="w-9 h-9 rounded-xl text-foreground hover:bg-muted"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl text-foreground hover:bg-muted"
             >
-              <Info className="w-5 h-5" />
+              <Info className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="sr-only">About</span>
             </Button>
             <ThemeToggle />
@@ -480,41 +657,27 @@ function Dashboard() {
 
           return (
             <div className="space-y-4">
-              {/* Quick Filter Tabs */}
+              {/* Quick Filter Tabs & Action Buttons */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    <Filter className="w-3.5 h-3.5 text-primary" /> Filter List
-                  </h3>
-                  <div className="flex items-center gap-1 flex-wrap justify-end">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => void handleReset()}
-                      className="text-primary hover:text-primary/80 font-black uppercase text-[11px] tracking-wider gap-1 h-7 px-2"
-                      title="Reset items in this routine to Missing position"
-                    >
-                      <RotateCcw className="w-3 h-3" /> Uncheck All
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => void handleResetAll()}
-                      className="text-muted-foreground hover:text-foreground font-black uppercase text-[11px] tracking-wider gap-1 h-7 px-2"
-                      title="Reset all items across all routines for a fresh day"
-                    >
-                      <RotateCcw className="w-3 h-3" /> Reset All Routines
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowDeleteAllConfirm(true)}
-                      className="text-destructive hover:text-destructive/80 font-black uppercase text-[11px] tracking-wider gap-1 h-7 px-2"
-                      title="Delete all created items in this routine"
-                    >
-                      <Trash2 className="w-3 h-3" /> Clear List
-                    </Button>
-                  </div>
+                <div className="flex items-center justify-end gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void handleReset()}
+                    className="text-primary hover:text-primary/80 font-black uppercase text-[11px] tracking-wider gap-1 h-7 px-2"
+                    title="Reset items in this routine to Missing position"
+                  >
+                    <RotateCcw className="w-3 h-3" /> Uncheck All
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowDeleteAllConfirm(true)}
+                    className="text-destructive hover:text-destructive/80 font-black uppercase text-[11px] tracking-wider gap-1 h-7 px-2"
+                    title="Delete all created items in this routine"
+                  >
+                    <Trash2 className="w-3 h-3" /> Clear List
+                  </Button>
                 </div>
 
                 <div className="grid grid-cols-3 gap-1.5 p-1 bg-muted/60 rounded-2xl select-none">
@@ -644,18 +807,14 @@ function Dashboard() {
                             {/* Details */}
                             <div className="select-none flex-1 min-w-0">
                               <p
-                                className={`item-name font-extrabold text-base sm:text-lg select-none truncate ${
+                                className={`item-name font-extrabold text-base sm:text-lg select-none truncate flex items-center ${
                                   item.isPacked
                                     ? "text-muted-foreground line-through decoration-muted-foreground decoration-2"
                                     : "text-foreground"
                                 }`}
                               >
-                                {item.emoji && !item.emoji.match(/\p{Emoji}/u) && (
-                                  <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-md mr-2 font-mono">
-                                    {item.emoji}
-                                  </span>
-                                )}
-                                <span className="select-none">{item.name}</span>
+                                {renderItemIcon(item.emoji)}
+                                <span className="select-none truncate">{item.name}</span>
                               </p>
                               <div className="mt-0.5">
                                 <Badge variant={item.isPacked ? "default" : "outline"} className="text-[10px] py-0 px-2 font-black">
@@ -710,14 +869,22 @@ function Dashboard() {
               className="flex flex-col sm:flex-row gap-2"
             >
               <div className="flex gap-2 sm:flex-1">
-                <Input
-                  type="text"
-                  value={newItemTag}
-                  onChange={(e) => setNewItemTag(e.target.value)}
-                  placeholder="Tag"
-                  className="w-24 text-xs shrink-0"
-                  title="Optional item tag or category"
-                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIconPickerTarget("newItem");
+                    setShowIconPicker(true);
+                  }}
+                  className="w-12 h-10 px-0 shrink-0 flex items-center justify-center rounded-xl"
+                  title="Select Lucide Icon for item"
+                >
+                  {newItemTag ? (
+                    renderItemIcon(newItemTag)
+                  ) : (
+                    <Tag className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </Button>
                 <Input
                   type="text"
                   value={newCustomItemName}
@@ -859,14 +1026,33 @@ function Dashboard() {
             <div className="space-y-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-black text-muted-foreground uppercase tracking-wider">
-                  Name
+                  Item Icon & Name
                 </label>
-                <Input
-                  type="text"
-                  value={editModalName}
-                  onChange={(e) => setEditModalName(e.target.value)}
-                  placeholder="Item name..."
-                />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIconPickerTarget("editItem");
+                      setShowIconPicker(true);
+                    }}
+                    className="w-12 h-10 px-0 shrink-0 flex items-center justify-center rounded-xl"
+                    title="Select Icon"
+                  >
+                    {editModalIconTag ? (
+                      renderItemIcon(editModalIconTag)
+                    ) : (
+                      <Tag className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                  <Input
+                    type="text"
+                    value={editModalName}
+                    onChange={(e) => setEditModalName(e.target.value)}
+                    placeholder="Item name..."
+                    className="flex-1"
+                  />
+                </div>
               </div>
 
               {/* Reordering */}
@@ -1008,6 +1194,19 @@ function Dashboard() {
           </div>
         </DialogContent>
       </Dialog>
+      {/* ─── Icon Picker Modal ─────────────────────────────────────── */}
+      <IconPickerModal
+        open={showIconPicker}
+        onOpenChange={setShowIconPicker}
+        selectedKey={iconPickerTarget === "newItem" ? newItemTag : editModalIconTag}
+        onSelectIcon={(key) => {
+          if (iconPickerTarget === "newItem") {
+            setNewItemTag(key);
+          } else {
+            setEditModalIconTag(key);
+          }
+        }}
+      />
     </>
   );
 }
