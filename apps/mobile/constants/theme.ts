@@ -11,7 +11,7 @@ export const Colors = {
     mutedForeground: "#71717a",
     border: "#e4e4e7",
     input: "#e4e4e7",
-    destructive: "#18181b", // Monochrome sleek contrast for actions
+    destructive: "#ef4444", // Red for destructive actions (Delete, Clear)
     destructiveForeground: "#ffffff",
     tint: "#09090b",
     tabIconDefault: "#a1a1aa",
@@ -29,7 +29,7 @@ export const Colors = {
     mutedForeground: "#a1a1aa",
     border: "#27272a",
     input: "#3f3f46",
-    destructive: "#27272a",
+    destructive: "#ef4444", // Red for destructive actions
     destructiveForeground: "#ffffff",
     tint: "#ffffff",
     tabIconDefault: "#71717a",

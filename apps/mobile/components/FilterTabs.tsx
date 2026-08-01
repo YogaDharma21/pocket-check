@@ -36,8 +36,8 @@ export function FilterTabs({
           style={styles.actionBtn}
           onPress={onResetAll}
         >
-          <Ionicons name="refresh" size={13} color={colors.primary} />
-          <Text style={[styles.actionText, { color: colors.primary }]}>
+          <Ionicons name="refresh" size={13} color={colors.foreground} />
+          <Text style={[styles.actionText, { color: colors.foreground }]}>
             UNCHECK ALL
           </Text>
         </TouchableOpacity>
@@ -46,8 +46,8 @@ export function FilterTabs({
           style={styles.actionBtn}
           onPress={onClearList}
         >
-          <Ionicons name="trash-outline" size={13} color={colors.destructive} />
-          <Text style={[styles.actionText, { color: colors.destructive }]}>
+          <Ionicons name="trash-outline" size={13} color="#ef4444" />
+          <Text style={[styles.actionText, { color: "#ef4444" }]}>
             CLEAR LIST
           </Text>
         </TouchableOpacity>
@@ -100,7 +100,7 @@ export function FilterTabs({
             styles.segmentBtn,
             filter === "missing" && [
               styles.activeSegmentBtn,
-              { backgroundColor: colors.card, borderColor: colors.destructive },
+              { backgroundColor: colors.card, borderColor: "#ef4444" },
             ],
           ]}
           onPress={() => onFilterChange("missing")}
@@ -111,7 +111,7 @@ export function FilterTabs({
               {
                 color:
                   filter === "missing"
-                    ? colors.destructive
+                    ? colors.foreground
                     : colors.mutedForeground,
               },
             ]}
@@ -121,13 +121,13 @@ export function FilterTabs({
           <View
             style={[
               styles.badge,
-              { backgroundColor: colors.destructive },
+              { backgroundColor: "#ef4444" },
             ]}
           >
             <Text
               style={[
                 styles.badgeText,
-                { color: colors.destructiveForeground },
+                { color: "#ffffff" },
               ]}
             >
               {missingCount}
@@ -140,7 +140,7 @@ export function FilterTabs({
             styles.segmentBtn,
             filter === "packed" && [
               styles.activeSegmentBtn,
-              { backgroundColor: colors.card, borderColor: colors.primary },
+              { backgroundColor: colors.card, borderColor: colors.border },
             ],
           ]}
           onPress={() => onFilterChange("packed")}
@@ -151,7 +151,7 @@ export function FilterTabs({
               {
                 color:
                   filter === "packed"
-                    ? colors.primary
+                    ? colors.foreground
                     : colors.mutedForeground,
               },
             ]}

@@ -5,6 +5,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   StyleSheet,
   Alert,
 } from "react-native";
@@ -77,121 +78,128 @@ export function RoutineSettingsModal({
       transparent
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: colors.foreground }]}>
-              Destination Settings
-            </Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={20} color={colors.mutedForeground} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: colors.mutedForeground }]}>
-              DESTINATION NAME
-            </Text>
-            <TextInput
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.overlay}>
+          <TouchableWithoutFeedback>
+            <View
               style={[
-                styles.input,
-                {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                  color: colors.foreground,
-                },
+                styles.card,
+                { backgroundColor: colors.card, borderColor: colors.border },
               ]}
-              value={name}
-              onChangeText={setName}
-            />
-          </View>
+            >
+              <View style={styles.header}>
+                <Text style={[styles.title, { color: colors.foreground }]}>
+                  Destination Settings
+                </Text>
+                <TouchableOpacity onPress={onClose}>
+                  <Ionicons
+                    name="close"
+                    size={20}
+                    color={colors.mutedForeground}
+                  />
+                </TouchableOpacity>
+              </View>
 
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: colors.mutedForeground }]}>
-              CHANGE ORDER
-            </Text>
-            <View style={styles.reorderRow}>
-              <TouchableOpacity
-                style={[
-                  styles.reorderBtn,
-                  {
-                    backgroundColor: colors.background,
-                    borderColor: colors.border,
-                    opacity: isFirst ? 0.4 : 1,
-                  },
-                ]}
-                disabled={isFirst}
-                onPress={() => onMove(routine._id, -1)}
-              >
-                <Ionicons
-                  name="chevron-back"
-                  size={16}
-                  color={colors.foreground}
+              <View style={styles.field}>
+                <Text style={[styles.label, { color: colors.mutedForeground }]}>
+                  DESTINATION NAME
+                </Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: colors.background,
+                      borderColor: colors.border,
+                      color: colors.foreground,
+                    },
+                  ]}
+                  value={name}
+                  onChangeText={setName}
                 />
-                <Text style={[styles.btnText, { color: colors.foreground }]}>
-                  Move Left
+              </View>
+
+              <View style={styles.field}>
+                <Text style={[styles.label, { color: colors.mutedForeground }]}>
+                  CHANGE ORDER
+                </Text>
+                <View style={styles.reorderRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.reorderBtn,
+                      {
+                        backgroundColor: colors.background,
+                        borderColor: colors.border,
+                        opacity: isFirst ? 0.4 : 1,
+                      },
+                    ]}
+                    disabled={isFirst}
+                    onPress={() => onMove(routine._id, -1)}
+                  >
+                    <Ionicons
+                      name="chevron-back"
+                      size={16}
+                      color={colors.foreground}
+                    />
+                    <Text
+                      style={[styles.btnText, { color: colors.foreground }]}
+                    >
+                      Move Left
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.reorderBtn,
+                      {
+                        backgroundColor: colors.background,
+                        borderColor: colors.border,
+                        opacity: isLast ? 0.4 : 1,
+                      },
+                    ]}
+                    disabled={isLast}
+                    onPress={() => onMove(routine._id, 1)}
+                  >
+                    <Text
+                      style={[styles.btnText, { color: colors.foreground }]}
+                    >
+                      Move Right
+                    </Text>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color={colors.foreground}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.saveBtn, { backgroundColor: colors.primary }]}
+                onPress={handleSave}
+              >
+                <Text
+                  style={[
+                    styles.saveBtnText,
+                    { color: colors.primaryForeground },
+                  ]}
+                >
+                  SAVE CHANGES
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[
-                  styles.reorderBtn,
-                  {
-                    backgroundColor: colors.background,
-                    borderColor: colors.border,
-                    opacity: isLast ? 0.4 : 1,
-                  },
-                ]}
-                disabled={isLast}
-                onPress={() => onMove(routine._id, 1)}
+                style={[styles.deleteBtn, { backgroundColor: "#ef4444" }]}
+                onPress={handleDelete}
               >
-                <Text style={[styles.btnText, { color: colors.foreground }]}>
-                  Move Right
+                <Ionicons name="trash-outline" size={16} color="#ffffff" />
+                <Text style={[styles.deleteBtnText, { color: "#ffffff" }]}>
+                  DELETE DESTINATION
                 </Text>
-                <Ionicons
-                  name="chevron-forward"
-                  size={16}
-                  color={colors.foreground}
-                />
               </TouchableOpacity>
             </View>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.saveBtn, { backgroundColor: colors.primary }]}
-            onPress={handleSave}
-          >
-            <Text
-              style={[
-                styles.saveBtnText,
-                { color: colors.primaryForeground },
-              ]}
-            >
-              SAVE CHANGES
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.deleteBtn,
-              { backgroundColor: colors.destructive + "20" },
-            ]}
-            onPress={handleDelete}
-          >
-            <Ionicons name="trash-outline" size={16} color={colors.destructive} />
-            <Text
-              style={[styles.deleteBtnText, { color: colors.destructive }]}
-            >
-              DELETE DESTINATION
-            </Text>
-          </TouchableOpacity>
+          </TouchableWithoutFeedback>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 }

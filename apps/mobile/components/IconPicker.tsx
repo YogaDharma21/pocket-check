@@ -5,6 +5,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   ScrollView,
   StyleSheet,
 } from "react-native";
@@ -106,125 +107,146 @@ export function IconPickerModal({
       transparent
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <View
-          style={[
-            styles.container,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <View style={styles.header}>
-            <View style={styles.titleRow}>
-              <Ionicons name="pricetag" size={18} color={colors.primary} />
-              <Text style={[styles.title, { color: colors.foreground }]}>
-                Select Item Icon
-              </Text>
-            </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <Ionicons name="close" size={20} color={colors.mutedForeground} />
-            </TouchableOpacity>
-          </View>
-
-          <View
-            style={[
-              styles.searchBox,
-              { backgroundColor: colors.background, borderColor: colors.border },
-            ]}
-          >
-            <Ionicons
-              name="search"
-              size={16}
-              color={colors.mutedForeground}
-              style={{ marginRight: 8 }}
-            />
-            <TextInput
-              style={[styles.searchInput, { color: colors.foreground }]}
-              placeholder="Search icons (e.g. key, phone, wallet)..."
-              placeholderTextColor={colors.mutedForeground}
-              value={search}
-              onChangeText={setSearch}
-            />
-            {search.length > 0 && (
-              <TouchableOpacity onPress={() => setSearch("")}>
-                <Ionicons
-                  name="close-circle"
-                  size={16}
-                  color={colors.mutedForeground}
-                />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <ScrollView contentContainerStyle={styles.grid}>
-            <TouchableOpacity
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.overlay}>
+          <TouchableWithoutFeedback>
+            <View
               style={[
-                styles.gridItem,
-                {
-                  borderColor: !selectedKey ? colors.primary : colors.border,
-                  backgroundColor: !selectedKey
-                    ? colors.muted
-                    : colors.background,
-                },
+                styles.container,
+                { backgroundColor: colors.card, borderColor: colors.border },
               ]}
-              onPress={() => {
-                onSelectIcon("");
-                onClose();
-              }}
             >
-              <Ionicons
-                name="close"
-                size={20}
-                color={colors.mutedForeground}
-              />
-              <Text
+              <View style={styles.header}>
+                <View style={styles.titleRow}>
+                  <Ionicons name="pricetag" size={18} color={colors.primary} />
+                  <Text style={[styles.title, { color: colors.foreground }]}>
+                    Select Item Icon
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                  <Ionicons
+                    name="close"
+                    size={20}
+                    color={colors.mutedForeground}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <View
                 style={[
-                  styles.iconLabel,
-                  { color: colors.mutedForeground },
+                  styles.searchBox,
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                  },
                 ]}
               >
-                None
-              </Text>
-            </TouchableOpacity>
+                <Ionicons
+                  name="search"
+                  size={16}
+                  color={colors.mutedForeground}
+                  style={{ marginRight: 8 }}
+                />
+                <TextInput
+                  style={[styles.searchInput, { color: colors.foreground }]}
+                  placeholder="Search icons (e.g. key, phone, wallet)..."
+                  placeholderTextColor={colors.mutedForeground}
+                  value={search}
+                  onChangeText={setSearch}
+                />
+                {search.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearch("")}>
+                    <Ionicons
+                      name="close-circle"
+                      size={16}
+                      color={colors.mutedForeground}
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
 
-            {filtered.map((item) => {
-              const isSelected = selectedKey?.toLowerCase() === item.key;
-              return (
+              <ScrollView contentContainerStyle={styles.grid}>
                 <TouchableOpacity
-                  key={item.key}
                   style={[
                     styles.gridItem,
                     {
-                      borderColor: isSelected ? colors.primary : colors.border,
-                      backgroundColor: isSelected
+                      borderColor: !selectedKey
+                        ? colors.primary
+                        : colors.border,
+                      backgroundColor: !selectedKey
                         ? colors.muted
                         : colors.background,
                     },
                   ]}
                   onPress={() => {
-                    onSelectIcon(item.key);
+                    onSelectIcon("");
                     onClose();
                   }}
                 >
                   <Ionicons
-                    name={item.ionicon}
-                    size={22}
-                    color={isSelected ? colors.primary : colors.foreground}
+                    name="close"
+                    size={20}
+                    color={colors.mutedForeground}
                   />
                   <Text
                     style={[
                       styles.iconLabel,
-                      { color: isSelected ? colors.primary : colors.foreground },
+                      { color: colors.mutedForeground },
                     ]}
-                    numberOfLines={1}
                   >
-                    {item.name}
+                    None
                   </Text>
                 </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+
+                {filtered.map((item) => {
+                  const isSelected = selectedKey?.toLowerCase() === item.key;
+                  return (
+                    <TouchableOpacity
+                      key={item.key}
+                      style={[
+                        styles.gridItem,
+                        {
+                          borderColor: isSelected
+                            ? colors.primary
+                            : colors.border,
+                          backgroundColor: isSelected
+                            ? colors.muted
+                            : colors.background,
+                        },
+                      ]}
+                      onPress={() => {
+                        onSelectIcon(item.key);
+                        onClose();
+                      }}
+                    >
+                      <Ionicons
+                        name={item.ionicon}
+                        size={22}
+                        color={
+                          isSelected ? colors.primary : colors.foreground
+                        }
+                      />
+                      <Text
+                        style={[
+                          styles.iconLabel,
+                          {
+                            color: isSelected
+                              ? colors.primary
+                              : colors.foreground,
+                          },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {item.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </TouchableWithoutFeedback>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 }

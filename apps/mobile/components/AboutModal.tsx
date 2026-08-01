@@ -4,6 +4,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Linking,
   StyleSheet,
 } from "react-native";
@@ -26,52 +27,73 @@ export function AboutModal({ visible, onClose, theme }: AboutModalProps) {
       transparent
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <View style={styles.header}>
-            <View style={styles.titleRow}>
-              <Ionicons name="information-circle" size={22} color={colors.primary} />
-              <Text style={[styles.title, { color: colors.foreground }]}>
-                About PocketCheck
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.overlay}>
+          <TouchableWithoutFeedback>
+            <View
+              style={[
+                styles.card,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
+              <View style={styles.header}>
+                <View style={styles.titleRow}>
+                  <Ionicons
+                    name="information-circle"
+                    size={22}
+                    color={colors.primary}
+                  />
+                  <Text style={[styles.title, { color: colors.foreground }]}>
+                    About PocketCheck
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={onClose}>
+                  <Ionicons
+                    name="close"
+                    size={20}
+                    color={colors.mutedForeground}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={[styles.description, { color: colors.foreground }]}>
+                PocketCheck is a minimal checklist tool designed to make sure
+                you never forget your keys, wallet, phone, or essential items
+                before stepping out for work, gym, or custom routines.
               </Text>
+
+              <TouchableOpacity
+                style={[
+                  styles.githubBtn,
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                  },
+                ]}
+                onPress={() =>
+                  Linking.openURL(
+                    "https://github.com/YogaDharma21/pocket-check"
+                  )
+                }
+              >
+                <Ionicons
+                  name="logo-github"
+                  size={18}
+                  color={colors.foreground}
+                />
+                <Text style={[styles.githubText, { color: colors.foreground }]}>
+                  github.com/yogaDharma21/pocket-check
+                </Text>
+                <Ionicons
+                  name="open-outline"
+                  size={14}
+                  color={colors.mutedForeground}
+                />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={20} color={colors.mutedForeground} />
-            </TouchableOpacity>
-          </View>
-
-          <Text style={[styles.description, { color: colors.foreground }]}>
-            PocketCheck is a minimal checklist tool designed to make sure you
-            never forget your keys, wallet, phone, or essential items before
-            stepping out for work, gym, or custom routines.
-          </Text>
-
-          <TouchableOpacity
-            style={[
-              styles.githubBtn,
-              { backgroundColor: colors.background, borderColor: colors.border },
-            ]}
-            onPress={() =>
-              Linking.openURL("https://github.com/YogaDharma21/pocket-check")
-            }
-          >
-            <Ionicons name="logo-github" size={18} color={colors.primary} />
-            <Text style={[styles.githubText, { color: colors.foreground }]}>
-              github.com/yogaDharma21/pocket-check
-            </Text>
-            <Ionicons
-              name="open-outline"
-              size={14}
-              color={colors.mutedForeground}
-            />
-          </TouchableOpacity>
+          </TouchableWithoutFeedback>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 }
