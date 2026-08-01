@@ -59,7 +59,7 @@ const ITEM_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> =
 
 export function renderItemIconHelper(
   iconKey?: string,
-  color = "#10b981",
+  color = "#ffffff",
   size = 18
 ) {
   if (!iconKey) return null;

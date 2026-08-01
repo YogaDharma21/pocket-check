@@ -29,7 +29,7 @@ interface RoutineSwitcherProps {
 
 export function renderRoutineIconHelper(
   iconStr: string,
-  color = "#10b981",
+  color = "#ffffff",
   size = 20
 ) {
   const normalized = (iconStr || "").toLowerCase().trim();
