@@ -6,9 +6,9 @@ import {
   ScrollView,
   StyleSheet,
   useColorScheme,
-  SafeAreaView,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useQuery, useMutation } from "convex/react";
 import { Ionicons } from "@expo/vector-icons";
@@ -250,6 +250,7 @@ export default function DashboardScreen() {
   return (
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: colors.background }]}
+      edges={["top", "bottom", "left", "right"]}
     >
       <View style={styles.container}>
         {/* Header */}
@@ -273,7 +274,7 @@ export default function DashboardScreen() {
               />
             </View>
             <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-              POCKET<Text style={{ color: colors.primary }}>CHECK</Text>
+              POCKET<Text style={{ color: colors.mutedForeground }}>CHECK</Text>
             </Text>
           </View>
 

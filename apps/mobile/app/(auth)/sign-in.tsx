@@ -5,16 +5,17 @@ import {
   TouchableOpacity,
   StyleSheet,
   useColorScheme,
-  SafeAreaView,
   Linking,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useOAuth } from "@clerk/clerk-expo";
 import * as WebBrowser from "expo-web-browser";
+import * as AuthSession from "expo-auth-session";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../../constants/theme";
 
-// Warm up the android browser session for OAuth speed
+// Warm up android browser session
 WebBrowser.maybeCompleteAuthSession();
 
 export default function SignInScreen() {
@@ -29,7 +30,12 @@ export default function SignInScreen() {
     setLoading(true);
     setErrorMsg("");
     try {
-      const { createdSessionId, setActive } = await startOAuthFlow();
+      const redirectUrl = AuthSession.makeRedirectUri({
+        path: "oauth-native-callback",
+      });
+      const { createdSessionId, setActive } = await startOAuthFlow({
+        redirectUrl,
+      });
 
       if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId });
@@ -45,6 +51,7 @@ export default function SignInScreen() {
   return (
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: colors.background }]}
+      edges={["top", "bottom", "left", "right"]}
     >
       <View style={styles.container}>
         {/* Header / Logo Section */}
@@ -160,19 +167,19 @@ const styles = StyleSheet.create({
   },
   logoSection: {
     alignItems: "center",
-    marginTop: 48,
+    marginTop: 24,
   },
   iconBox: {
-    width: 88,
-    height: 88,
-    borderRadius: 28,
+    width: 84,
+    height: 84,
+    borderRadius: 26,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 24,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 34,
+    fontSize: 32,
     fontWeight: "900",
     letterSpacing: 1.5,
     marginBottom: 12,
@@ -186,7 +193,7 @@ const styles = StyleSheet.create({
   },
   authSection: {
     gap: 16,
-    marginBottom: 32,
+    marginBottom: 24,
   },
   errorBox: {
     flexDirection: "row",
