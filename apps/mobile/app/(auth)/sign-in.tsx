@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useOAuth } from "@clerk/clerk-expo";
+import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import * as AuthSession from "expo-auth-session";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,6 +22,7 @@ WebBrowser.maybeCompleteAuthSession();
 export default function SignInScreen() {
   const colorScheme = useColorScheme() ?? "dark";
   const colors = Colors[colorScheme];
+  const router = useRouter();
 
   const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
   const [loading, setLoading] = useState(false);
@@ -39,6 +41,7 @@ export default function SignInScreen() {
 
       if (createdSessionId && setActive) {
         await setActive({ session: createdSessionId });
+        router.replace("/(main)");
       }
     } catch (err: any) {
       console.error("OAuth error", err);
@@ -46,7 +49,7 @@ export default function SignInScreen() {
     } finally {
       setLoading(false);
     }
-  }, [startOAuthFlow]);
+  }, [startOAuthFlow, router]);
 
   return (
     <SafeAreaView

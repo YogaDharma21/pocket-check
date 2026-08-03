@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth, useUser } from "@clerk/clerk-expo";
+import { useRouter } from "expo-router";
 import { useQuery, useMutation } from "convex/react";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../convex/_generated/api";
@@ -30,6 +31,7 @@ export default function DashboardScreen() {
   const colorScheme = useColorScheme() ?? "dark";
   const theme = colorScheme;
   const colors = Colors[theme];
+  const router = useRouter();
 
   const { signOut } = useAuth();
   const { user } = useUser();
@@ -242,7 +244,14 @@ export default function DashboardScreen() {
       {
         text: "Log Out",
         style: "destructive",
-        onPress: () => signOut(),
+        onPress: async () => {
+          try {
+            await signOut();
+            router.replace("/(auth)/sign-in");
+          } catch (err) {
+            console.error("Sign out error", err);
+          }
+        },
       },
     ]);
   };
