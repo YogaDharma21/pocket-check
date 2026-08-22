@@ -803,14 +803,14 @@ export function Dashboard() {
                         console.error("Failed to delete routine", err);
                       }
                     }}
-                    className="flex-1 text-xs uppercase tracking-wider"
+                    className="flex-1 text-xs uppercase tracking-wider font-bold"
                   >
                     <Trash2 className="w-4 h-4" /> Delete Destination
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => setManageRoutine(null)}
-                    className="flex-1 text-xs uppercase tracking-wider"
+                    className="flex-1 text-xs uppercase tracking-wider font-bold"
                   >
                     Cancel
                   </Button>
@@ -936,9 +936,16 @@ export function Dashboard() {
                         console.error("Failed to delete item", err);
                       }
                     }}
-                    className="flex-1 text-xs uppercase tracking-wider"
+                    className="flex-1 text-xs uppercase tracking-wider font-bold"
                   >
                     <Trash2 className="w-4 h-4" /> Delete Item
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setManageItem(null)}
+                    className="flex-1 text-xs uppercase tracking-wider font-bold"
+                  >
+                    Cancel
                   </Button>
                 </div>
               </DialogFooter>
