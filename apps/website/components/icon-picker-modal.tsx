@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useMemo, useDeferredValue } from "react";
 import {
   Search,
   X,
@@ -13,6 +13,8 @@ import {
   Key,
   Wallet,
   CreditCard,
+  Banknote,
+  Coins,
   Smartphone,
   Laptop,
   Headphones,
@@ -20,25 +22,72 @@ import {
   Watch,
   Camera,
   BatteryCharging,
+  Cable,
   Plug,
+  Gamepad2,
+  Mouse,
+  Keyboard,
+  HardDrive,
+  Speaker,
+  Radio,
+  Mic,
   Backpack,
   ShoppingBag,
   Luggage,
+  Package,
   Umbrella,
   Glasses,
   Sun,
+  Fingerprint,
   Pill,
+  Cross,
   Heart,
-  Shield,
   Activity,
-  FileText,
-  BookOpen,
+  Droplet,
+  Sparkles,
+  Thermometer,
+  Bandage,
+  FlaskConical,
+  Shirt,
+  Footprints,
+  Crown,
+  Gem,
   Coffee,
+  CupSoda,
   Utensils,
-  Smile,
-  Star,
+  Apple,
+  Sandwich,
+  Cookie,
+  Wine,
+  Car,
+  Bike,
+  Bus,
+  Train,
+  Plane,
+  Ticket,
+  Map,
+  Globe,
+  Pen,
+  BookOpen,
+  FileText,
+  Folder,
+  ClipboardList,
+  Calculator,
+  Scissors,
+  Bookmark,
+  StickyNote,
+  Wrench,
+  Hammer,
+  Flashlight,
+  Lock,
+  Shield,
   Flame,
   Zap,
+  Bell,
+  Star,
+  Smile,
+  Trophy,
+  Music,
 } from "lucide-react";
 import {
   Dialog,
@@ -48,42 +97,529 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
-export const ITEM_ICONS: {
+export interface ItemIconDef {
   name: string;
   key: string;
   icon: React.ComponentType<{ className?: string }>;
-}[] = [
-  { name: "Key", key: "key", icon: Key },
-  { name: "Wallet", key: "wallet", icon: Wallet },
-  { name: "Card", key: "card", icon: CreditCard },
-  { name: "Phone", key: "phone", icon: Smartphone },
-  { name: "Laptop", key: "laptop", icon: Laptop },
-  { name: "Headphones", key: "headphones", icon: Headphones },
-  { name: "Tablet", key: "tablet", icon: Tablet },
-  { name: "Watch", key: "watch", icon: Watch },
-  { name: "Camera", key: "camera", icon: Camera },
-  { name: "Battery", key: "battery", icon: BatteryCharging },
-  { name: "Plug", key: "plug", icon: Plug },
-  { name: "Backpack", key: "backpack", icon: Backpack },
-  { name: "Briefcase", key: "briefcase", icon: Briefcase },
-  { name: "Bag", key: "bag", icon: ShoppingBag },
-  { name: "Luggage", key: "luggage", icon: Luggage },
-  { name: "Umbrella", key: "umbrella", icon: Umbrella },
-  { name: "Glasses", key: "glasses", icon: Glasses },
-  { name: "Sun", key: "sun", icon: Sun },
-  { name: "Pill", key: "pill", icon: Pill },
-  { name: "Heart", key: "heart", icon: Heart },
-  { name: "Shield", key: "shield", icon: Shield },
-  { name: "Activity", key: "activity", icon: Activity },
-  { name: "File", key: "file", icon: FileText },
-  { name: "Book", key: "book", icon: BookOpen },
-  { name: "Coffee", key: "coffee", icon: Coffee },
-  { name: "Utensils", key: "utensils", icon: Utensils },
-  { name: "Smile", key: "smile", icon: Smile },
-  { name: "Star", key: "star", icon: Star },
-  { name: "Tag", key: "tag", icon: Tag },
-  { name: "Flame", key: "flame", icon: Flame },
-  { name: "Zap", key: "zap", icon: Zap },
+  tags: string[];
+}
+
+export const ITEM_ICONS: ItemIconDef[] = [
+  // Tech & Everyday Electronics
+  {
+    name: "Phone",
+    key: "phone",
+    icon: Smartphone,
+    tags: ["smartphone", "mobile", "cell", "handphone", "iphone", "android"],
+  },
+  {
+    name: "Laptop",
+    key: "laptop",
+    icon: Laptop,
+    tags: ["macbook", "computer", "pc", "notebook", "work"],
+  },
+  {
+    name: "Headphones",
+    key: "headphones",
+    icon: Headphones,
+    tags: ["earphone", "airpods", "buds", "headset", "audio", "music"],
+  },
+  {
+    name: "Watch",
+    key: "watch",
+    icon: Watch,
+    tags: ["smartwatch", "clock", "time", "apple watch"],
+  },
+  {
+    name: "Tablet",
+    key: "tablet",
+    icon: Tablet,
+    tags: ["ipad", "screen", "ereader", "kindle"],
+  },
+  {
+    name: "Battery",
+    key: "battery",
+    icon: BatteryCharging,
+    tags: ["powerbank", "charger", "power", "energy"],
+  },
+  {
+    name: "Cable",
+    key: "cable",
+    icon: Cable,
+    tags: ["wire", "cord", "usb", "type-c", "lightning", "charger"],
+  },
+  {
+    name: "Plug",
+    key: "plug",
+    icon: Plug,
+    tags: ["adapter", "socket", "wall", "charger", "electricity"],
+  },
+  {
+    name: "Camera",
+    key: "camera",
+    icon: Camera,
+    tags: ["photo", "dslr", "video", "lens", "gopro"],
+  },
+  {
+    name: "Mouse",
+    key: "mouse",
+    icon: Mouse,
+    tags: ["clicker", "pointer", "trackpad", "bluetooth"],
+  },
+  {
+    name: "Keyboard",
+    key: "keyboard",
+    icon: Keyboard,
+    tags: ["typing", "keys", "computer"],
+  },
+  {
+    name: "Gamepad",
+    key: "gamepad",
+    icon: Gamepad2,
+    tags: ["controller", "game", "switch", "console", "playstation", "xbox"],
+  },
+  {
+    name: "Drive",
+    key: "harddrive",
+    icon: HardDrive,
+    tags: ["storage", "flashdrive", "usb", "ssd", "hdd", "thumbdrive"],
+  },
+  {
+    name: "Speaker",
+    key: "speaker",
+    icon: Speaker,
+    tags: ["sound", "audio", "bluetooth", "music"],
+  },
+  {
+    name: "Mic",
+    key: "mic",
+    icon: Mic,
+    tags: ["microphone", "audio", "recording", "voice"],
+  },
+  {
+    name: "Radio",
+    key: "radio",
+    icon: Radio,
+    tags: ["walkie", "transceiver", "fm", "am"],
+  },
+
+  // Pocket Essentials & Money
+  {
+    name: "Key",
+    key: "key",
+    icon: Key,
+    tags: ["keys", "keychain", "house", "car", "lock"],
+  },
+  {
+    name: "Wallet",
+    key: "wallet",
+    icon: Wallet,
+    tags: ["money", "cash", "purse", "billfold"],
+  },
+  {
+    name: "Card",
+    key: "card",
+    icon: CreditCard,
+    tags: ["credit", "debit", "visa", "mastercard", "atm", "payment"],
+  },
+  {
+    name: "Cash",
+    key: "banknote",
+    icon: Banknote,
+    tags: ["money", "bills", "dollars", "currency"],
+  },
+  {
+    name: "Coins",
+    key: "coins",
+    icon: Coins,
+    tags: ["change", "money", "tokens"],
+  },
+  {
+    name: "Glasses",
+    key: "glasses",
+    icon: Glasses,
+    tags: ["spectacles", "sunglasses", "shades", "eye", "vision"],
+  },
+  {
+    name: "Sun",
+    key: "sun",
+    icon: Sun,
+    tags: ["sunglasses", "summer", "weather", "uv"],
+  },
+  {
+    name: "Umbrella",
+    key: "umbrella",
+    icon: Umbrella,
+    tags: ["rain", "storm", "shade", "parasol"],
+  },
+  {
+    name: "ID",
+    key: "fingerprint",
+    icon: Fingerprint,
+    tags: ["badge", "pass", "identity", "security", "biometric"],
+  },
+
+  // Bags & Luggage
+  {
+    name: "Backpack",
+    key: "backpack",
+    icon: Backpack,
+    tags: ["bag", "rucksack", "daypack", "schoolbag", "knapsack"],
+  },
+  {
+    name: "Briefcase",
+    key: "briefcase",
+    icon: Briefcase,
+    tags: ["workbag", "attache", "laptop bag", "office"],
+  },
+  {
+    name: "Bag",
+    key: "bag",
+    icon: ShoppingBag,
+    tags: ["tote", "grocery", "shopping", "pouch", "handbag"],
+  },
+  {
+    name: "Luggage",
+    key: "luggage",
+    icon: Luggage,
+    tags: ["suitcase", "travel", "flight", "trip", "trunk"],
+  },
+  {
+    name: "Package",
+    key: "package",
+    icon: Package,
+    tags: ["parcel", "box", "delivery"],
+  },
+
+  // Food & Hydration
+  {
+    name: "Water",
+    key: "cupsoda",
+    icon: CupSoda,
+    tags: ["bottle", "drink", "beverage", "tumbler", "hydration", "straw"],
+  },
+  {
+    name: "Coffee",
+    key: "coffee",
+    icon: Coffee,
+    tags: ["tea", "mug", "cup", "espresso", "latte", "cafe", "drink"],
+  },
+  {
+    name: "Utensils",
+    key: "utensils",
+    icon: Utensils,
+    tags: ["fork", "spoon", "knife", "cutlery", "lunch", "food"],
+  },
+  {
+    name: "Apple",
+    key: "apple",
+    icon: Apple,
+    tags: ["fruit", "snack", "food", "healthy"],
+  },
+  {
+    name: "Sandwich",
+    key: "sandwich",
+    icon: Sandwich,
+    tags: ["meal", "lunch", "snack", "bread", "burger", "food"],
+  },
+  {
+    name: "Cookie",
+    key: "cookie",
+    icon: Cookie,
+    tags: ["biscuit", "snack", "sweet", "treat"],
+  },
+  {
+    name: "Drink",
+    key: "wine",
+    icon: Wine,
+    tags: ["wine", "alcohol", "bottle", "party"],
+  },
+
+  // Health, Care & Personal
+  {
+    name: "Pill",
+    key: "pill",
+    icon: Pill,
+    tags: ["medicine", "vitamins", "capsule", "drug", "tablet", "medical"],
+  },
+  {
+    name: "First Aid",
+    key: "cross",
+    icon: Cross,
+    tags: ["medical", "emergency", "health", "hospital", "doctor"],
+  },
+  {
+    name: "Bandage",
+    key: "bandage",
+    icon: Bandage,
+    tags: ["bandaid", "plaster", "wound", "first aid"],
+  },
+  {
+    name: "Sanitizer",
+    key: "droplet",
+    icon: Droplet,
+    tags: ["water", "eye drops", "drops", "lotion", "liquid"],
+  },
+  {
+    name: "Spray",
+    key: "flask",
+    icon: FlaskConical,
+    tags: ["perfume", "cologne", "spray", "cosmetics", "lotion"],
+  },
+  {
+    name: "Clean",
+    key: "sparkles",
+    icon: Sparkles,
+    tags: ["hygiene", "cosmetics", "beauty", "clean", "fresh"],
+  },
+  {
+    name: "Thermometer",
+    key: "thermometer",
+    icon: Thermometer,
+    tags: ["temp", "fever", "health"],
+  },
+  {
+    name: "Heart",
+    key: "heart",
+    icon: Heart,
+    tags: ["health", "pulse", "care", "wellness"],
+  },
+  {
+    name: "Activity",
+    key: "activity",
+    icon: Activity,
+    tags: ["fitness", "bpm", "tracker", "workout"],
+  },
+
+  // Clothing & Personal Style
+  {
+    name: "Clothes",
+    key: "shirt",
+    icon: Shirt,
+    tags: ["top", "t-shirt", "jacket", "apparel", "uniform"],
+  },
+  {
+    name: "Shoes",
+    key: "shoes",
+    icon: Footprints,
+    tags: ["footprints", "sneakers", "boots", "socks", "sandals"],
+  },
+  {
+    name: "Hat",
+    key: "crown",
+    icon: Crown,
+    tags: ["cap", "beanie", "helmet", "headwear"],
+  },
+  {
+    name: "Jewelry",
+    key: "gem",
+    icon: Gem,
+    tags: ["ring", "necklace", "earring", "bracelet", "valuable"],
+  },
+
+  // Work, Study & Stationery
+  {
+    name: "Pen",
+    key: "pen",
+    icon: Pen,
+    tags: ["pencil", "write", "stationery", "marker", "stylus"],
+  },
+  {
+    name: "Book",
+    key: "book",
+    icon: BookOpen,
+    tags: ["reading", "notebook", "novel", "textbook"],
+  },
+  {
+    name: "Notes",
+    key: "file",
+    icon: FileText,
+    tags: ["document", "paper", "contract", "receipt", "forms"],
+  },
+  {
+    name: "Folder",
+    key: "folder",
+    icon: Folder,
+    tags: ["files", "documents", "portfolio"],
+  },
+  {
+    name: "List",
+    key: "clipboard",
+    icon: ClipboardList,
+    tags: ["checklist", "tasks", "notes", "agenda"],
+  },
+  {
+    name: "Calculator",
+    key: "calculator",
+    icon: Calculator,
+    tags: ["math", "finance", "accounting"],
+  },
+  {
+    name: "Scissors",
+    key: "scissors",
+    icon: Scissors,
+    tags: ["cut", "craft", "stationery"],
+  },
+  {
+    name: "Bookmark",
+    key: "bookmark",
+    icon: Bookmark,
+    tags: ["tag", "marker", "save"],
+  },
+  {
+    name: "Sticky Note",
+    key: "stickynote",
+    icon: StickyNote,
+    tags: ["memo", "postit", "reminder"],
+  },
+
+  // Travel & Commute
+  {
+    name: "Car",
+    key: "car",
+    icon: Car,
+    tags: ["drive", "vehicle", "auto", "keys"],
+  },
+  {
+    name: "Bike",
+    key: "bike",
+    icon: Bike,
+    tags: ["bicycle", "cycling", "scooter"],
+  },
+  {
+    name: "Bus",
+    key: "bus",
+    icon: Bus,
+    tags: ["transit", "commute", "coach"],
+  },
+  {
+    name: "Train",
+    key: "train",
+    icon: Train,
+    tags: ["subway", "metro", "rail", "commute"],
+  },
+  {
+    name: "Flight",
+    key: "plane",
+    icon: Plane,
+    tags: ["airplane", "airport", "travel", "holiday"],
+  },
+  {
+    name: "Ticket",
+    key: "ticket",
+    icon: Ticket,
+    tags: ["boarding pass", "pass", "cinema", "event", "concert", "entry"],
+  },
+  {
+    name: "Map",
+    key: "map",
+    icon: Map,
+    tags: ["atlas", "guide", "directions", "route"],
+  },
+  {
+    name: "Globe",
+    key: "globe",
+    icon: Globe,
+    tags: ["world", "international", "passport", "travel"],
+  },
+  {
+    name: "Compass",
+    key: "compass",
+    icon: Compass,
+    tags: ["navigation", "direction", "outdoor"],
+  },
+  {
+    name: "Location",
+    key: "pin",
+    icon: MapPin,
+    tags: ["mappin", "place", "address", "gps"],
+  },
+
+  // Tools & Security
+  {
+    name: "Tools",
+    key: "wrench",
+    icon: Wrench,
+    tags: ["spanner", "repair", "maintenance", "hardware"],
+  },
+  {
+    name: "Hammer",
+    key: "hammer",
+    icon: Hammer,
+    tags: ["tool", "build", "hardware"],
+  },
+  {
+    name: "Torch",
+    key: "flashlight",
+    icon: Flashlight,
+    tags: ["light", "lantern", "night", "beam"],
+  },
+  {
+    name: "Lock",
+    key: "lock",
+    icon: Lock,
+    tags: ["padlock", "security", "safe"],
+  },
+  {
+    name: "Shield",
+    key: "shield",
+    icon: Shield,
+    tags: ["protection", "security", "mask"],
+  },
+  {
+    name: "Flame",
+    key: "flame",
+    icon: Flame,
+    tags: ["lighter", "match", "fire", "heat"],
+  },
+  {
+    name: "Power",
+    key: "zap",
+    icon: Zap,
+    tags: ["lightning", "electricity", "energy", "charge"],
+  },
+  {
+    name: "Bell",
+    key: "bell",
+    icon: Bell,
+    tags: ["alarm", "notification", "ring", "reminder"],
+  },
+  {
+    name: "Tag",
+    key: "tag",
+    icon: Tag,
+    tags: ["label", "item", "category", "price"],
+  },
+  {
+    name: "Star",
+    key: "star",
+    icon: Star,
+    tags: ["favorite", "priority", "important", "special"],
+  },
+  {
+    name: "Smile",
+    key: "smile",
+    icon: Smile,
+    tags: ["happy", "fun", "emoji", "mood"],
+  },
+  {
+    name: "Gym",
+    key: "dumbbell",
+    icon: Dumbbell,
+    tags: ["fitness", "workout", "weights", "exercise"],
+  },
+  {
+    name: "Trophy",
+    key: "trophy",
+    icon: Trophy,
+    tags: ["award", "win", "achievement", "sports"],
+  },
+  {
+    name: "Music",
+    key: "music",
+    icon: Music,
+    tags: ["song", "track", "audio", "melody"],
+  },
 ];
 
 export const ITEM_ICON_MAP: Record<
@@ -153,16 +689,25 @@ export function IconPickerModal({
   selectedKey?: string;
 }) {
   const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
 
-  const filtered = ITEM_ICONS.filter(
-    (i) =>
-      i.name.toLowerCase().includes(search.toLowerCase()) ||
-      i.key.toLowerCase().includes(search.toLowerCase())
-  );
+  const cleanQuery = deferredSearch.trim().toLowerCase();
+
+  const filtered = useMemo(() => {
+    if (!cleanQuery) return ITEM_ICONS;
+    return ITEM_ICONS.filter(
+      (item) =>
+        item.name.toLowerCase().includes(cleanQuery) ||
+        item.key.toLowerCase().includes(cleanQuery) ||
+        item.tags.some((tag) => tag.includes(cleanQuery))
+    );
+  }, [cleanQuery]);
+
+  const hasDirectEmojiOrCustom = cleanQuery.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" onClose={() => onOpenChange(false)}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-black">
             <Tag className="w-4 h-4 text-primary" /> Select Item Icon
@@ -176,8 +721,9 @@ export function IconPickerModal({
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search icons (e.g. key, phone, wallet, bag)..."
-              className="pl-9 text-xs"
+              placeholder="Search 80+ icons (e.g. phone, water, bottle, pen, cash)..."
+              className="pl-9 pr-8 text-xs"
+              autoFocus
             />
             {search && (
               <button
@@ -190,12 +736,14 @@ export function IconPickerModal({
             )}
           </div>
 
-          <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-60 overflow-y-auto p-1">
+          <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-64 overflow-y-auto p-1 pr-1.5">
+            {/* None Option */}
             <button
               type="button"
               onClick={() => {
                 onSelectIcon("");
                 onOpenChange(false);
+                setSearch("");
               }}
               className={`flex flex-col items-center justify-center p-2 rounded-xl border text-xs gap-1 transition-all cursor-pointer ${
                 !selectedKey
@@ -207,6 +755,27 @@ export function IconPickerModal({
               <span className="text-[10px] truncate max-w-full">None</span>
             </button>
 
+            {/* Custom Emoji / Query button if searching */}
+            {hasDirectEmojiOrCustom && (
+              <button
+                type="button"
+                onClick={() => {
+                  onSelectIcon(search.trim());
+                  onOpenChange(false);
+                  setSearch("");
+                }}
+                className="flex flex-col items-center justify-center p-2 rounded-xl border border-dashed border-primary bg-primary/5 hover:bg-primary/15 text-primary text-xs gap-1 transition-all cursor-pointer"
+                title={`Use "${search.trim()}" directly`}
+              >
+                <span className="text-base leading-none">
+                  {search.trim().slice(0, 2)}
+                </span>
+                <span className="text-[9px] font-black truncate max-w-full">
+                  Use Text
+                </span>
+              </button>
+            )}
+
             {filtered.map((item) => {
               const IconComp = item.icon;
               const isSelected = selectedKey?.toLowerCase() === item.key;
@@ -217,6 +786,7 @@ export function IconPickerModal({
                   onClick={() => {
                     onSelectIcon(item.key);
                     onOpenChange(false);
+                    setSearch("");
                   }}
                   className={`flex flex-col items-center justify-center p-2 rounded-xl border text-xs gap-1 transition-all cursor-pointer ${
                     isSelected
@@ -232,6 +802,12 @@ export function IconPickerModal({
               );
             })}
           </div>
+
+          {filtered.length === 0 && (
+            <p className="text-xs text-center text-muted-foreground py-2 font-bold">
+              No matching icons found. Tap &quot;Use Text&quot; above to use &quot;{search.trim()}&quot;!
+            </p>
+          )}
         </div>
       </DialogContent>
     </Dialog>
