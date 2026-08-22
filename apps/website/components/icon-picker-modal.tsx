@@ -357,6 +357,29 @@ export function IconPickerModal({
   onSelectIcon: (key: string) => void;
   selectedKey?: string;
 }) {
+  if (!open) return null;
+
+  return (
+    <IconPickerModalInner
+      open={open}
+      onOpenChange={onOpenChange}
+      onSelectIcon={onSelectIcon}
+      selectedKey={selectedKey}
+    />
+  );
+}
+
+function IconPickerModalInner({
+  open,
+  onOpenChange,
+  onSelectIcon,
+  selectedKey,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSelectIcon: (key: string) => void;
+  selectedKey?: string;
+}) {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);

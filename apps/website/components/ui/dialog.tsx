@@ -38,7 +38,7 @@ export function Dialog({
       <div
         role="dialog"
         aria-modal="true"
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 animate-fadeIn"
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             onOpenChange(false);
