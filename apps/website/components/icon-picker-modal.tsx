@@ -633,9 +633,21 @@ export const ITEM_ICON_MAP: Record<
   {} as Record<string, React.ComponentType<{ className?: string }>>
 );
 
-export function renderRoutineIcon(iconStr: string) {
-  const normalized = (iconStr || "").toLowerCase().trim();
-  if (normalized.includes("work") || normalized.includes("briefcase")) {
+export function renderRoutineIcon(iconStr?: string) {
+  if (!iconStr) return <MapPin className="w-5 h-5" />;
+  const normalized = iconStr.toLowerCase().trim();
+  const IconComp = ITEM_ICON_MAP[normalized];
+  if (IconComp) {
+    return <IconComp className="w-5 h-5 shrink-0" />;
+  }
+  if (iconStr.match(/\p{Emoji}/u)) {
+    return <span className="text-base leading-none shrink-0">{iconStr}</span>;
+  }
+  if (
+    normalized.includes("work") ||
+    normalized.includes("briefcase") ||
+    normalized.includes("office")
+  ) {
     return <Briefcase className="w-5 h-5" />;
   }
   if (
@@ -651,9 +663,13 @@ export function renderRoutineIcon(iconStr: string) {
   if (
     normalized.includes("travel") ||
     normalized.includes("trip") ||
+    normalized.includes("flight") ||
     normalized.includes("compass")
   ) {
     return <Compass className="w-5 h-5" />;
+  }
+  if (normalized === "tag") {
+    return <Tag className="w-5 h-5" />;
   }
   return <MapPin className="w-5 h-5" />;
 }

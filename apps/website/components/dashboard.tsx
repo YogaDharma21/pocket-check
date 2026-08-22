@@ -110,7 +110,7 @@ export function Dashboard() {
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [iconPickerTarget, setIconPickerTarget] = useState<
-    "newItem" | "editItem"
+    "newItem" | "editItem" | "newRoutine" | "editRoutine"
   >("newItem");
 
   // Seed default routines + items on first login
@@ -328,7 +328,7 @@ export function Dashboard() {
                     className="w-full h-auto flex flex-col items-center gap-2 p-3.5 pt-5 rounded-2xl text-sm font-black"
                   >
                     <span className="block select-none">
-                      {renderRoutineIcon(routine.name)}
+                      {renderRoutineIcon(routine.icon || routine.name)}
                     </span>
                     <span className="truncate max-w-full select-none">
                       {routine.name}
@@ -372,9 +372,18 @@ export function Dashboard() {
             <div className="animate-fadeIn mt-2">
               <Card>
                 <CardContent className="p-2 flex flex-row gap-2 items-center">
-                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0 text-muted-foreground">
-                    <Tag className="w-4 h-4" />
-                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIconPickerTarget("newRoutine");
+                      setShowIconPicker(true);
+                    }}
+                    className="w-10 h-10 px-0 rounded-xl flex items-center justify-center shrink-0"
+                    title="Select Destination Icon"
+                  >
+                    {renderRoutineIcon(customRoutineIcon)}
+                  </Button>
                   <Input
                     type="text"
                     value={customRoutineName}
@@ -712,14 +721,29 @@ export function Dashboard() {
             <div className="space-y-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-black text-muted-foreground uppercase tracking-wider">
-                  Name
+                  Destination Icon & Name
                 </label>
-                <Input
-                  type="text"
-                  value={editModalName}
-                  onChange={(e) => setEditModalName(e.target.value)}
-                  placeholder="Destination name..."
-                />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIconPickerTarget("editRoutine");
+                      setShowIconPicker(true);
+                    }}
+                    className="w-12 h-10 px-0 shrink-0 flex items-center justify-center rounded-xl"
+                    title="Select Destination Icon"
+                  >
+                    {renderRoutineIcon(editModalIconTag)}
+                  </Button>
+                  <Input
+                    type="text"
+                    value={editModalName}
+                    onChange={(e) => setEditModalName(e.target.value)}
+                    placeholder="Destination name..."
+                    className="flex-1"
+                  />
+                </div>
               </div>
 
               {/* Reordering */}
@@ -1033,11 +1057,17 @@ export function Dashboard() {
         open={showIconPicker}
         onOpenChange={setShowIconPicker}
         selectedKey={
-          iconPickerTarget === "newItem" ? newItemTag : editModalIconTag
+          iconPickerTarget === "newItem"
+            ? newItemTag
+            : iconPickerTarget === "newRoutine"
+            ? customRoutineIcon
+            : editModalIconTag
         }
         onSelectIcon={(key) => {
           if (iconPickerTarget === "newItem") {
             setNewItemTag(key);
+          } else if (iconPickerTarget === "newRoutine") {
+            setCustomRoutineIcon(key);
           } else {
             setEditModalIconTag(key);
           }
