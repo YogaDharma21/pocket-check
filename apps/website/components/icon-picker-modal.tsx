@@ -452,13 +452,8 @@ function IconPickerModalInner({
         onClose={() => onOpenChange(false)}
       >
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between text-base font-black">
-            <span className="flex items-center gap-2">
-              <Tag className="w-4 h-4 text-primary" /> Select Icon
-            </span>
-            <span className="text-[11px] text-muted-foreground font-normal">
-              1,700+ Icons
-            </span>
+          <DialogTitle className="flex items-center gap-2 text-base font-black">
+            <Tag className="w-4 h-4 text-primary" /> Select Icon
           </DialogTitle>
         </DialogHeader>
 
