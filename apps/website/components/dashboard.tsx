@@ -285,7 +285,7 @@ export function Dashboard() {
 
       <main className="w-full max-w-xl mx-auto p-4 flex-1 space-y-6 pb-24 md:py-8">
         {/* Progress Status Block */}
-        <Card className="py-0">
+        <Card>
           <CardContent className="p-5">
             <div className="flex items-start gap-4 select-none">
               <ShieldCheck className="w-10 h-10 text-primary shrink-0 hidden sm:block mt-1" />
@@ -370,8 +370,8 @@ export function Dashboard() {
           {/* New custom destination form */}
           {showCustomInput && (
             <div className="animate-fadeIn mt-2">
-              <Card className="py-0">
-                <CardContent className="p-2 flex gap-2 items-center">
+              <Card>
+                <CardContent className="p-2 flex flex-row gap-2 items-center">
                   <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0 text-muted-foreground">
                     <Tag className="w-4 h-4" />
                   </div>
@@ -497,8 +497,8 @@ export function Dashboard() {
               <div className="space-y-3" id="checklist-container">
                 {rawItems === undefined ? (
                   [1, 2, 3].map((i) => (
-                    <Card key={i} className="py-0">
-                      <CardContent className="p-3.5 flex items-center justify-between gap-3">
+                    <Card key={i}>
+                      <CardContent className="p-3.5 flex flex-row items-center justify-between gap-3">
                         <div className="flex items-center gap-3 select-none flex-1 min-w-0">
                           <Skeleton className="w-4 h-4 rounded-sm shrink-0" />
                           <Skeleton className="w-7 h-7 rounded-xl shrink-0" />
@@ -512,7 +512,7 @@ export function Dashboard() {
                     </Card>
                   ))
                 ) : filteredItems.length === 0 ? (
-                  <Card className="border-dashed py-0">
+                  <Card className="border-dashed">
                     <CardContent className="p-6 text-center text-muted-foreground text-sm font-bold">
                       {filter === "all"
                         ? "No items added to this routine yet."
@@ -557,7 +557,7 @@ export function Dashboard() {
                         onClick={() => {
                           void handleToggle(item._id, item.isPacked);
                         }}
-                        className={`cursor-pointer transition-all relative py-0 ${
+                        className={`cursor-pointer transition-all relative ${
                           item.isPacked ? "bg-muted/40" : "hover:bg-accent/40"
                         } ${
                           isDragging
@@ -569,7 +569,7 @@ export function Dashboard() {
                             : ""
                         }`}
                       >
-                        <CardContent className="p-3.5 flex items-center justify-between gap-3">
+                        <CardContent className="p-3.5 flex flex-row items-center justify-between gap-3">
                           <div className="flex items-center gap-3 select-none flex-1 min-w-0">
                             {/* Drag Handle */}
                             <div
@@ -585,7 +585,7 @@ export function Dashboard() {
                               className={`checkbox-ui w-7 h-7 rounded-xl border flex items-center justify-center transition-all shrink-0 select-none ${
                                 item.isPacked
                                   ? "border-primary bg-primary text-primary-foreground"
-                                  : "border-border bg-background"
+                                  : "border-border bg-card hover:border-primary/60"
                               }`}
                             >
                               {item.isPacked && (
@@ -649,7 +649,7 @@ export function Dashboard() {
         })()}
 
         {/* Add Item Form */}
-        <Card className="py-0">
+        <Card>
           <CardHeader className="p-4 pb-2">
             <CardDescription className="uppercase tracking-wider text-xs font-black">
               Add target item to bring:

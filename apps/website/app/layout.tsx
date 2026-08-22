@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 const nunito = Nunito({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-nunito",
   weight: ["400", "500", "600", "700", "800", "900"],
 });
 
@@ -33,9 +33,9 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased font-sans", fontMono.variable, nunito.variable)}
+      className={cn("antialiased", nunito.variable, fontMono.variable)}
     >
-      <body>
+      <body className="font-sans antialiased">
         <ConvexClientProvider>
           <ThemeProvider>{children}</ThemeProvider>
         </ConvexClientProvider>
