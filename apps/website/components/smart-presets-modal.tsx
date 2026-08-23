@@ -47,7 +47,7 @@ export function SmartPresetsModal({
       <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <div className="rounded-xl bg-primary/10 p-2 text-primary">
+            <div className="rounded-lg bg-primary/10 p-2 text-primary">
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
@@ -76,7 +76,7 @@ export function SmartPresetsModal({
                   <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                     <div className="space-y-2 min-w-0 flex-1">
                       <div className="flex items-center gap-2.5">
-                        <div className="rounded-xl bg-primary/10 p-2 text-primary">
+                        <div className="rounded-lg bg-primary/10 p-2 text-primary">
                           {renderRoutineIcon(preset.icon)}
                         </div>
                         <div>
@@ -115,7 +115,7 @@ export function SmartPresetsModal({
                       <Button
                         onClick={() => void handleApply(preset)}
                         disabled={isBusy}
-                        className="w-full cursor-pointer rounded-xl font-bold text-xs uppercase sm:w-auto"
+                        className="w-full cursor-pointer rounded-lg font-bold text-xs uppercase sm:w-auto"
                       >
                         {isApplyingDirect ? (
                           <>

@@ -60,7 +60,7 @@ export function SmartIntelligenceBanner({
       <CardContent className="p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
               <Sparkles className="h-4 w-4 text-primary" />
             </div>
             <div>
@@ -132,14 +132,14 @@ export function SmartIntelligenceBanner({
 
             {/* Unpacked / Forgotten Items section (subtle, clean styling) */}
             {isAllPacked ? (
-              <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-3 text-xs font-bold text-foreground">
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 p-3 text-xs font-bold text-foreground">
                 <CheckCheck className="h-4 w-4 text-primary shrink-0" />
                 <span>
                   Everything is packed and ready to go!
                 </span>
               </div>
             ) : (
-              <div className="space-y-2 rounded-xl border border-border/70 bg-muted/30 p-3">
+              <div className="space-y-2 rounded-lg border border-border/70 bg-muted/30 p-3">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs font-bold text-foreground">
                     {missingCount === 1

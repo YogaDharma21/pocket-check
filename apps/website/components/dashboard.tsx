@@ -379,7 +379,7 @@ export function Dashboard() {
       <header className="sticky top-0 z-50 border-b border-border bg-card shadow-xs">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
           <div className="flex shrink-0 items-center gap-2.5 select-none sm:gap-3.5">
-            <div className="rounded-xl bg-primary p-2 text-primary-foreground shadow-xs">
+            <div className="rounded-lg bg-primary p-2 text-primary-foreground shadow-xs">
               <PackageCheck className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
             <div>
@@ -408,7 +408,7 @@ export function Dashboard() {
               size="icon"
               onClick={() => setShowAboutDialog(true)}
               title="About PocketCheck"
-              className="h-9 w-9 cursor-pointer rounded-xl text-foreground hover:bg-muted"
+              className="h-9 w-9 cursor-pointer rounded-lg text-foreground hover:bg-muted"
             >
               <Info className="h-4 w-4 sm:h-5 sm:w-5" />
               <span className="sr-only">About</span>
@@ -428,7 +428,7 @@ export function Dashboard() {
               <CardContent className="space-y-4 p-5">
                 <div className="flex items-start gap-3.5 select-none">
                   <div
-                    className={`shrink-0 rounded-2xl p-2.5 ${
+                    className={`shrink-0 rounded-lg p-2.5 ${
                       percentage === 100
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-primary"
@@ -520,7 +520,7 @@ export function Dashboard() {
                         onClick={() => {
                           setSelectedRoutine(routine.name)
                         }}
-                        className={`group flex cursor-pointer items-center justify-between rounded-xl border p-2.5 transition-all ${
+                        className={`group flex cursor-pointer items-center justify-between rounded-lg border p-2.5 transition-all ${
                           isActive
                             ? "border-primary bg-primary font-black text-primary-foreground shadow-xs"
                             : "border-border bg-card font-bold text-foreground hover:bg-muted/60"
@@ -577,7 +577,7 @@ export function Dashboard() {
                           onClick={() => {
                             setSelectedRoutine(routine.name)
                           }}
-                          className="flex h-auto w-full flex-col items-center gap-1.5 rounded-xl p-3 pt-4 text-xs font-black"
+                          className="flex h-auto w-full flex-col items-center gap-1.5 rounded-lg p-3 pt-4 text-xs font-black"
                         >
                           <span className="block select-none">
                             {renderRoutineIcon(routine.icon || routine.name)}
@@ -611,7 +611,7 @@ export function Dashboard() {
                   <Button
                     variant="outline"
                     onClick={() => setShowPresetsModal(true)}
-                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-xl text-xs font-black tracking-wider text-primary uppercase hover:bg-primary/10"
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider text-primary uppercase hover:bg-primary/10"
                     title="Choose from smart presets (Kampus, Work, Travel)"
                   >
                     <Sparkles className="h-4 w-4" />
@@ -625,7 +625,7 @@ export function Dashboard() {
                       setCustomRoutineIcon("tag")
                       setShowNewRoutineModal(true)
                     }}
-                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-xl text-xs font-black tracking-wider uppercase hover:bg-accent hover:text-foreground"
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider uppercase hover:bg-accent hover:text-foreground"
                   >
                     <Plus className="h-4 w-4" />
                     <span>New Destination</span>
@@ -638,9 +638,9 @@ export function Dashboard() {
           {/* Right Column / Workspace (lg:col-span-8 space-y-5) */}
           <div className="space-y-5 lg:col-span-8">
             {/* Active Destination Workspace Card Header */}
-            <div className="flex flex-col justify-between gap-4 rounded-2xl border border-border bg-card p-4 shadow-xs sm:flex-row sm:items-center sm:p-5">
+            <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-card p-4 shadow-xs sm:flex-row sm:items-center sm:p-5">
               <div className="flex items-center gap-3">
-                <div className="shrink-0 rounded-xl bg-primary/10 p-3 text-primary">
+                <div className="shrink-0 rounded-lg bg-primary/10 p-3 text-primary">
                   {renderRoutineIcon(
                     currentRoutineObj?.icon || effectiveRoutine
                   )}
@@ -661,7 +661,7 @@ export function Dashboard() {
               </div>
 
               {/* Filter Segmented Control */}
-              <div className="grid grid-cols-3 gap-1 rounded-xl bg-muted/60 p-1 select-none sm:w-72">
+              <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted/60 p-1 select-none sm:w-72">
                 <button
                   type="button"
                   onClick={() => setFilter("all")}
@@ -744,7 +744,7 @@ export function Dashboard() {
                         setIconPickerTarget("newItem")
                         setShowIconPicker(true)
                       }}
-                      className="flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-xl px-0"
+                      className="flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-lg px-0"
                       title="Select Icon for item"
                     >
                       {newItemTag ? (
@@ -766,7 +766,7 @@ export function Dashboard() {
                     <Button
                       type="submit"
                       disabled={!newCustomItemName.trim()}
-                      className="h-11 w-full cursor-pointer rounded-xl px-5 font-black tracking-wider uppercase sm:w-auto"
+                      className="h-11 w-full cursor-pointer rounded-lg px-5 font-black tracking-wider uppercase sm:w-auto"
                     >
                       <Plus className="mr-1 h-4 w-4" />
                       {(() => {
@@ -835,13 +835,13 @@ export function Dashboard() {
                         <CardContent className="flex flex-row items-center justify-between gap-3 p-3.5">
                           <div className="flex min-w-0 flex-1 items-center gap-3 select-none">
                             <Skeleton className="h-4 w-4 shrink-0 rounded-sm" />
-                            <Skeleton className="h-7 w-7 shrink-0 rounded-xl" />
+                            <Skeleton className="h-7 w-7 shrink-0 rounded-lg" />
                             <div className="min-w-0 flex-1 space-y-1.5">
                               <Skeleton className="h-5 w-28 rounded-md sm:w-36" />
                               <Skeleton className="h-3.5 w-14 rounded-full" />
                             </div>
                           </div>
-                          <Skeleton className="h-8 w-8 shrink-0 rounded-xl" />
+                          <Skeleton className="h-8 w-8 shrink-0 rounded-lg" />
                         </CardContent>
                       </Card>
                     ))
@@ -960,7 +960,7 @@ export function Dashboard() {
 
                               {/* Checkbox */}
                               <div
-                                className={`checkbox-ui flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border transition-all select-none ${
+                                className={`checkbox-ui flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-all select-none ${
                                   item.isPacked
                                     ? "border-primary bg-primary text-primary-foreground shadow-xs"
                                     : "border-border bg-card hover:border-primary/60"
@@ -1012,7 +1012,7 @@ export function Dashboard() {
                                   setEditModalName(item.name)
                                   setEditModalIconTag(item.emoji ?? "")
                                 }}
-                                className="h-8 w-8 cursor-pointer rounded-xl text-muted-foreground hover:text-primary"
+                                className="h-8 w-8 cursor-pointer rounded-lg text-muted-foreground hover:text-primary"
                                 title="Control Item"
                               >
                                 <Settings className="h-4 w-4" />
@@ -1054,7 +1054,7 @@ export function Dashboard() {
                       setIconPickerTarget("editRoutine")
                       setShowIconPicker(true)
                     }}
-                    className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl px-0"
+                    className="flex h-10 w-12 shrink-0 items-center justify-center rounded-lg px-0"
                     title="Select Destination Icon"
                   >
                     {renderRoutineIcon(editModalIconTag)}
@@ -1192,7 +1192,7 @@ export function Dashboard() {
                       setIconPickerTarget("editItem")
                       setShowIconPicker(true)
                     }}
-                    className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl px-0"
+                    className="flex h-10 w-12 shrink-0 items-center justify-center rounded-lg px-0"
                     title="Select Icon"
                   >
                     {editModalIconTag ? (
@@ -1418,7 +1418,7 @@ export function Dashboard() {
                     setIconPickerTarget("newRoutine")
                     setShowIconPicker(true)
                   }}
-                  className="flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-xl px-0"
+                  className="flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-lg px-0"
                   title="Select Destination Icon"
                 >
                   {renderRoutineIcon(customRoutineIcon)}
