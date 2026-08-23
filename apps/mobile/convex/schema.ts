@@ -9,6 +9,8 @@ export default defineSchema({
     isPacked: v.boolean(),
     isDefault: v.optional(v.boolean()),
     emoji: v.optional(v.string()),
+    quantity: v.optional(v.number()),
+    locationNote: v.optional(v.string()),
     order: v.optional(v.number()),
   })
     .index("by_user_routine", ["userId", "routine"])
@@ -18,6 +20,9 @@ export default defineSchema({
     userId: v.string(),
     name: v.string(),
     icon: v.string(),
+    autoResetTime: v.optional(v.string()),
+    autoResetDays: v.optional(v.array(v.number())),
+    lastResetDate: v.optional(v.string()),
     order: v.optional(v.number()),
   })
     .index("by_user", ["userId"])

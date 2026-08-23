@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback, useMemo } from "react"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Id } from "@/convex/_generated/dataModel"
@@ -24,6 +24,12 @@ import {
   AlertTriangle,
   Settings,
   Sparkles,
+  Share2,
+  Download,
+  Clock,
+  Undo2,
+  Compass,
+  MapPin,
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
@@ -46,6 +52,11 @@ import {
 } from "@/components/icon-picker-modal"
 import { SmartPresetsModal } from "@/components/smart-presets-modal"
 import { SmartIntelligenceBanner } from "@/components/smart-intelligence-banner"
+import { WeatherAlertBanner } from "@/components/weather-alert-banner"
+import { ExportModal } from "@/components/export-modal"
+import { ShareRoutineModal } from "@/components/share-routine-modal"
+import { RoutineScheduleModal } from "@/components/routine-schedule-modal"
+import { ImportSharedModal } from "@/components/import-shared-modal"
 import {
   SMART_PRESETS,
   parseMultiItemInput,
@@ -53,8 +64,18 @@ import {
   PresetRoutine,
 } from "@/lib/presets"
 
+interface RestorableItem {
+  routine: string
+  name: string
+  isPacked: boolean
+  emoji?: string
+  quantity?: number
+  locationNote?: string
+  order?: number
+}
+
 export function Dashboard() {
-  const [selectedRoutine, setSelectedRoutine] = useState("Work")
+  const [selectedRoutine, setSelectedRoutine] = useState<string>("")
   const [showNewRoutineModal, setShowNewRoutineModal] = useState(false)
   const [customRoutineName, setCustomRoutineName] = useState("")
   const [customRoutineIcon, setCustomRoutineIcon] = useState("tag")
@@ -66,20 +87,76 @@ export function Dashboard() {
     _id: Id<"routines">
     name: string
     icon: string
+    autoResetTime?: string
+    autoResetDays?: number[]
     order?: number
   } | null>(null)
+
   const [manageItem, setManageItem] = useState<{
     _id: Id<"items">
     name: string
     emoji?: string
+    quantity?: number
+    locationNote?: string
     isPacked: boolean
     order?: number
   } | null>(null)
 
   const [editModalName, setEditModalName] = useState("")
   const [editModalIconTag, setEditModalIconTag] = useState("")
+  const [editModalQuantity, setEditModalQuantity] = useState<number | undefined>(undefined)
+  const [editModalLocationNote, setEditModalLocationNote] = useState("")
+
   const [showAboutDialog, setShowAboutDialog] = useState(false)
   const [showPresetsModal, setShowPresetsModal] = useState(false)
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      return !!params.get("import")
+    }
+    return false
+  })
+  const [sharedImportData] = useState<{
+    name: string
+    icon: string
+    items: Array<{
+      name: string
+      emoji?: string
+      quantity?: number
+      locationNote?: string
+    }>
+  } | null>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const importParam = params.get("import")
+      if (importParam) {
+        try {
+          const decoded = JSON.parse(
+            decodeURIComponent(escape(atob(decodeURIComponent(importParam))))
+          )
+          if (decoded && decoded.name && Array.isArray(decoded.items)) {
+            return decoded
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+    return null
+  })
+
+  // Floating Undo Toast State
+  const [undoToast, setUndoToast] = useState<{
+    message: string
+    items: RestorableItem[]
+  } | null>(null)
+  const undoTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Keyboard navigation highlight
+  const [focusedItemIndex, setFocusedItemIndex] = useState<number>(-1)
   const itemInputRef = useRef<HTMLInputElement>(null)
 
   // Convex mutations & queries
@@ -95,18 +172,24 @@ export function Dashboard() {
   const deleteItem = useMutation(api.pocketcheck.deleteItem)
   const resetItems = useMutation(api.pocketcheck.resetItems)
   const deleteAllItems = useMutation(api.pocketcheck.deleteAllItems)
+  const restoreItems = useMutation(api.pocketcheck.restoreItems)
+  const checkAndExecuteAutoReset = useMutation(api.pocketcheck.checkAndExecuteAutoReset)
   const reorderItems = useMutation(api.pocketcheck.reorderItems)
   const reorderRoutines = useMutation(api.pocketcheck.reorderRoutines)
 
-  const customRoutines = useQuery(api.pocketcheck.listRoutines) ?? []
-  const routinesList = customRoutines
-  const effectiveRoutine =
-    selectedRoutine ||
-    (routinesList.length > 0 ? routinesList[0].name : "Work")
+  const customRoutines = useQuery(api.pocketcheck.listRoutines)
+  const isRoutinesLoading = customRoutines === undefined
+  const routinesList = useMemo(() => customRoutines ?? [], [customRoutines])
+  const currentRoutineObj =
+    routinesList.find((r) => r.name === selectedRoutine) ||
+    (routinesList.length > 0 ? routinesList[0] : null)
+  const effectiveRoutine = currentRoutineObj ? currentRoutineObj.name : ""
 
-  const rawItems = useQuery(api.pocketcheck.listItems, {
-    routine: effectiveRoutine,
-  })
+  const rawItems = useQuery(
+    api.pocketcheck.listItems,
+    effectiveRoutine ? { routine: effectiveRoutine } : "skip"
+  )
+  const isItemsLoading = effectiveRoutine ? rawItems === undefined : false
   const items = rawItems ?? []
 
   // Filter & Drag State
@@ -119,9 +202,76 @@ export function Dashboard() {
     "newItem" | "editItem" | "newRoutine" | "editRoutine"
   >("newItem")
 
-  // Keyboard shortcut to focus single item input bar (Ctrl+K or Cmd+K)
+  // Seed default routines on first login
+  useEffect(() => {
+    void ensureInitialized()
+  }, [ensureInitialized])
+
+  // Auto-Reset Time check per routine
+  useEffect(() => {
+    if (!currentRoutineObj || !currentRoutineObj.autoResetTime) return
+
+    const checkSchedule = async () => {
+      const now = new Date()
+      const currentDay = now.getDay()
+      const activeDays = currentRoutineObj.autoResetDays ?? [1, 2, 3, 4, 5]
+
+      if (!activeDays.includes(currentDay)) return
+
+      const [hours, minutes] = currentRoutineObj.autoResetTime!.split(":").map(Number)
+      const scheduledTime = new Date()
+      scheduledTime.setHours(hours, minutes, 0, 0)
+
+      const todayStr = now.toISOString().split("T")[0]
+      if (now >= scheduledTime && currentRoutineObj.lastResetDate !== todayStr) {
+        try {
+          await checkAndExecuteAutoReset({
+            routineId: currentRoutineObj._id,
+            currentDateStr: todayStr,
+          })
+        } catch (err) {
+          console.warn("Auto-reset execution failed", err)
+        }
+      }
+    }
+
+    void checkSchedule()
+    const timer = setInterval(checkSchedule, 30000)
+    return () => clearInterval(timer)
+  }, [currentRoutineObj, checkAndExecuteAutoReset])
+
+  // Filtered items list
+  const filteredItems = items.filter((item) => {
+    if (filter === "packed") return item.isPacked
+    if (filter === "missing") return !item.isPacked
+    return true
+  })
+
+  // Handlers
+  const handleToggle = useCallback(
+    async (itemId: Id<"items">, currentPacked: boolean) => {
+      try {
+        await toggleItem({ id: itemId, isPacked: !currentPacked })
+      } catch (err) {
+        console.error("Failed to toggle item", err)
+      }
+    },
+    [toggleItem]
+  )
+
+  const handleReset = useCallback(async () => {
+    if (!effectiveRoutine) return
+    try {
+      await resetItems({ routine: effectiveRoutine })
+    } catch (err) {
+      console.error("Failed to reset list", err)
+    }
+  }, [resetItems, effectiveRoutine])
+
+  // Keyboard navigation shortcut handler (UX-02)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Focus single item input bar (Ctrl+K or Cmd+K or 'N' when not typing)
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault()
         itemInputRef.current?.focus()
@@ -129,60 +279,155 @@ export function Dashboard() {
           behavior: "smooth",
           block: "center",
         })
+        return
+      }
+
+      // If active element is an input, skip global shortcuts
+      if (
+        document.activeElement instanceof HTMLInputElement ||
+        document.activeElement instanceof HTMLTextAreaElement
+      ) {
+        return
+      }
+
+      // Space: Toggle active highlighted item or first missing
+      if (e.code === "Space") {
+        e.preventDefault()
+        if (
+          focusedItemIndex >= 0 &&
+          focusedItemIndex < filteredItems.length
+        ) {
+          const item = filteredItems[focusedItemIndex]
+          void handleToggle(item._id, item.isPacked)
+        } else if (filteredItems.length > 0) {
+          const firstMissing =
+            filteredItems.find((i) => !i.isPacked) || filteredItems[0]
+          void handleToggle(firstMissing._id, firstMissing.isPacked)
+        }
+      }
+
+      // J or Down Arrow: Navigate down list
+      if (e.key === "j" || e.key === "ArrowDown") {
+        e.preventDefault()
+        setFocusedItemIndex((prev) =>
+          prev < filteredItems.length - 1 ? prev + 1 : 0
+        )
+      }
+
+      // K or Up Arrow: Navigate up list
+      if (e.key === "k" || e.key === "ArrowUp") {
+        e.preventDefault()
+        setFocusedItemIndex((prev) =>
+          prev > 0 ? prev - 1 : filteredItems.length - 1
+        )
+      }
+
+      // Shift + U: Reset all items in current routine
+      if (e.shiftKey && e.key.toLowerCase() === "u") {
+        e.preventDefault()
+        void handleReset()
+      }
+
+      // Numbers 1-9: Switch routine tab
+      const num = parseInt(e.key, 10)
+      if (!isNaN(num) && num >= 1 && num <= routinesList.length) {
+        e.preventDefault()
+        setSelectedRoutine(routinesList[num - 1].name)
       }
     }
+
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [])
+  }, [filteredItems, focusedItemIndex, routinesList, handleToggle, handleReset])
 
-  // Seed default routines + items on first login
-  useEffect(() => {
-    void ensureInitialized()
-  }, [ensureInitialized])
+  // Trigger floating Undo toast (UX-01)
+  const triggerUndo = (message: string, itemsToRestore: RestorableItem[]) => {
+    if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current)
+    setUndoToast({ message, items: itemsToRestore })
+    undoTimeoutRef.current = setTimeout(() => {
+      setUndoToast(null)
+    }, 5000)
+  }
+
+  const handleExecuteUndo = async () => {
+    if (!undoToast || undoToast.items.length === 0) return
+    if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current)
+    try {
+      await restoreItems({ items: undoToast.items })
+      setUndoToast(null)
+    } catch (err) {
+      console.error("Failed to restore items", err)
+    }
+  }
+
+  const handleDeleteItemWithUndo = async (item: {
+    _id: Id<"items">
+    name: string
+    emoji?: string
+    quantity?: number
+    locationNote?: string
+    isPacked: boolean
+    order?: number
+  }) => {
+    try {
+      const restorable: RestorableItem = {
+        routine: effectiveRoutine,
+        name: item.name,
+        isPacked: item.isPacked,
+        emoji: item.emoji,
+        quantity: item.quantity,
+        locationNote: item.locationNote,
+        order: item.order,
+      }
+      await deleteItem({ id: item._id })
+      setManageItem(null)
+      triggerUndo(`Deleted "${item.name}"`, [restorable])
+    } catch (err) {
+      console.error("Failed to delete item", err)
+    }
+  }
+
+  const handleDeleteAllCreatedItems = async () => {
+    if (!effectiveRoutine) return
+    try {
+      const backupItems: RestorableItem[] = items.map((i) => ({
+        routine: effectiveRoutine,
+        name: i.name,
+        isPacked: i.isPacked,
+        emoji: i.emoji,
+        quantity: i.quantity,
+        locationNote: i.locationNote,
+        order: i.order,
+      }))
+      await deleteAllItems({ routine: effectiveRoutine })
+      setShowDeleteAllConfirm(false)
+      if (backupItems.length > 0) {
+        triggerUndo(
+          `Cleared ${backupItems.length} items from ${effectiveRoutine}`,
+          backupItems
+        )
+      }
+    } catch (err) {
+      console.error("Failed to delete all items", err)
+    }
+  }
 
   // Calculate progress metrics
   const totalItems = items.length
   const packedItems = items.filter((i) => i.isPacked).length
   const missingItems = totalItems - packedItems
   const percentage = totalItems > 0 ? (packedItems / totalItems) * 100 : 0
-  const currentRoutineObj = routinesList.find(
-    (r) => r.name === effectiveRoutine
-  )
 
   // Headline message
   let headline = "Let's double-check before you pack!"
-  if (totalItems === 0) {
+  if (!effectiveRoutine) {
+    headline = "No destinations created yet."
+  } else if (totalItems === 0) {
     headline = "Your pocket list is empty. Add items below!"
   } else if (packedItems === totalItems) {
     headline = "Excellent! You are 100% prepared to leave!"
   } else if (percentage >= 50) {
     headline = "Looking good! Keep grabbing those items!"
-  }
-
-  // Handlers
-  const handleToggle = async (itemId: Id<"items">, currentPacked: boolean) => {
-    try {
-      await toggleItem({ id: itemId, isPacked: !currentPacked })
-    } catch (err) {
-      console.error("Failed to toggle item", err)
-    }
-  }
-
-  const handleReset = async () => {
-    try {
-      await resetItems({ routine: effectiveRoutine })
-    } catch (err) {
-      console.error("Failed to reset list", err)
-    }
-  }
-
-  const handleDeleteAllCreatedItems = async () => {
-    try {
-      await deleteAllItems({ routine: effectiveRoutine })
-      setShowDeleteAllConfirm(false)
-    } catch (err) {
-      console.error("Failed to delete all items", err)
-    }
   }
 
   const handleDropItem = async (targetId: Id<"items">) => {
@@ -268,10 +513,7 @@ export function Dashboard() {
         setSelectedRoutine(res.routineName)
       }
     } catch (err) {
-      console.warn(
-        "applyPreset failed, executing client-side routine & items creation",
-        err
-      )
+      console.warn("applyPreset fallback", err)
       const existingRoutine = routinesList.find(
         (r) =>
           r.name.toLowerCase().trim() === routineNameToUse.toLowerCase().trim()
@@ -319,6 +561,7 @@ export function Dashboard() {
 
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!effectiveRoutine) return
     const trimmed = newCustomItemName.trim()
     if (!trimmed) return
 
@@ -345,7 +588,7 @@ export function Dashboard() {
           items: itemsToInsert,
         })
       } catch (err) {
-        console.warn("addItemsBatch failed, adding items sequentially", err)
+        console.warn("addItemsBatch fallback", err)
         for (const item of itemsToInsert) {
           await addItem({
             routine: effectiveRoutine,
@@ -373,6 +616,10 @@ export function Dashboard() {
     }
   }
 
+  // Auto-detected icon while user is typing in input (UX-04)
+  const liveDetectedIcon =
+    newItemTag || (newCustomItemName.trim() ? detectIconForItem(newCustomItemName.trim()) : null)
+
   return (
     <>
       {/* Header */}
@@ -390,19 +637,45 @@ export function Dashboard() {
           </div>
 
           {/* Active Routine Pill on Desktop */}
-          <div className="hidden items-center gap-2 rounded-full border border-border bg-muted/60 px-3.5 py-1.5 text-xs font-extrabold select-none md:flex">
-            <span className="text-muted-foreground">Active Routine:</span>
-            <span className="flex items-center gap-1.5 font-black text-foreground">
-              {renderRoutineIcon(currentRoutineObj?.icon || effectiveRoutine)}
-              <span>{effectiveRoutine}</span>
-            </span>
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            <span className="font-bold text-muted-foreground">
-              {packedItems}/{totalItems} Packed
-            </span>
-          </div>
+          {effectiveRoutine ? (
+            <div className="hidden items-center gap-2 rounded-full border border-border bg-muted/60 px-3.5 py-1.5 text-xs font-extrabold select-none md:flex">
+              <span className="text-muted-foreground">Active Routine:</span>
+              <span className="flex items-center gap-1.5 font-black text-foreground">
+                {renderRoutineIcon(currentRoutineObj?.icon || effectiveRoutine)}
+                <span>{effectiveRoutine}</span>
+              </span>
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <span className="font-bold text-muted-foreground">
+                {packedItems}/{totalItems} Packed
+              </span>
+            </div>
+          ) : null}
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!effectiveRoutine}
+              onClick={() => setShowExportModal(true)}
+              className="h-8 text-xs font-bold border-border text-foreground hover:bg-muted hidden sm:flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Export or Print Checklist"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Export</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!effectiveRoutine}
+              onClick={() => setShowShareModal(true)}
+              className="h-8 text-xs font-bold border-border text-foreground hover:bg-muted hidden sm:flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Share Checklist Link"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              <span>Share</span>
+            </Button>
+
             <Button
               variant="ghost"
               size="icon"
@@ -426,71 +699,92 @@ export function Dashboard() {
             {/* 1. Progress Status Block */}
             <Card className="overflow-hidden border-border shadow-xs">
               <CardContent className="space-y-4 p-5">
-                <div className="flex items-start gap-3.5 select-none">
-                  <div
-                    className={`shrink-0 rounded-lg p-2.5 ${
-                      percentage === 100
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-primary"
-                    }`}
-                  >
-                    <ShieldCheck className="h-6 w-6" />
-                  </div>
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-black tracking-wider text-muted-foreground uppercase">
-                        Pocket Status
-                      </span>
-                      <Badge
-                        variant={percentage === 100 ? "default" : "secondary"}
-                        className="px-2 py-0.5 text-[10px] font-black"
-                      >
-                        {Math.round(percentage)}% Packed
-                      </Badge>
+                {isRoutinesLoading ? (
+                  <div className="space-y-3.5">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-11 w-11 rounded-lg shrink-0" />
+                      <div className="space-y-1.5 flex-1">
+                        <Skeleton className="h-3.5 w-20" />
+                        <Skeleton className="h-5 w-40" />
+                      </div>
                     </div>
-                    <h2
-                      id="status-headline"
-                      className="text-base leading-snug font-extrabold tracking-tight text-card-foreground sm:text-lg"
-                    >
-                      {headline}
-                    </h2>
+                    <Skeleton className="h-2.5 w-full rounded-full" />
+                    <div className="flex justify-between">
+                      <Skeleton className="h-3.5 w-28" />
+                      <Skeleton className="h-3.5 w-16" />
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="flex items-start gap-3.5 select-none">
+                      <div
+                        className={`shrink-0 rounded-lg p-2.5 ${
+                          percentage === 100
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-primary"
+                        }`}
+                      >
+                        <ShieldCheck className="h-6 w-6" />
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                            Pocket Status
+                          </span>
+                          <Badge
+                            variant={percentage === 100 ? "default" : "secondary"}
+                            className="px-2 py-0.5 text-[10px] font-black"
+                          >
+                            {Math.round(percentage)}% Packed
+                          </Badge>
+                        </div>
+                        <h2
+                          id="status-headline"
+                          className="text-base leading-snug font-extrabold tracking-tight text-card-foreground sm:text-lg"
+                        >
+                          {headline}
+                        </h2>
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <Progress value={percentage} className="h-2.5" />
-                  <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
-                    <span id="progress-text">
-                      <strong className="font-black text-foreground">
-                        {packedItems}
-                      </strong>{" "}
-                      of {totalItems} items packed
-                    </span>
-                    <span>{missingItems} missing</span>
-                  </div>
-                </div>
+                    <div className="space-y-2">
+                      <Progress value={percentage} className="h-2.5" />
+                      <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
+                        <span id="progress-text">
+                          <strong className="font-black text-foreground">
+                            {packedItems}
+                          </strong>{" "}
+                          of {totalItems} items packed
+                        </span>
+                        <span>{missingItems} missing</span>
+                      </div>
+                    </div>
 
-                {/* Quick Action buttons in progress card */}
-                <div className="flex items-center justify-between gap-2 border-t border-border pt-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => void handleReset()}
-                    className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-primary uppercase hover:text-primary/80"
-                    title="Reset items in this routine to Missing position"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" /> Uncheck All
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowDeleteAllConfirm(true)}
-                    className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-destructive uppercase hover:text-destructive/80"
-                    title="Delete all created items in this routine"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" /> Clear List
-                  </Button>
-                </div>
+                    {/* Quick Action buttons in progress card */}
+                    <div className="flex items-center justify-between gap-2 border-t border-border pt-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={!effectiveRoutine || totalItems === 0}
+                        onClick={() => void handleReset()}
+                        className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-primary uppercase hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed"
+                        title="Reset items in this routine to Missing position (Shift+U)"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" /> Uncheck All
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={!effectiveRoutine || totalItems === 0}
+                        onClick={() => setShowDeleteAllConfirm(true)}
+                        className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-destructive uppercase hover:text-destructive/80 disabled:opacity-40 disabled:cursor-not-allowed"
+                        title="Delete all created items in this routine"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Clear List
+                      </Button>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -505,106 +799,154 @@ export function Dashboard() {
                     Where are you heading?
                   </p>
                 </div>
-                <Badge variant="outline" className="text-xs font-black">
-                  {routinesList.length} lists
-                </Badge>
+                {isRoutinesLoading ? (
+                  <Skeleton className="h-5 w-12 rounded-full" />
+                ) : (
+                  <Badge variant="outline" className="text-xs font-black">
+                    {routinesList.length} lists
+                  </Badge>
+                )}
               </CardHeader>
               <CardContent className="space-y-2 p-3 pt-0">
-                {/* Desktop vertical list view */}
-                <div className="hidden flex-col gap-1.5 lg:flex">
-                  {routinesList.map((routine) => {
-                    const isActive = routine.name === effectiveRoutine
-                    return (
-                      <div
-                        key={routine.name}
-                        onClick={() => {
-                          setSelectedRoutine(routine.name)
-                        }}
-                        className={`group flex cursor-pointer items-center justify-between rounded-lg border p-2.5 transition-all ${
-                          isActive
-                            ? "border-primary bg-primary font-black text-primary-foreground shadow-xs"
-                            : "border-border bg-card font-bold text-foreground hover:bg-muted/60"
-                        }`}
-                      >
-                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                {isRoutinesLoading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-11 w-full rounded-lg" />
+                    <Skeleton className="h-11 w-full rounded-lg" />
+                    <Skeleton className="h-11 w-full rounded-lg" />
+                  </div>
+                ) : routinesList.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-4 text-center">
+                    <Compass className="h-6 w-6 text-muted-foreground mb-1.5 opacity-60" />
+                    <p className="text-xs font-bold text-foreground">No destinations yet</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Add a destination or choose a preset below.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Desktop vertical list view */}
+                    <div className="hidden flex-col gap-1.5 lg:flex">
+                      {routinesList.map((routine) => {
+                        const isActive = routine.name === effectiveRoutine
+                        return (
                           <div
-                            className={`shrink-0 rounded-lg p-2 ${
-                              isActive
-                                ? "bg-primary-foreground/15 text-primary-foreground"
-                                : "bg-muted text-foreground"
-                            }`}
-                          >
-                            {renderRoutineIcon(routine.icon || routine.name)}
-                          </div>
-                          <span className="truncate text-sm select-none">
-                            {routine.name}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setManageRoutine(routine)
-                              setEditModalName(routine.name)
-                              setEditModalIconTag(routine.icon)
+                            key={routine.name}
+                            onClick={() => {
+                              setSelectedRoutine(routine.name)
                             }}
-                            className={`h-7 w-7 shrink-0 cursor-pointer rounded-lg opacity-70 transition-opacity group-hover:opacity-100 ${
+                            className={`group flex cursor-pointer items-center justify-between rounded-lg border p-2.5 transition-all ${
                               isActive
-                                ? "text-primary-foreground hover:bg-primary-foreground/20"
-                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                ? "border-primary bg-primary font-black text-primary-foreground shadow-xs"
+                                : "border-border bg-card font-bold text-foreground hover:bg-muted/60"
                             }`}
-                            title="Destination Settings"
                           >
-                            <Settings className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
+                            <div className="flex min-w-0 flex-1 items-center gap-3">
+                              <div
+                                className={`shrink-0 rounded-lg p-2 ${
+                                  isActive
+                                    ? "bg-primary-foreground/15 text-primary-foreground"
+                                    : "bg-muted text-foreground"
+                                }`}
+                              >
+                                {renderRoutineIcon(routine.icon || routine.name)}
+                              </div>
+                              <div className="truncate min-w-0">
+                                <span className="truncate text-sm select-none block">
+                                  {routine.name}
+                                </span>
+                                {routine.autoResetTime && (
+                                  <span className="text-[10px] font-mono opacity-70 flex items-center gap-1">
+                                    <Clock className="h-2.5 w-2.5" />
+                                    {routine.autoResetTime}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
 
-                {/* Mobile / Tablet grid view */}
-                <div className="grid grid-cols-3 gap-2 lg:hidden">
-                  {routinesList.map((routine) => {
-                    const isActive = routine.name === effectiveRoutine
-                    return (
-                      <div key={routine.name} className="relative">
-                        <Button
-                          variant={isActive ? "default" : "outline"}
-                          onClick={() => {
-                            setSelectedRoutine(routine.name)
-                          }}
-                          className="flex h-auto w-full flex-col items-center gap-1.5 rounded-lg p-3 pt-4 text-xs font-black"
-                        >
-                          <span className="block select-none">
-                            {renderRoutineIcon(routine.icon || routine.name)}
-                          </span>
-                          <span className="max-w-full truncate select-none">
-                            {routine.name}
-                          </span>
-                        </Button>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setManageRoutine(routine)
+                                  setShowScheduleModal(true)
+                                }}
+                                className={`h-7 w-7 shrink-0 cursor-pointer rounded-lg opacity-70 transition-opacity group-hover:opacity-100 ${
+                                  isActive
+                                    ? "text-primary-foreground hover:bg-primary-foreground/20"
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                }`}
+                                title="Schedule Auto-Reset"
+                              >
+                                <Clock className="h-3.5 w-3.5" />
+                              </Button>
 
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setManageRoutine(routine)
-                            setEditModalName(routine.name)
-                            setEditModalIconTag(routine.icon)
-                          }}
-                          className="absolute top-1 right-1 h-5 w-5 rounded-md bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground"
-                          title="Control"
-                        >
-                          <Settings className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    )
-                  })}
-                </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setManageRoutine(routine)
+                                  setEditModalName(routine.name)
+                                  setEditModalIconTag(routine.icon)
+                                }}
+                                className={`h-7 w-7 shrink-0 cursor-pointer rounded-lg opacity-70 transition-opacity group-hover:opacity-100 ${
+                                  isActive
+                                    ? "text-primary-foreground hover:bg-primary-foreground/20"
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                }`}
+                                title="Destination Settings"
+                              >
+                                <Settings className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    {/* Mobile / Tablet grid view */}
+                    <div className="grid grid-cols-3 gap-2 lg:hidden">
+                      {routinesList.map((routine) => {
+                        const isActive = routine.name === effectiveRoutine
+                        return (
+                          <div key={routine.name} className="relative">
+                            <Button
+                              variant={isActive ? "default" : "outline"}
+                              onClick={() => {
+                                setSelectedRoutine(routine.name)
+                              }}
+                              className="flex h-auto w-full flex-col items-center gap-1.5 rounded-lg p-3 pt-4 text-xs font-black"
+                            >
+                              <span className="block select-none">
+                                {renderRoutineIcon(routine.icon || routine.name)}
+                              </span>
+                              <span className="max-w-full truncate select-none">
+                                {routine.name}
+                              </span>
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setManageRoutine(routine)
+                                setEditModalName(routine.name)
+                                setEditModalIconTag(routine.icon)
+                              }}
+                              className="absolute top-1 right-1 h-5 w-5 rounded-md bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground"
+                              title="Control"
+                            >
+                              <Settings className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </>
+                )}
 
                 {/* Destination Actions: Smart Presets & New Destination */}
                 <div className="mt-2 flex flex-col gap-1.5">
@@ -637,8 +979,87 @@ export function Dashboard() {
 
           {/* Right Column / Workspace (lg:col-span-8 space-y-5) */}
           <div className="space-y-5 lg:col-span-8">
-            {/* Active Destination Workspace Card Header */}
-            <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-card p-4 shadow-xs sm:flex-row sm:items-center sm:p-5">
+            {isRoutinesLoading ? (
+              <div className="space-y-5">
+                {/* Header Skeleton */}
+                <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:p-5">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-12 w-12 rounded-lg shrink-0" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-6 w-36 rounded-md" />
+                      <Skeleton className="h-4 w-28 rounded-md" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-9 w-64 rounded-lg" />
+                </div>
+
+                {/* Quick Add Bar Skeleton */}
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <div className="flex gap-2">
+                    <Skeleton className="h-11 w-12 rounded-lg" />
+                    <Skeleton className="h-11 flex-1 rounded-lg" />
+                    <Skeleton className="h-11 w-28 rounded-lg" />
+                  </div>
+                </div>
+
+                {/* Items List Skeletons */}
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Card key={i}>
+                      <CardContent className="flex flex-row items-center justify-between gap-3 p-3.5">
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                          <Skeleton className="h-4 w-4 shrink-0 rounded-sm" />
+                          <Skeleton className="h-7 w-7 shrink-0 rounded-lg" />
+                          <div className="min-w-0 flex-1 space-y-1.5">
+                            <Skeleton className="h-5 w-32 rounded-md sm:w-40" />
+                            <Skeleton className="h-3.5 w-16 rounded-full" />
+                          </div>
+                        </div>
+                        <Skeleton className="h-8 w-8 shrink-0 rounded-lg" />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ) : !effectiveRoutine ? (
+              <Card className="border-border shadow-xs">
+                <CardContent className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                  <div className="rounded-full bg-primary/10 p-4 text-primary mb-4">
+                    <MapPin className="h-8 w-8" />
+                  </div>
+                  <h2 className="text-xl font-black text-foreground sm:text-2xl mb-1">
+                    Ready to Start Packing?
+                  </h2>
+                  <p className="text-sm font-medium text-muted-foreground max-w-md mb-6">
+                    Create your first destination or choose from smart presets like Work, Gym, Campus, or Travel to organize your essential gear.
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <Button
+                      onClick={() => setShowPresetsModal(true)}
+                      className="font-black text-xs uppercase tracking-wider h-10 px-5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                    >
+                      <Sparkles className="h-4 w-4 mr-1.5" />
+                      Browse Smart Presets
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setCustomRoutineName("")
+                        setCustomRoutineIcon("tag")
+                        setShowNewRoutineModal(true)
+                      }}
+                      className="font-black text-xs uppercase tracking-wider h-10 px-5 cursor-pointer"
+                    >
+                      <Plus className="h-4 w-4 mr-1.5" />
+                      Create Custom Destination
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Active Destination Workspace Card Header */}
+                <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-card p-4 shadow-xs sm:flex-row sm:items-center sm:p-5">
               <div className="flex items-center gap-3">
                 <div className="shrink-0 rounded-lg bg-primary/10 p-3 text-primary">
                   {renderRoutineIcon(
@@ -718,7 +1139,19 @@ export function Dashboard() {
               </div>
             </div>
 
-            {/* Smart Departure Intelligence Banner */}
+            {/* Free Weather-Aware Packing Suggestions Banner (FEAT-01) */}
+            <WeatherAlertBanner
+              currentRoutineItems={items}
+              onQuickAddItem={async (name, emoji) => {
+                await addItem({
+                  routine: effectiveRoutine,
+                  name,
+                  emoji: emoji || "Umbrella",
+                })
+              }}
+            />
+
+            {/* Smart Departure Intelligence Banner (UX-05) */}
             <SmartIntelligenceBanner
               routineName={effectiveRoutine}
               items={items}
@@ -727,7 +1160,7 @@ export function Dashboard() {
               }}
             />
 
-            {/* Quick Add Item Bar */}
+            {/* Quick Add Item Bar with Live Auto-Icon Detection (UX-03, UX-04) */}
             <Card className="border-border shadow-xs">
               <CardContent className="space-y-2 p-3.5 sm:p-4">
                 <form
@@ -747,8 +1180,8 @@ export function Dashboard() {
                       className="flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-lg px-0"
                       title="Select Icon for item"
                     >
-                      {newItemTag ? (
-                        renderItemIcon(newItemTag)
+                      {liveDetectedIcon ? (
+                        renderItemIcon(liveDetectedIcon)
                       ) : (
                         <Tag className="h-4 w-4 text-muted-foreground" />
                       )}
@@ -809,7 +1242,7 @@ export function Dashboard() {
                   }
                   return (
                     <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground px-1">
-                      <span>Tip: Type multiple items separated by commas to add at once (e.g., USB Cable, Notebook, ID Card)</span>
+                      <span>Tip: Type comma-separated items to bulk-add &bull; Space to toggle &bull; J/K to move</span>
                       <kbd className="hidden rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground sm:inline">
                         Ctrl+K to focus
                       </kbd>
@@ -821,15 +1254,9 @@ export function Dashboard() {
 
             {/* Items List */}
             {(() => {
-              const filteredItems = items.filter((item) => {
-                if (filter === "packed") return item.isPacked
-                if (filter === "missing") return !item.isPacked
-                return true
-              })
-
               return (
                 <div className="space-y-3" id="checklist-container">
-                  {rawItems === undefined ? (
+                  {isItemsLoading ? (
                     [1, 2, 3].map((i) => (
                       <Card key={i}>
                         <CardContent className="flex flex-row items-center justify-between gap-3 p-3.5">
@@ -900,9 +1327,10 @@ export function Dashboard() {
                       </CardContent>
                     </Card>
                   ) : (
-                    filteredItems.map((item) => {
+                    filteredItems.map((item, itemIdx) => {
                       const isDragging = draggedItemId === item._id
                       const isDragOver = dragOverItemId === item._id
+                      const isFocused = focusedItemIndex === itemIdx
 
                       return (
                         <Card
@@ -933,10 +1361,13 @@ export function Dashboard() {
                             setDragOverItemId(null)
                           }}
                           onClick={() => {
+                            setFocusedItemIndex(itemIdx)
                             void handleToggle(item._id, item.isPacked)
                           }}
                           className={`relative cursor-pointer transition-all ${
                             item.isPacked ? "bg-muted/40" : "hover:bg-accent/40"
+                          } ${
+                            isFocused ? "ring-2 ring-primary ring-offset-1" : ""
                           } ${
                             isDragging
                               ? "scale-[0.98] border-dashed border-primary opacity-40"
@@ -971,21 +1402,30 @@ export function Dashboard() {
                                 )}
                               </div>
 
-                              {/* Details */}
-                              <div className="min-w-0 flex-1 select-none">
-                                <p
-                                  className={`item-name flex items-center truncate text-base font-extrabold select-none sm:text-lg ${
-                                    item.isPacked
-                                      ? "text-muted-foreground line-through decoration-muted-foreground decoration-2"
-                                      : "text-foreground"
-                                  }`}
-                                >
-                                  {renderItemIcon(item.emoji)}
-                                  <span className="truncate select-none">
-                                    {item.name}
-                                  </span>
-                                </p>
-                                <div className="mt-0.5">
+                              {/* Details (Item Name, Quantities FEAT-03, Placement Notes) */}
+                              <div className="min-w-0 flex-1 select-none space-y-0.5">
+                                <div className="flex items-center gap-2">
+                                  <p
+                                    className={`item-name flex items-center truncate text-base font-extrabold select-none sm:text-lg ${
+                                      item.isPacked
+                                        ? "text-muted-foreground line-through decoration-muted-foreground decoration-2"
+                                        : "text-foreground"
+                                    }`}
+                                  >
+                                    {renderItemIcon(item.emoji)}
+                                    <span className="truncate select-none">
+                                      {item.name}
+                                    </span>
+                                  </p>
+
+                                  {item.quantity && item.quantity > 1 && (
+                                    <span className="px-1.5 py-0.2 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-[11px] font-bold shrink-0">
+                                      {item.quantity}x
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-2">
                                   <Badge
                                     variant={
                                       item.isPacked ? "default" : "outline"
@@ -994,6 +1434,12 @@ export function Dashboard() {
                                   >
                                     {item.isPacked ? "Packed" : "Missing"}
                                   </Badge>
+
+                                  {item.locationNote && (
+                                    <span className="text-[11px] text-muted-foreground italic font-medium">
+                                      📍 {item.locationNote}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -1011,6 +1457,8 @@ export function Dashboard() {
                                   setManageItem(item)
                                   setEditModalName(item.name)
                                   setEditModalIconTag(item.emoji ?? "")
+                                  setEditModalQuantity(item.quantity)
+                                  setEditModalLocationNote(item.locationNote ?? "")
                                 }}
                                 className="h-8 w-8 cursor-pointer rounded-lg text-muted-foreground hover:text-primary"
                                 title="Control Item"
@@ -1026,13 +1474,32 @@ export function Dashboard() {
                 </div>
               )
             })()}
-          </div>
+          </>
+        )}
+      </div>
         </div>
       </main>
 
+      {/* Floating Undo Toast Notification (UX-01) */}
+      {undoToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-700 text-zinc-100 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <span className="text-xs font-bold text-zinc-200">
+            {undoToast.message}
+          </span>
+          <Button
+            size="sm"
+            onClick={() => void handleExecuteUndo()}
+            className="h-7 px-3 text-xs bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold flex items-center gap-1"
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+            Undo
+          </Button>
+        </div>
+      )}
+
       {/* Manage Routine Modal */}
       <Dialog
-        open={!!manageRoutine}
+        open={!!manageRoutine && !showScheduleModal}
         onOpenChange={(open) => !open && setManageRoutine(null)}
       >
         {manageRoutine && (
@@ -1144,7 +1611,13 @@ export function Dashboard() {
                       )
                         return
                       try {
-                        await deleteRoutine({ id: manageRoutine._id })
+                        const routineToDeleteName = manageRoutine.name
+                        const routineToDeleteId = manageRoutine._id
+                        await deleteRoutine({ id: routineToDeleteId })
+                        const remaining = routinesList.filter((r) => r._id !== routineToDeleteId)
+                        if (selectedRoutine === routineToDeleteName || effectiveRoutine === routineToDeleteName) {
+                          setSelectedRoutine(remaining.length > 0 ? remaining[0].name : "")
+                        }
                         setManageRoutine(null)
                       } catch (err) {
                         console.error("Failed to delete routine", err)
@@ -1168,7 +1641,7 @@ export function Dashboard() {
         )}
       </Dialog>
 
-      {/* Manage Item Modal */}
+      {/* Manage Item Modal (Quantities & Placement Notes FEAT-03) */}
       <Dialog
         open={!!manageItem}
         onOpenChange={(open) => !open && setManageItem(null)}
@@ -1207,6 +1680,40 @@ export function Dashboard() {
                     onChange={(e) => setEditModalName(e.target.value)}
                     placeholder="Item name..."
                     className="flex-1"
+                  />
+                </div>
+              </div>
+
+              {/* Quantity & Location Note Inputs (FEAT-03) */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Quantity (Optional)
+                  </label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={editModalQuantity ?? ""}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10)
+                      setEditModalQuantity(isNaN(val) ? undefined : val)
+                    }}
+                    placeholder="1"
+                    className="h-9 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Location Note
+                  </label>
+                  <Input
+                    type="text"
+                    value={editModalLocationNote}
+                    onChange={(e) => setEditModalLocationNote(e.target.value)}
+                    placeholder="e.g. Front Pocket"
+                    className="h-9 text-xs"
                   />
                 </div>
               </div>
@@ -1258,6 +1765,8 @@ export function Dashboard() {
                         id: manageItem._id,
                         name: editModalName.trim(),
                         emoji: editModalIconTag.trim() || undefined,
+                        quantity: editModalQuantity,
+                        locationNote: editModalLocationNote.trim() || undefined,
                       })
                       setManageItem(null)
                     } catch (err) {
@@ -1272,15 +1781,7 @@ export function Dashboard() {
                 <div className="flex w-full gap-2">
                   <Button
                     variant="destructive"
-                    onClick={async () => {
-                      if (!confirm(`Delete "${manageItem.name}"?`)) return
-                      try {
-                        await deleteItem({ id: manageItem._id })
-                        setManageItem(null)
-                      } catch (err) {
-                        console.error("Failed to delete item", err)
-                      }
-                    }}
+                    onClick={() => handleDeleteItemWithUndo(manageItem)}
                     className="flex-1 text-xs font-bold tracking-wider uppercase"
                   >
                     <Trash2 className="h-4 w-4" /> Delete Item
@@ -1299,6 +1800,64 @@ export function Dashboard() {
         )}
       </Dialog>
 
+      {/* Routine Schedule Auto-Reset Modal (FEAT-02) */}
+      <RoutineScheduleModal
+        open={showScheduleModal && !!manageRoutine}
+        onOpenChange={(open) => {
+          setShowScheduleModal(open)
+          if (!open) setManageRoutine(null)
+        }}
+        routineName={manageRoutine?.name || effectiveRoutine}
+        initialTime={manageRoutine?.autoResetTime}
+        initialDays={manageRoutine?.autoResetDays}
+        onSaveSchedule={async (time, days) => {
+          if (!manageRoutine) return
+          await updateRoutine({
+            id: manageRoutine._id,
+            name: manageRoutine.name,
+            icon: manageRoutine.icon,
+            autoResetTime: time,
+            autoResetDays: days,
+          })
+        }}
+      />
+
+      {/* Universal Export & Backup Modal (FEAT-05) */}
+      <ExportModal
+        open={showExportModal}
+        onOpenChange={setShowExportModal}
+        routineName={effectiveRoutine}
+        items={items}
+      />
+
+      {/* Share Routine Modal (FEAT-04) */}
+      <ShareRoutineModal
+        open={showShareModal}
+        onOpenChange={setShowShareModal}
+        routineName={effectiveRoutine}
+        routineIcon={currentRoutineObj?.icon || "tag"}
+        items={items}
+      />
+
+      {/* Import Shared Routine Modal (FEAT-04) */}
+      <ImportSharedModal
+        open={showImportModal}
+        onOpenChange={setShowImportModal}
+        data={sharedImportData}
+        onConfirmImport={async () => {
+          if (!sharedImportData) return
+          await applyPreset({
+            name: sharedImportData.name,
+            icon: sharedImportData.icon || "tag",
+            items: sharedImportData.items,
+          })
+          setSelectedRoutine(sharedImportData.name)
+          if (typeof window !== "undefined") {
+            window.history.replaceState({}, document.title, window.location.pathname)
+          }
+        }}
+      />
+
       {/* About Project Modal */}
       <Dialog open={showAboutDialog} onOpenChange={setShowAboutDialog}>
         <DialogContent>
@@ -1310,9 +1869,9 @@ export function Dashboard() {
 
           <div className="space-y-4 py-2 select-none">
             <p className="text-sm leading-relaxed font-bold text-foreground">
-              PocketCheck is a minimal checklist tool designed to make sure you
-              never forget your keys, wallet, phone, or essential items before
-              stepping out for work, gym, or custom routines.
+              PocketCheck is an everyday carry checklist platform designed to ensure
+              you never leave essential gear behind before stepping out for work, gym,
+              or custom routines.
             </p>
 
             <a
@@ -1351,7 +1910,7 @@ export function Dashboard() {
               <span className="font-black text-primary">
                 &quot;{effectiveRoutine}&quot;
               </span>
-              ? This action cannot be undone.
+              ? You will have a 5-second Undo option.
             </p>
             <div className="flex gap-2 pt-2">
               <Button

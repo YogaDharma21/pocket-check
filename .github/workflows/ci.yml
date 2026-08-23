@@ -22,7 +22,7 @@ jobs:
         with:
           filters: |
             web:
-              - 'apps/web/**'
+              - 'apps/website/**'
             mobile:
               - 'apps/mobile/**'
             desktop:
@@ -36,23 +36,48 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.web == 'true'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/website
     steps:
       - uses: actions/checkout@v4
-      - name: Build Web App
-        run: echo "Building web app"
-      - name: Test Web App
-        run: echo "Testing web app"
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: apps/website/package-lock.json
+      - name: Install Dependencies
+        run: npm install
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Production Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_CONVEX_URL: ${{ secrets.NEXT_PUBLIC_CONVEX_URL || 'https://placeholder.convex.cloud' }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_placeholder' }}
 
   build-mobile:
     needs: detect-changes
     if: needs.detect-changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
     steps:
       - uses: actions/checkout@v4
-      - name: Build Mobile App
-        run: echo "Building mobile app"
-      - name: Test Mobile App
-        run: echo "Testing mobile app"
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: apps/mobile/package-lock.json
+      - name: Install Dependencies
+        run: npm install --legacy-peer-deps
+      - name: Lint
+        run: npm run lint
 
   build-desktop:
     needs: detect-changes
@@ -61,9 +86,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build Desktop App
-        run: echo "Building desktop app"
-      - name: Test Desktop App
-        run: echo "Testing desktop app"
+        run: echo "Desktop app placeholder"
 
   build-backend:
     needs: detect-changes
@@ -72,9 +95,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build Backend App
-        run: echo "Building backend app"
-      - name: Test Backend App
-        run: echo "Testing backend app"
+        run: echo "Backend app placeholder"
 
   build-cli:
     needs: detect-changes
@@ -83,6 +104,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build CLI App
-        run: echo "Building CLI app"
-      - name: Test CLI App
-        run: echo "Testing CLI app"
+        run: echo "CLI app placeholder"
