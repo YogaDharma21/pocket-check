@@ -403,9 +403,6 @@ export function Dashboard() {
               <h1 className="text-lg leading-none font-black tracking-wide text-foreground sm:text-2xl">
                 POCKET<span className="text-primary">CHECK</span>
               </h1>
-              <p className="hidden text-[10px] font-bold text-muted-foreground sm:block sm:text-xs">
-                Double-check before you leave
-              </p>
             </div>
           </div>
 
