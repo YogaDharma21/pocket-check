@@ -178,6 +178,7 @@ export function Dashboard() {
   const reorderRoutines = useMutation(api.pocketcheck.reorderRoutines)
 
   const customRoutines = useQuery(api.pocketcheck.listRoutines)
+  const isRoutinesLoading = customRoutines === undefined
   const routinesList = useMemo(() => customRoutines ?? [], [customRoutines])
   const currentRoutineObj =
     routinesList.find((r) => r.name === selectedRoutine) ||
@@ -188,6 +189,7 @@ export function Dashboard() {
     api.pocketcheck.listItems,
     effectiveRoutine ? { routine: effectiveRoutine } : "skip"
   )
+  const isItemsLoading = effectiveRoutine ? rawItems === undefined : false
   const items = rawItems ?? []
 
   // Filter & Drag State
@@ -697,73 +699,92 @@ export function Dashboard() {
             {/* 1. Progress Status Block */}
             <Card className="overflow-hidden border-border shadow-xs">
               <CardContent className="space-y-4 p-5">
-                <div className="flex items-start gap-3.5 select-none">
-                  <div
-                    className={`shrink-0 rounded-lg p-2.5 ${
-                      percentage === 100
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-primary"
-                    }`}
-                  >
-                    <ShieldCheck className="h-6 w-6" />
-                  </div>
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-black tracking-wider text-muted-foreground uppercase">
-                        Pocket Status
-                      </span>
-                      <Badge
-                        variant={percentage === 100 ? "default" : "secondary"}
-                        className="px-2 py-0.5 text-[10px] font-black"
-                      >
-                        {Math.round(percentage)}% Packed
-                      </Badge>
+                {isRoutinesLoading ? (
+                  <div className="space-y-3.5">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-11 w-11 rounded-lg shrink-0" />
+                      <div className="space-y-1.5 flex-1">
+                        <Skeleton className="h-3.5 w-20" />
+                        <Skeleton className="h-5 w-40" />
+                      </div>
                     </div>
-                    <h2
-                      id="status-headline"
-                      className="text-base leading-snug font-extrabold tracking-tight text-card-foreground sm:text-lg"
-                    >
-                      {headline}
-                    </h2>
+                    <Skeleton className="h-2.5 w-full rounded-full" />
+                    <div className="flex justify-between">
+                      <Skeleton className="h-3.5 w-28" />
+                      <Skeleton className="h-3.5 w-16" />
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="flex items-start gap-3.5 select-none">
+                      <div
+                        className={`shrink-0 rounded-lg p-2.5 ${
+                          percentage === 100
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-primary"
+                        }`}
+                      >
+                        <ShieldCheck className="h-6 w-6" />
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                            Pocket Status
+                          </span>
+                          <Badge
+                            variant={percentage === 100 ? "default" : "secondary"}
+                            className="px-2 py-0.5 text-[10px] font-black"
+                          >
+                            {Math.round(percentage)}% Packed
+                          </Badge>
+                        </div>
+                        <h2
+                          id="status-headline"
+                          className="text-base leading-snug font-extrabold tracking-tight text-card-foreground sm:text-lg"
+                        >
+                          {headline}
+                        </h2>
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <Progress value={percentage} className="h-2.5" />
-                  <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
-                    <span id="progress-text">
-                      <strong className="font-black text-foreground">
-                        {packedItems}
-                      </strong>{" "}
-                      of {totalItems} items packed
-                    </span>
-                    <span>{missingItems} missing</span>
-                  </div>
-                </div>
+                    <div className="space-y-2">
+                      <Progress value={percentage} className="h-2.5" />
+                      <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
+                        <span id="progress-text">
+                          <strong className="font-black text-foreground">
+                            {packedItems}
+                          </strong>{" "}
+                          of {totalItems} items packed
+                        </span>
+                        <span>{missingItems} missing</span>
+                      </div>
+                    </div>
 
-                {/* Quick Action buttons in progress card */}
-                <div className="flex items-center justify-between gap-2 border-t border-border pt-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={!effectiveRoutine || totalItems === 0}
-                    onClick={() => void handleReset()}
-                    className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-primary uppercase hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed"
-                    title="Reset items in this routine to Missing position (Shift+U)"
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" /> Uncheck All
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={!effectiveRoutine || totalItems === 0}
-                    onClick={() => setShowDeleteAllConfirm(true)}
-                    className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-destructive uppercase hover:text-destructive/80 disabled:opacity-40 disabled:cursor-not-allowed"
-                    title="Delete all created items in this routine"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" /> Clear List
-                  </Button>
-                </div>
+                    {/* Quick Action buttons in progress card */}
+                    <div className="flex items-center justify-between gap-2 border-t border-border pt-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={!effectiveRoutine || totalItems === 0}
+                        onClick={() => void handleReset()}
+                        className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-primary uppercase hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed"
+                        title="Reset items in this routine to Missing position (Shift+U)"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" /> Uncheck All
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={!effectiveRoutine || totalItems === 0}
+                        onClick={() => setShowDeleteAllConfirm(true)}
+                        className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-destructive uppercase hover:text-destructive/80 disabled:opacity-40 disabled:cursor-not-allowed"
+                        title="Delete all created items in this routine"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Clear List
+                      </Button>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -778,12 +799,22 @@ export function Dashboard() {
                     Where are you heading?
                   </p>
                 </div>
-                <Badge variant="outline" className="text-xs font-black">
-                  {routinesList.length} lists
-                </Badge>
+                {isRoutinesLoading ? (
+                  <Skeleton className="h-5 w-12 rounded-full" />
+                ) : (
+                  <Badge variant="outline" className="text-xs font-black">
+                    {routinesList.length} lists
+                  </Badge>
+                )}
               </CardHeader>
               <CardContent className="space-y-2 p-3 pt-0">
-                {routinesList.length === 0 ? (
+                {isRoutinesLoading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-11 w-full rounded-lg" />
+                    <Skeleton className="h-11 w-full rounded-lg" />
+                    <Skeleton className="h-11 w-full rounded-lg" />
+                  </div>
+                ) : routinesList.length === 0 ? (
                   <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-4 text-center">
                     <Compass className="h-6 w-6 text-muted-foreground mb-1.5 opacity-60" />
                     <p className="text-xs font-bold text-foreground">No destinations yet</p>
@@ -948,7 +979,49 @@ export function Dashboard() {
 
           {/* Right Column / Workspace (lg:col-span-8 space-y-5) */}
           <div className="space-y-5 lg:col-span-8">
-            {!effectiveRoutine ? (
+            {isRoutinesLoading ? (
+              <div className="space-y-5">
+                {/* Header Skeleton */}
+                <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:p-5">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-12 w-12 rounded-lg shrink-0" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-6 w-36 rounded-md" />
+                      <Skeleton className="h-4 w-28 rounded-md" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-9 w-64 rounded-lg" />
+                </div>
+
+                {/* Quick Add Bar Skeleton */}
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <div className="flex gap-2">
+                    <Skeleton className="h-11 w-12 rounded-lg" />
+                    <Skeleton className="h-11 flex-1 rounded-lg" />
+                    <Skeleton className="h-11 w-28 rounded-lg" />
+                  </div>
+                </div>
+
+                {/* Items List Skeletons */}
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Card key={i}>
+                      <CardContent className="flex flex-row items-center justify-between gap-3 p-3.5">
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                          <Skeleton className="h-4 w-4 shrink-0 rounded-sm" />
+                          <Skeleton className="h-7 w-7 shrink-0 rounded-lg" />
+                          <div className="min-w-0 flex-1 space-y-1.5">
+                            <Skeleton className="h-5 w-32 rounded-md sm:w-40" />
+                            <Skeleton className="h-3.5 w-16 rounded-full" />
+                          </div>
+                        </div>
+                        <Skeleton className="h-8 w-8 shrink-0 rounded-lg" />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            ) : !effectiveRoutine ? (
               <Card className="border-border shadow-xs">
                 <CardContent className="flex flex-col items-center justify-center py-16 px-6 text-center">
                   <div className="rounded-full bg-primary/10 p-4 text-primary mb-4">
@@ -1183,7 +1256,7 @@ export function Dashboard() {
             {(() => {
               return (
                 <div className="space-y-3" id="checklist-container">
-                  {rawItems === undefined ? (
+                  {isItemsLoading ? (
                     [1, 2, 3].map((i) => (
                       <Card key={i}>
                         <CardContent className="flex flex-row items-center justify-between gap-3 p-3.5">

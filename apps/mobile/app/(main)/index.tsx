@@ -7,9 +7,10 @@ import {
   StyleSheet,
   useColorScheme,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth, useUser } from "@clerk/clerk-expo";
+import { useAuth } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { useQuery, useMutation } from "convex/react";
 import { Ionicons } from "@expo/vector-icons";
@@ -34,7 +35,6 @@ export default function DashboardScreen() {
   const router = useRouter();
 
   const { signOut } = useAuth();
-  const { user } = useUser();
 
   const [selectedRoutine, setSelectedRoutine] = useState<string>("");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -62,8 +62,9 @@ export default function DashboardScreen() {
   const reorderItems = useMutation(api.pocketcheck.reorderItems);
   const reorderRoutines = useMutation(api.pocketcheck.reorderRoutines);
 
-  const rawRoutines = useQuery(api.pocketcheck.listRoutines) ?? [];
-  const routines: RoutineItem[] = rawRoutines.map((r) => ({
+  const rawRoutines = useQuery(api.pocketcheck.listRoutines);
+  const isRoutinesLoading = rawRoutines === undefined;
+  const routines: RoutineItem[] = (rawRoutines ?? []).map((r) => ({
     _id: r._id,
     name: r.name,
     icon: r.icon,
@@ -80,13 +81,14 @@ export default function DashboardScreen() {
   const rawItems = useQuery(
     api.pocketcheck.listItems,
     effectiveRoutine ? { routine: effectiveRoutine } : "skip"
-  ) ?? [];
+  );
+  const isItemsLoading = effectiveRoutine ? rawItems === undefined : false;
 
   useEffect(() => {
     void ensureInitialized();
   }, [ensureInitialized]);
 
-  const items: ItemData[] = rawItems.map((i) => ({
+  const items: ItemData[] = (rawItems ?? []).map((i) => ({
     _id: i._id,
     routine: i.routine,
     name: i.name,
@@ -356,7 +358,31 @@ export default function DashboardScreen() {
 
           {/* Checklist */}
           <View style={styles.checklistContainer}>
-            {filteredItems.length === 0 ? (
+            {isRoutinesLoading || isItemsLoading ? (
+              <View
+                style={[
+                  styles.emptyCard,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <ActivityIndicator
+                  size="small"
+                  color={colors.primary}
+                  style={{ marginBottom: 8 }}
+                />
+                <Text
+                  style={[
+                    styles.emptyText,
+                    { color: colors.mutedForeground },
+                  ]}
+                >
+                  Loading checklist...
+                </Text>
+              </View>
+            ) : filteredItems.length === 0 ? (
               <View
                 style={[
                   styles.emptyCard,
