@@ -334,7 +334,7 @@ export const addItemsBatch = mutation({
     if (!identity) throw new Error("Not authenticated");
     const userId = identity.subject;
 
-    if (items.length === 0) return [];
+    if (!items || items.length === 0) return [];
 
     // Get current max order within the routine
     const existing = await ctx.db
@@ -347,12 +347,13 @@ export const addItemsBatch = mutation({
 
     const insertedIds = [];
     for (const item of items) {
-      if (!item.name.trim()) continue;
+      const trimmed = item.name?.trim();
+      if (!trimmed) continue;
       currentOrder += 1;
       const id = await ctx.db.insert("items", {
         userId,
         routine,
-        name: item.name.trim(),
+        name: trimmed,
         isPacked: false,
         order: currentOrder,
         ...(item.emoji ? { emoji: item.emoji } : {}),
@@ -390,12 +391,12 @@ export const applyPreset = mutation({
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
 
-    const routine = allRoutines.find(
+    const existingRoutine = allRoutines.find(
       (r) => r.name.toLowerCase().trim() === routineName.toLowerCase().trim()
     );
 
     let finalRoutineName = routineName;
-    if (!routine) {
+    if (!existingRoutine) {
       const maxOrder = allRoutines.reduce((m, r) => Math.max(m, r.order ?? 0), -1);
       await ctx.db.insert("routines", {
         userId,
@@ -404,7 +405,7 @@ export const applyPreset = mutation({
         order: maxOrder + 1,
       });
     } else {
-      finalRoutineName = routine.name;
+      finalRoutineName = existingRoutine.name;
     }
 
     // Insert items that do not already exist in the routine
@@ -425,14 +426,15 @@ export const applyPreset = mutation({
 
     const insertedIds = [];
     for (const item of items) {
-      if (!item.name.trim() || existingNames.has(item.name.toLowerCase().trim())) {
+      const trimmed = item.name?.trim();
+      if (!trimmed || existingNames.has(trimmed.toLowerCase())) {
         continue;
       }
       currentOrder += 1;
       const id = await ctx.db.insert("items", {
         userId,
         routine: finalRoutineName,
-        name: item.name.trim(),
+        name: trimmed,
         isPacked: false,
         order: currentOrder,
         ...(item.emoji ? { emoji: item.emoji } : {}),

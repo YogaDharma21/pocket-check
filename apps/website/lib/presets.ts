@@ -70,7 +70,10 @@ const KEYWORD_ICON_MAP: Array<{ keywords: string[]; icon: string }> = [
     ],
     icon: "Plug",
   },
-  { keywords: ["cable", "usb", "wire", "cord", "lightning", "usb cable"], icon: "Cable" },
+  {
+    keywords: ["cable", "usb cable", "usb", "wire", "cord", "lightning"],
+    icon: "Cable",
+  },
   {
     keywords: ["mouse", "trackpad", "trackball", "magic mouse"],
     icon: "Mouse",
@@ -89,7 +92,7 @@ const KEYWORD_ICON_MAP: Array<{ keywords: string[]; icon: string }> = [
     icon: "Headphones",
   },
   {
-    keywords: ["wallet", "purse", "billfold", "cash", "money"],
+    keywords: ["wallet", "purse", "billfold", "cash", "money", "dompet"],
     icon: "Wallet",
   },
   {
@@ -111,9 +114,9 @@ const KEYWORD_ICON_MAP: Array<{ keywords: string[]; icon: string }> = [
       "badge",
       "access card",
       "keycard",
-      "card",
       "student card",
       "ktp",
+      "card",
     ],
     icon: "IdCard",
   },
@@ -123,14 +126,15 @@ const KEYWORD_ICON_MAP: Array<{ keywords: string[]; icon: string }> = [
       "journal",
       "notepad",
       "diary",
-      "book",
       "textbook",
+      "book",
       "notes",
+      "buku",
     ],
     icon: "BookOpen",
   },
   {
-    keywords: ["passport", "visa", "boarding pass", "ticket"],
+    keywords: ["passport", "paspor", "visa", "boarding pass", "ticket"],
     icon: "FileText",
   },
   {
@@ -144,6 +148,7 @@ const KEYWORD_ICON_MAP: Array<{ keywords: string[]; icon: string }> = [
       "hoodie",
       "underwear",
       "socks",
+      "baju",
     ],
     icon: "Shirt",
   },
@@ -161,7 +166,7 @@ const KEYWORD_ICON_MAP: Array<{ keywords: string[]; icon: string }> = [
     icon: "Sparkles",
   },
   {
-    keywords: ["keys", "house key", "car key", "keychain", "key", "motorcycle key"],
+    keywords: ["keys", "house key", "car key", "keychain", "key", "kunci"],
     icon: "Key",
   },
   {
@@ -177,26 +182,29 @@ const KEYWORD_ICON_MAP: Array<{ keywords: string[]; icon: string }> = [
     icon: "Smartphone",
   },
   {
-    keywords: ["mask", "facemask", "face mask"],
+    keywords: ["mask", "facemask", "face mask", "masker"],
     icon: "Shield",
   },
   {
-    keywords: ["glasses", "sunglasses", "spectacles", "contacts"],
+    keywords: ["glasses", "sunglasses", "spectacles", "kacamata"],
     icon: "Glasses",
   },
-  { keywords: ["watch", "smartwatch", "apple watch"], icon: "Watch" },
-  { keywords: ["umbrella", "raincoat"], icon: "Umbrella" },
-  { keywords: ["pen", "pencil", "highlighter", "marker", "stationery"], icon: "Pen" },
+  { keywords: ["watch", "smartwatch", "apple watch", "jam"], icon: "Watch" },
+  { keywords: ["umbrella", "raincoat", "payung"], icon: "Umbrella" },
+  {
+    keywords: ["pen", "pencil", "highlighter", "marker", "stationery", "pulpen"],
+    icon: "Pen",
+  },
   {
     keywords: ["gym", "towel", "workout", "dumbbell", "weights"],
     icon: "Dumbbell",
   },
   {
-    keywords: ["medicine", "pill", "pills", "vitamins", "bandaid", "first aid", "panadol"],
+    keywords: ["medicine", "pill", "pills", "vitamins", "bandaid", "first aid", "obat"],
     icon: "Pill",
   },
   { keywords: ["camera", "gopro", "lens", "dslr"], icon: "Camera" },
-  { keywords: ["shoes", "sneakers", "boots", "sandals"], icon: "Footprints" },
+  { keywords: ["shoes", "sneakers", "boots", "sandals", "sepatu"], icon: "Footprints" },
 ]
 
 /** Automatically detect a matching Lucide icon name for an item based on its name. */
@@ -204,23 +212,27 @@ export function detectIconForItem(name: string): string {
   const lower = name.toLowerCase().trim()
   if (!lower) return "Tag"
 
-  // Exact / partial match against keyword list
+  // 1. Exact keyword match
   for (const entry of KEYWORD_ICON_MAP) {
     for (const keyword of entry.keywords) {
-      if (
-        lower === keyword ||
-        lower.includes(keyword) ||
-        keyword.includes(lower)
-      ) {
+      if (lower === keyword) {
         return entry.icon
       }
     }
   }
 
-  // Word-by-word token fallback
-  const words = lower.split(/[\s_-]+/)
+  // 2. Substring match (item contains the keyword)
+  for (const entry of KEYWORD_ICON_MAP) {
+    for (const keyword of entry.keywords) {
+      if (lower.includes(keyword)) {
+        return entry.icon
+      }
+    }
+  }
+
+  // 3. Word-by-word token match
+  const words = lower.split(/[\s_-]+/).filter((w) => w.length > 2)
   for (const word of words) {
-    if (word.length <= 2) continue
     for (const entry of KEYWORD_ICON_MAP) {
       if (entry.keywords.includes(word)) {
         return entry.icon
@@ -238,7 +250,7 @@ export function detectIconForItem(name: string): string {
 export function parseMultiItemInput(
   rawInput: string
 ): Array<{ name: string; emoji?: string }> {
-  if (!rawInput.trim()) return []
+  if (!rawInput || !rawInput.trim()) return []
 
   const rawTokens = rawInput
     .split(/[,\n;\r]+/)
@@ -253,7 +265,7 @@ export function parseMultiItemInput(
     const icon = detectIconForItem(name)
     return {
       name,
-      emoji: icon !== "Tag" ? icon : undefined,
+      ...(icon && icon !== "Tag" ? { emoji: icon } : {}),
     }
   })
 }

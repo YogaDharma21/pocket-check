@@ -101,10 +101,8 @@ export function Dashboard() {
   const customRoutines = useQuery(api.pocketcheck.listRoutines) ?? []
   const routinesList = customRoutines
   const effectiveRoutine =
-    routinesList.length > 0 &&
-    !routinesList.some((r) => r.name === selectedRoutine)
-      ? routinesList[0].name
-      : selectedRoutine
+    selectedRoutine ||
+    (routinesList.length > 0 ? routinesList[0].name : "Work")
 
   const rawItems = useQuery(api.pocketcheck.listItems, {
     routine: effectiveRoutine,
@@ -253,18 +251,51 @@ export function Dashboard() {
     preset: PresetRoutine,
     targetRoutine?: string
   ) => {
+    const routineNameToUse = targetRoutine || preset.name
+    setSelectedRoutine(routineNameToUse)
+
     try {
       const res = await applyPreset({
         name: preset.name,
         icon: preset.icon,
-        items: preset.items,
+        items: preset.items.map((i) => ({
+          name: i.name,
+          ...(i.emoji ? { emoji: i.emoji } : {}),
+        })),
         targetRoutine: targetRoutine,
       })
       if (res?.routineName) {
         setSelectedRoutine(res.routineName)
       }
     } catch (err) {
-      console.error("Failed to apply preset", err)
+      console.warn(
+        "applyPreset failed, executing client-side routine & items creation",
+        err
+      )
+      const existingRoutine = routinesList.find(
+        (r) =>
+          r.name.toLowerCase().trim() === routineNameToUse.toLowerCase().trim()
+      )
+      if (!existingRoutine) {
+        await addRoutine({
+          name: routineNameToUse,
+          icon: preset.icon,
+        })
+      }
+      setSelectedRoutine(routineNameToUse)
+
+      const existingNames = new Set(
+        items.map((i) => i.name.toLowerCase().trim())
+      )
+      for (const item of preset.items) {
+        if (!existingNames.has(item.name.toLowerCase().trim())) {
+          await addItem({
+            routine: routineNameToUse,
+            name: item.name,
+            emoji: item.emoji,
+          })
+        }
+      }
     }
   }
 
@@ -286,41 +317,45 @@ export function Dashboard() {
 
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newCustomItemName.trim()) return
+    const trimmed = newCustomItemName.trim()
+    if (!trimmed) return
 
-    // Multi-item parse if commas, semicolons, or newlines exist
-    if (
-      newCustomItemName.includes(",") ||
-      newCustomItemName.includes(";") ||
-      newCustomItemName.includes("\n")
-    ) {
-      const parsed = parseMultiItemInput(newCustomItemName)
-      if (parsed.length > 0) {
-        try {
-          await addItemsBatch({
+    const parsed = parseMultiItemInput(trimmed)
+    if (parsed.length === 0) return
+
+    setNewCustomItemName("")
+    setNewItemTag("")
+
+    if (parsed.length > 1) {
+      try {
+        await addItemsBatch({
+          routine: effectiveRoutine,
+          items: parsed,
+        })
+      } catch (err) {
+        console.warn("addItemsBatch failed, adding items sequentially", err)
+        for (const item of parsed) {
+          await addItem({
             routine: effectiveRoutine,
-            items: parsed,
+            name: item.name,
+            emoji: item.emoji,
           })
-          setNewCustomItemName("")
-          setNewItemTag("")
-        } catch (err) {
-          console.error("Failed to add batch items", err)
         }
-        return
       }
+      return
     }
 
     // Single item add
+    const single = parsed[0]
+    const detectedEmoji =
+      newItemTag.trim() || single.emoji || detectIconForItem(single.name)
+
     try {
-      const detectedEmoji =
-        newItemTag.trim() || detectIconForItem(newCustomItemName.trim())
       await addItem({
         routine: effectiveRoutine,
-        name: newCustomItemName.trim(),
+        name: single.name,
         emoji: detectedEmoji !== "Tag" ? detectedEmoji : undefined,
       })
-      setNewCustomItemName("")
-      setNewItemTag("")
     } catch (err) {
       console.error("Failed to add item", err)
     }
