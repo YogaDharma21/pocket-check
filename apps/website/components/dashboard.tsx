@@ -24,7 +24,6 @@ import {
   AlertTriangle,
   Settings,
   Sparkles,
-  X,
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
@@ -56,7 +55,7 @@ import {
 
 export function Dashboard() {
   const [selectedRoutine, setSelectedRoutine] = useState("Work")
-  const [showCustomInput, setShowCustomInput] = useState(false)
+  const [showNewRoutineModal, setShowNewRoutineModal] = useState(false)
   const [customRoutineName, setCustomRoutineName] = useState("")
   const [customRoutineIcon, setCustomRoutineIcon] = useState("tag")
   const [newCustomItemName, setNewCustomItemName] = useState("")
@@ -82,8 +81,6 @@ export function Dashboard() {
   const [showAboutDialog, setShowAboutDialog] = useState(false)
   const [showPresetsModal, setShowPresetsModal] = useState(false)
   const itemInputRef = useRef<HTMLInputElement>(null)
-  const newRoutineFormRef = useRef<HTMLDivElement>(null)
-  const newRoutineInputRef = useRef<HTMLInputElement>(null)
 
   // Convex mutations & queries
   const ensureInitialized = useMutation(api.pocketcheck.ensureInitialized)
@@ -302,33 +299,19 @@ export function Dashboard() {
     }
   }
 
-  const handleToggleNewDestination = () => {
-    setShowCustomInput((prev) => {
-      const next = !prev
-      if (next) {
-        setTimeout(() => {
-          newRoutineInputRef.current?.focus()
-          newRoutineFormRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-          })
-        }, 60)
-      }
-      return next
-    })
-  }
-
   const handleCreateRoutine = async () => {
     if (!customRoutineName.trim()) return
+    const routineName = customRoutineName.trim()
+    const routineIcon = customRoutineIcon || "pin"
     try {
       await addRoutine({
-        name: customRoutineName.trim(),
-        icon: customRoutineIcon || "pin",
+        name: routineName,
+        icon: routineIcon,
       })
-      setSelectedRoutine(customRoutineName.trim())
+      setSelectedRoutine(routineName)
       setCustomRoutineName("")
       setCustomRoutineIcon("tag")
-      setShowCustomInput(false)
+      setShowNewRoutineModal(false)
     } catch (err) {
       console.error("Failed to create routine", err)
     }
@@ -536,7 +519,6 @@ export function Dashboard() {
                         key={routine.name}
                         onClick={() => {
                           setSelectedRoutine(routine.name)
-                          setShowCustomInput(false)
                         }}
                         className={`group flex cursor-pointer items-center justify-between rounded-xl border p-2.5 transition-all ${
                           isActive
@@ -594,7 +576,6 @@ export function Dashboard() {
                           variant={isActive ? "default" : "outline"}
                           onClick={() => {
                             setSelectedRoutine(routine.name)
-                            setShowCustomInput(false)
                           }}
                           className="flex h-auto w-full flex-col items-center gap-1.5 rounded-xl p-3 pt-4 text-xs font-black"
                         >
@@ -638,78 +619,18 @@ export function Dashboard() {
                   </Button>
 
                   <Button
-                    variant={showCustomInput ? "secondary" : "outline"}
-                    onClick={handleToggleNewDestination}
-                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-xl text-xs font-black tracking-wider uppercase"
+                    variant="outline"
+                    onClick={() => {
+                      setCustomRoutineName("")
+                      setCustomRoutineIcon("tag")
+                      setShowNewRoutineModal(true)
+                    }}
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-xl text-xs font-black tracking-wider uppercase hover:bg-accent hover:text-foreground"
                   >
-                    {showCustomInput ? (
-                      <>
-                        <X className="h-4 w-4" />
-                        <span>Cancel</span>
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4" />
-                        <span>New Destination</span>
-                      </>
-                    )}
+                    <Plus className="h-4 w-4" />
+                    <span>New Destination</span>
                   </Button>
                 </div>
-
-                {/* New custom destination form */}
-                {showCustomInput && (
-                  <div
-                    ref={newRoutineFormRef}
-                    className="animate-fadeIn mt-2 space-y-2 rounded-xl border border-border bg-muted/40 p-2.5 shadow-sm"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setIconPickerTarget("newRoutine")
-                          setShowIconPicker(true)
-                        }}
-                        className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-card px-0"
-                        title="Select Destination Icon"
-                      >
-                        {renderRoutineIcon(customRoutineIcon)}
-                      </Button>
-                      <Input
-                        ref={newRoutineInputRef}
-                        type="text"
-                        value={customRoutineName}
-                        onChange={(e) => setCustomRoutineName(e.target.value)}
-                        placeholder="Destination name..."
-                        className="h-10 bg-card text-sm font-bold"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") void handleCreateRoutine()
-                          if (e.key === "Escape") setShowCustomInput(false)
-                        }}
-                      />
-                    </div>
-                    <div className="flex gap-1.5">
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          void handleCreateRoutine()
-                        }}
-                        disabled={!customRoutineName.trim()}
-                        className="h-9 flex-1 cursor-pointer text-xs font-black tracking-wider uppercase"
-                      >
-                        Create Destination
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setShowCustomInput(false)}
-                        className="h-9 cursor-pointer text-xs font-bold text-muted-foreground hover:text-foreground"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>
@@ -1459,6 +1380,80 @@ export function Dashboard() {
         currentRoutine={effectiveRoutine}
         onSelectPreset={handleSelectPreset}
       />
+
+      {/* Create New Destination Modal */}
+      <Dialog
+        open={showNewRoutineModal}
+        onOpenChange={(open) => {
+          setShowNewRoutineModal(open)
+          if (!open) {
+            setCustomRoutineName("")
+            setCustomRoutineIcon("tag")
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-black">
+              <Plus className="h-4 w-4 text-primary" /> New Destination
+            </DialogTitle>
+          </DialogHeader>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              void handleCreateRoutine()
+            }}
+            className="space-y-4 py-2 select-none"
+          >
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                Destination Icon & Name
+              </label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIconPickerTarget("newRoutine")
+                    setShowIconPicker(true)
+                  }}
+                  className="flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-xl px-0"
+                  title="Select Destination Icon"
+                >
+                  {renderRoutineIcon(customRoutineIcon)}
+                </Button>
+                <Input
+                  type="text"
+                  value={customRoutineName}
+                  onChange={(e) => setCustomRoutineName(e.target.value)}
+                  placeholder="e.g. Kampus, Work, Gym, Weekend Trip..."
+                  className="h-11 flex-1 text-sm font-bold"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowNewRoutineModal(false)}
+                className="cursor-pointer font-bold text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={!customRoutineName.trim()}
+                className="cursor-pointer font-black text-xs uppercase"
+              >
+                Create Destination
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Icon Picker Modal */}
       <IconPickerModal
