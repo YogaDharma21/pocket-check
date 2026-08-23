@@ -2,7 +2,6 @@ import { SignInButton, SignUpButton } from "@clerk/nextjs"
 import {
   PackageCheck,
   ShieldCheck,
-  Sparkles,
   Smartphone,
   Check,
   Layers,
@@ -19,11 +18,6 @@ export function WelcomeScreen() {
       <div className="grid w-full grid-cols-1 items-center gap-8 lg:grid-cols-12 lg:gap-12">
         {/* Left / Hero Column */}
         <div className="space-y-6 text-center lg:col-span-7 lg:text-left">
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-black tracking-wider text-primary uppercase">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>Smart Essentials Checklist</span>
-          </div>
-
           <div className="flex items-center justify-center gap-3 lg:justify-start">
             <div className="shrink-0 rounded-2xl bg-primary p-2.5 text-primary-foreground shadow-md sm:p-3">
               <PackageCheck className="h-8 w-8 sm:h-10 sm:w-10" />
