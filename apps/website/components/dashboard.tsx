@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   Settings,
   Sparkles,
+  X,
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
@@ -81,6 +82,8 @@ export function Dashboard() {
   const [showAboutDialog, setShowAboutDialog] = useState(false)
   const [showPresetsModal, setShowPresetsModal] = useState(false)
   const itemInputRef = useRef<HTMLInputElement>(null)
+  const newRoutineFormRef = useRef<HTMLDivElement>(null)
+  const newRoutineInputRef = useRef<HTMLInputElement>(null)
 
   // Convex mutations & queries
   const ensureInitialized = useMutation(api.pocketcheck.ensureInitialized)
@@ -297,6 +300,22 @@ export function Dashboard() {
         }
       }
     }
+  }
+
+  const handleToggleNewDestination = () => {
+    setShowCustomInput((prev) => {
+      const next = !prev
+      if (next) {
+        setTimeout(() => {
+          newRoutineInputRef.current?.focus()
+          newRoutineFormRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+          })
+        }, 60)
+      }
+      return next
+    })
   }
 
   const handleCreateRoutine = async () => {
@@ -622,18 +641,30 @@ export function Dashboard() {
                   </Button>
 
                   <Button
-                    variant={showCustomInput ? "default" : "outline"}
-                    onClick={() => setShowCustomInput(!showCustomInput)}
+                    variant={showCustomInput ? "secondary" : "outline"}
+                    onClick={handleToggleNewDestination}
                     className="h-10 w-full cursor-pointer justify-center gap-2 rounded-xl text-xs font-black tracking-wider uppercase"
                   >
-                    <Plus className="h-4 w-4" />
-                    <span>New Destination</span>
+                    {showCustomInput ? (
+                      <>
+                        <X className="h-4 w-4" />
+                        <span>Cancel</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4" />
+                        <span>New Destination</span>
+                      </>
+                    )}
                   </Button>
                 </div>
 
                 {/* New custom destination form */}
                 {showCustomInput && (
-                  <div className="animate-fadeIn mt-2 space-y-2 rounded-xl border border-border bg-muted/40 p-2.5">
+                  <div
+                    ref={newRoutineFormRef}
+                    className="animate-fadeIn mt-2 space-y-2 rounded-xl border border-border bg-muted/40 p-2.5 shadow-sm"
+                  >
                     <div className="flex items-center gap-2">
                       <Button
                         type="button"
@@ -648,6 +679,7 @@ export function Dashboard() {
                         {renderRoutineIcon(customRoutineIcon)}
                       </Button>
                       <Input
+                        ref={newRoutineInputRef}
                         type="text"
                         value={customRoutineName}
                         onChange={(e) => setCustomRoutineName(e.target.value)}
@@ -655,18 +687,30 @@ export function Dashboard() {
                         className="h-10 bg-card text-sm font-bold"
                         onKeyDown={(e) => {
                           if (e.key === "Enter") void handleCreateRoutine()
+                          if (e.key === "Escape") setShowCustomInput(false)
                         }}
                       />
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        void handleCreateRoutine()
-                      }}
-                      className="h-9 w-full cursor-pointer text-xs font-black tracking-wider uppercase"
-                    >
-                      Create Destination
-                    </Button>
+                    <div className="flex gap-1.5">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          void handleCreateRoutine()
+                        }}
+                        disabled={!customRoutineName.trim()}
+                        className="h-9 flex-1 cursor-pointer text-xs font-black tracking-wider uppercase"
+                      >
+                        Create Destination
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setShowCustomInput(false)}
+                        className="h-9 cursor-pointer text-xs font-bold text-muted-foreground hover:text-foreground"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
                 )}
               </CardContent>
