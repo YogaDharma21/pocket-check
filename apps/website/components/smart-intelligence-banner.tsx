@@ -56,35 +56,26 @@ export function SmartIntelligenceBanner({
   }
 
   return (
-    <Card className="overflow-hidden border-border bg-gradient-to-r from-primary/5 via-card to-card shadow-xs transition-all">
+    <Card className="overflow-hidden border-border bg-card shadow-xs transition-all">
       <CardContent className="p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Sparkles className="h-4 w-4" />
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground">
+              <Sparkles className="h-4 w-4 text-primary" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-black tracking-wider text-primary uppercase">
+                <span className="text-[11px] font-black tracking-wider text-muted-foreground uppercase">
                   Packing Intelligence
                 </span>
-                {isAllPacked ? (
-                  <Badge
-                    variant="default"
-                    className="h-5 px-2 py-0 text-[10px] font-black"
-                  >
-                    All Packed
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="destructive"
-                    className="h-5 px-2 py-0 text-[10px] font-black"
-                  >
-                    {missingCount} Unpacked
-                  </Badge>
-                )}
+                <Badge
+                  variant="outline"
+                  className="h-5 px-2 py-0 text-[10px] font-bold text-muted-foreground"
+                >
+                  {isAllPacked ? "All Packed" : `${missingCount} Remaining`}
+                </Badge>
               </div>
-              <h3 className="text-sm font-black text-foreground sm:text-base">
+              <h3 className="text-sm font-extrabold text-foreground sm:text-base">
                 Before you leave for {routineName}
               </h3>
             </div>
@@ -122,10 +113,10 @@ export function SmartIntelligenceBanner({
                   return (
                     <span
                       key={idx}
-                      className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-bold transition-all ${
+                      className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-all ${
                         isItemPacked
-                          ? "border-border bg-muted/40 text-muted-foreground line-through opacity-80"
-                          : "border-primary/30 bg-card text-foreground font-extrabold shadow-2xs"
+                          ? "border-border bg-muted/40 text-muted-foreground line-through opacity-70"
+                          : "border-border bg-card text-foreground font-bold shadow-2xs"
                       }`}
                     >
                       {matchingItem && renderItemIcon(matchingItem.emoji)}
@@ -139,24 +130,24 @@ export function SmartIntelligenceBanner({
               </div>
             </div>
 
-            {/* Forgotten / Unpacked Attention Callout */}
+            {/* Unpacked / Forgotten Items section (subtle, clean styling) */}
             {isAllPacked ? (
-              <div className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs font-black text-foreground">
+              <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 p-3 text-xs font-bold text-foreground">
                 <CheckCheck className="h-4 w-4 text-primary shrink-0" />
                 <span>
-                  Excellent! You haven&apos;t left anything behind. You are ready to go!
+                  Everything is packed and ready to go!
                 </span>
               </div>
             ) : (
-              <div className="space-y-2 rounded-xl border border-destructive/20 bg-destructive/5 p-3">
+              <div className="space-y-2 rounded-xl border border-border/70 bg-muted/30 p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-black text-destructive">
+                  <p className="text-xs font-bold text-foreground">
                     {missingCount === 1
-                      ? `You haven't packed ${missingItems[0].name}`
+                      ? `You haven't packed ${missingItems[0].name}:`
                       : `You haven't packed ${missingCount} items:`}
                   </p>
-                  <span className="text-[10px] font-bold text-muted-foreground">
-                    Tap to pack instantly
+                  <span className="text-[10px] font-medium text-muted-foreground">
+                    Tap to pack
                   </span>
                 </div>
 
@@ -169,12 +160,12 @@ export function SmartIntelligenceBanner({
                       variant="outline"
                       onClick={() => void handlePack(item._id)}
                       disabled={isPackingId === item._id}
-                      className="h-7 cursor-pointer gap-1.5 rounded-lg border-destructive/30 bg-card px-2.5 text-xs font-black text-foreground hover:border-primary hover:bg-primary/10 hover:text-primary"
+                      className="group h-8 cursor-pointer gap-1.5 rounded-lg border border-border bg-card px-2.5 text-xs font-bold text-foreground transition-all hover:border-primary/50 hover:bg-muted"
                       title={`Mark ${item.name} as packed`}
                     >
                       {renderItemIcon(item.emoji)}
                       <span>{item.name}</span>
-                      <span className="ml-1 rounded-sm bg-destructive/10 px-1 py-0.2 text-[9px] font-extrabold text-destructive">
+                      <span className="text-[10px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
                         + Pack
                       </span>
                     </Button>

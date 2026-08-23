@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Id } from "@/convex/_generated/dataModel"
@@ -46,7 +46,6 @@ import {
 } from "@/components/icon-picker-modal"
 import { SmartPresetsModal } from "@/components/smart-presets-modal"
 import { SmartIntelligenceBanner } from "@/components/smart-intelligence-banner"
-import { QuickAddModal } from "@/components/quick-add-modal"
 import {
   SMART_PRESETS,
   parseMultiItemInput,
@@ -81,7 +80,7 @@ export function Dashboard() {
   const [editModalIconTag, setEditModalIconTag] = useState("")
   const [showAboutDialog, setShowAboutDialog] = useState(false)
   const [showPresetsModal, setShowPresetsModal] = useState(false)
-  const [showQuickAddModal, setShowQuickAddModal] = useState(false)
+  const itemInputRef = useRef<HTMLInputElement>(null)
 
   // Convex mutations & queries
   const ensureInitialized = useMutation(api.pocketcheck.ensureInitialized)
@@ -122,12 +121,16 @@ export function Dashboard() {
     "newItem" | "editItem" | "newRoutine" | "editRoutine"
   >("newItem")
 
-  // Global keyboard shortcut for Quick Add (Ctrl+K or Cmd+K)
+  // Keyboard shortcut to focus single item input bar (Ctrl+K or Cmd+K)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault()
-        setShowQuickAddModal((prev) => !prev)
+        itemInputRef.current?.focus()
+        itemInputRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        })
       }
     }
     window.addEventListener("keydown", handleKeyDown)
@@ -246,31 +249,22 @@ export function Dashboard() {
     }
   }
 
-  const handleSelectPreset = async (preset: PresetRoutine) => {
+  const handleSelectPreset = async (
+    preset: PresetRoutine,
+    targetRoutine?: string
+  ) => {
     try {
       const res = await applyPreset({
         name: preset.name,
         icon: preset.icon,
         items: preset.items,
+        targetRoutine: targetRoutine,
       })
       if (res?.routineName) {
         setSelectedRoutine(res.routineName)
       }
     } catch (err) {
       console.error("Failed to apply preset", err)
-    }
-  }
-
-  const handleAddBatch = async (
-    newItems: Array<{ name: string; emoji?: string }>
-  ) => {
-    try {
-      await addItemsBatch({
-        routine: effectiveRoutine,
-        items: newItems,
-      })
-    } catch (err) {
-      console.error("Failed to batch add items", err)
     }
   }
 
@@ -753,42 +747,62 @@ export function Dashboard() {
                       )}
                     </Button>
                     <Input
+                      ref={itemInputRef}
                       type="text"
                       value={newCustomItemName}
                       onChange={(e) => setNewCustomItemName(e.target.value)}
-                      placeholder={`Add item to ${effectiveRoutine} (e.g., Keys, Wallet, Charger)...`}
+                      placeholder={`Add item(s) to ${effectiveRoutine} (e.g. Keys, Wallet or USB Cable, Notebook, ID Card)...`}
                       className="h-11 flex-1 text-sm font-bold"
                     />
                   </div>
                   <div className="flex w-full gap-2 sm:w-auto">
                     <Button
                       type="submit"
-                      className="h-11 flex-1 cursor-pointer rounded-xl px-5 font-black tracking-wider uppercase sm:flex-none"
+                      disabled={!newCustomItemName.trim()}
+                      className="h-11 w-full cursor-pointer rounded-xl px-5 font-black tracking-wider uppercase sm:w-auto"
                     >
-                      <Plus className="mr-1 h-4 w-4" /> Add Item
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowQuickAddModal(true)}
-                      className="h-11 cursor-pointer gap-1.5 rounded-xl px-3.5 text-xs font-black tracking-wider text-primary uppercase hover:bg-primary/10"
-                      title="Quick Multi-Add (Ctrl+K)"
-                    >
-                      <Sparkles className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Multi-Add</span>
+                      <Plus className="mr-1 h-4 w-4" />
+                      {(() => {
+                        const parsed = parseMultiItemInput(newCustomItemName)
+                        if (parsed.length > 1) {
+                          return `Add ${parsed.length} Items`
+                        }
+                        return "Add Item"
+                      })()}
                     </Button>
                   </div>
                 </form>
-                <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground px-1">
-                  <span>Tip: Separate multiple items with commas (e.g., USB Cable, Notebook, ID Card)</span>
-                  <button
-                    type="button"
-                    onClick={() => setShowQuickAddModal(true)}
-                    className="hidden text-primary hover:underline sm:inline-block cursor-pointer font-extrabold"
-                  >
-                    Multi-Add Modal (Ctrl+K)
-                  </button>
-                </div>
+
+                {/* Live preview for multi-item comma entry */}
+                {(() => {
+                  const parsed = parseMultiItemInput(newCustomItemName)
+                  if (parsed.length > 1) {
+                    return (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[11px] font-bold text-muted-foreground">
+                          Adding {parsed.length} items:
+                        </span>
+                        {parsed.map((item, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-0.5 text-xs font-bold text-foreground"
+                          >
+                            {renderItemIcon(item.emoji)}
+                            <span>{item.name}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )
+                  }
+                  return (
+                    <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground px-1">
+                      <span>Tip: Type multiple items separated by commas to add at once (e.g., USB Cable, Notebook, ID Card)</span>
+                      <kbd className="hidden rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground sm:inline">
+                        Ctrl+K to focus
+                      </kbd>
+                    </div>
+                  )
+                })()}
               </CardContent>
             </Card>
 
@@ -849,7 +863,12 @@ export function Dashboard() {
                                   key={preset.id}
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => void handleSelectPreset(preset)}
+                                  onClick={() =>
+                                    void handleSelectPreset(
+                                      preset,
+                                      effectiveRoutine
+                                    )
+                                  }
                                   className="h-8 cursor-pointer gap-1.5 rounded-lg border-border font-extrabold hover:border-primary hover:bg-primary/5 hover:text-primary"
                                 >
                                   {renderRoutineIcon(preset.icon)}
@@ -1341,35 +1360,12 @@ export function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Floating Action Button (FAB) for Quick Add */}
-      <div className="fixed right-6 bottom-6 z-40">
-        <Button
-          onClick={() => setShowQuickAddModal(true)}
-          size="lg"
-          className="h-13 cursor-pointer gap-2 rounded-2xl bg-primary px-4.5 font-black tracking-wider text-primary-foreground shadow-lg transition-transform hover:scale-105 active:scale-95"
-          title="Quick Add Items (Ctrl+K)"
-        >
-          <Plus className="h-5 w-5 stroke-[2.5]" />
-          <span className="text-xs font-black uppercase">Quick Add</span>
-          <kbd className="hidden rounded bg-primary-foreground/20 px-1.5 py-0.5 text-[10px] font-mono sm:inline">
-            Ctrl+K
-          </kbd>
-        </Button>
-      </div>
-
       {/* Smart Presets Modal */}
       <SmartPresetsModal
         open={showPresetsModal}
         onOpenChange={setShowPresetsModal}
+        currentRoutine={effectiveRoutine}
         onSelectPreset={handleSelectPreset}
-      />
-
-      {/* Quick Add Modal */}
-      <QuickAddModal
-        open={showQuickAddModal}
-        onOpenChange={setShowQuickAddModal}
-        routineName={effectiveRoutine}
-        onAddBatch={handleAddBatch}
       />
 
       {/* Icon Picker Modal */}

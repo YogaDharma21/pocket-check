@@ -60,10 +60,17 @@ export const SMART_PRESETS: PresetRoutine[] = [
 const KEYWORD_ICON_MAP: Array<{ keywords: string[]; icon: string }> = [
   { keywords: ["laptop", "macbook", "notebook computer"], icon: "Laptop" },
   {
-    keywords: ["laptop charger", "charger", "power adapter", "magsafe"],
+    keywords: [
+      "laptop charger",
+      "phone charger",
+      "charger",
+      "power adapter",
+      "magsafe",
+      "adapter",
+    ],
     icon: "Plug",
   },
-  { keywords: ["cable", "usb", "wire", "cord", "lightning"], icon: "Cable" },
+  { keywords: ["cable", "usb", "wire", "cord", "lightning", "usb cable"], icon: "Cable" },
   {
     keywords: ["mouse", "trackpad", "trackball", "magic mouse"],
     icon: "Mouse",
@@ -77,6 +84,7 @@ const KEYWORD_ICON_MAP: Array<{ keywords: string[]; icon: string }> = [
       "earbud",
       "earbuds",
       "airpods",
+      "tws",
     ],
     icon: "Headphones",
   },
@@ -97,7 +105,16 @@ const KEYWORD_ICON_MAP: Array<{ keywords: string[]; icon: string }> = [
     icon: "CupSoda",
   },
   {
-    keywords: ["id card", "id badge", "badge", "access card", "keycard"],
+    keywords: [
+      "id card",
+      "id badge",
+      "badge",
+      "access card",
+      "keycard",
+      "card",
+      "student card",
+      "ktp",
+    ],
     icon: "IdCard",
   },
   {
@@ -108,6 +125,7 @@ const KEYWORD_ICON_MAP: Array<{ keywords: string[]; icon: string }> = [
       "diary",
       "book",
       "textbook",
+      "notes",
     ],
     icon: "BookOpen",
   },
@@ -143,12 +161,24 @@ const KEYWORD_ICON_MAP: Array<{ keywords: string[]; icon: string }> = [
     icon: "Sparkles",
   },
   {
-    keywords: ["keys", "house key", "car key", "keychain", "key"],
+    keywords: ["keys", "house key", "car key", "keychain", "key", "motorcycle key"],
     icon: "Key",
   },
   {
-    keywords: ["phone", "smartphone", "iphone", "android", "cellphone"],
+    keywords: [
+      "handphone",
+      "hp",
+      "phone",
+      "smartphone",
+      "iphone",
+      "android",
+      "cellphone",
+    ],
     icon: "Smartphone",
+  },
+  {
+    keywords: ["mask", "facemask", "face mask"],
+    icon: "Shield",
   },
   {
     keywords: ["glasses", "sunglasses", "spectacles", "contacts"],
@@ -156,13 +186,13 @@ const KEYWORD_ICON_MAP: Array<{ keywords: string[]; icon: string }> = [
   },
   { keywords: ["watch", "smartwatch", "apple watch"], icon: "Watch" },
   { keywords: ["umbrella", "raincoat"], icon: "Umbrella" },
-  { keywords: ["pen", "pencil", "highlighter", "marker"], icon: "Pen" },
+  { keywords: ["pen", "pencil", "highlighter", "marker", "stationery"], icon: "Pen" },
   {
     keywords: ["gym", "towel", "workout", "dumbbell", "weights"],
     icon: "Dumbbell",
   },
   {
-    keywords: ["medicine", "pill", "pills", "vitamins", "bandaid", "first aid"],
+    keywords: ["medicine", "pill", "pills", "vitamins", "bandaid", "first aid", "panadol"],
     icon: "Pill",
   },
   { keywords: ["camera", "gopro", "lens", "dslr"], icon: "Camera" },

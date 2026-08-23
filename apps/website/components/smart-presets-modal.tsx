@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { Sparkles, ArrowRight, Loader2 } from "lucide-react"
+import { Sparkles, ArrowRight, Loader2, Plus } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -20,20 +20,22 @@ import { SMART_PRESETS, PresetRoutine } from "@/lib/presets"
 interface SmartPresetsModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSelectPreset: (preset: PresetRoutine) => Promise<void>
+  currentRoutine?: string
+  onSelectPreset: (preset: PresetRoutine, targetRoutine?: string) => Promise<void>
 }
 
 export function SmartPresetsModal({
   open,
   onOpenChange,
+  currentRoutine,
   onSelectPreset,
 }: SmartPresetsModalProps) {
   const [applyingPresetId, setApplyingPresetId] = useState<string | null>(null)
 
-  const handleApply = async (preset: PresetRoutine) => {
-    setApplyingPresetId(preset.id)
+  const handleApply = async (preset: PresetRoutine, targetRoutine?: string) => {
+    setApplyingPresetId(`${preset.id}-${targetRoutine || "new"}`)
     try {
-      await onSelectPreset(preset)
+      await onSelectPreset(preset, targetRoutine)
       onOpenChange(false)
     } finally {
       setApplyingPresetId(null)
@@ -53,24 +55,26 @@ export function SmartPresetsModal({
                 Smart Packing Presets
               </DialogTitle>
               <p className="text-xs font-bold text-muted-foreground">
-                Instantly populate your checklist with curated everyday essentials.
+                Quickly start or populate your checklist with curated everyday essentials.
               </p>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          <div className="grid grid-cols-1 gap-3.5">
+        <div className="space-y-3.5 py-2">
+          <div className="grid grid-cols-1 gap-3">
             {SMART_PRESETS.map((preset) => {
-              const isApplying = applyingPresetId === preset.id
+              const isApplyingDirect = applyingPresetId === `${preset.id}-new`
+              const isApplyingToCurrent = applyingPresetId === `${preset.id}-${currentRoutine}`
+              const isBusy = !!applyingPresetId
 
               return (
                 <Card
                   key={preset.id}
-                  className="group relative overflow-hidden border-border transition-all hover:border-primary/50 hover:shadow-md"
+                  className="group relative overflow-hidden border-border transition-all hover:border-primary/50 hover:shadow-sm"
                 >
                   <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-                    <div className="space-y-2.5 min-w-0 flex-1">
+                    <div className="space-y-2 min-w-0 flex-1">
                       <div className="flex items-center gap-2.5">
                         <div className="rounded-xl bg-primary/10 p-2 text-primary">
                           {renderRoutineIcon(preset.icon)}
@@ -82,12 +86,12 @@ export function SmartPresetsModal({
                             </h4>
                             <Badge
                               variant="secondary"
-                              className="text-[10px] font-black"
+                              className="text-[10px] font-bold"
                             >
                               {preset.items.length} items
                             </Badge>
                           </div>
-                          <p className="text-xs font-bold text-muted-foreground">
+                          <p className="text-xs text-muted-foreground font-medium">
                             {preset.description}
                           </p>
                         </div>
@@ -98,7 +102,7 @@ export function SmartPresetsModal({
                         {preset.items.map((item, idx) => (
                           <span
                             key={idx}
-                            className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-0.5 text-xs font-bold text-foreground"
+                            className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-0.5 text-xs font-medium text-foreground"
                           >
                             {renderItemIcon(item.emoji)}
                             <span>{item.name}</span>
@@ -107,23 +111,45 @@ export function SmartPresetsModal({
                       </div>
                     </div>
 
-                    <div className="shrink-0 pt-2 sm:pt-0">
+                    <div className="flex flex-col gap-1.5 shrink-0 pt-2 sm:pt-0 sm:items-end">
                       <Button
                         onClick={() => void handleApply(preset)}
-                        disabled={!!applyingPresetId}
-                        className="w-full cursor-pointer rounded-xl font-black tracking-wider uppercase sm:w-auto"
+                        disabled={isBusy}
+                        className="w-full cursor-pointer rounded-xl font-bold text-xs uppercase sm:w-auto"
                       >
-                        {isApplying ? (
+                        {isApplyingDirect ? (
                           <>
-                            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                            Applying...
+                            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                            Loading...
                           </>
                         ) : (
                           <>
-                            Use Preset <ArrowRight className="ml-1 h-4 w-4" />
+                            Open {preset.name} <ArrowRight className="ml-1 h-3.5 w-3.5" />
                           </>
                         )}
                       </Button>
+
+                      {currentRoutine && currentRoutine.toLowerCase() !== preset.name.toLowerCase() && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => void handleApply(preset, currentRoutine)}
+                          disabled={isBusy}
+                          className="h-7 cursor-pointer text-[11px] font-bold text-muted-foreground hover:text-foreground"
+                        >
+                          {isApplyingToCurrent ? (
+                            <>
+                              <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                              Adding...
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="mr-1 h-3 w-3" />
+                              Add to {currentRoutine}
+                            </>
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
