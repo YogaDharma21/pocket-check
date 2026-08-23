@@ -59,8 +59,10 @@ export const addRoutine = mutation({
   args: {
     name: v.string(),
     icon: v.string(),
+    autoResetTime: v.optional(v.string()),
+    autoResetDays: v.optional(v.array(v.number())),
   },
-  handler: async (ctx, { name, icon }) => {
+  handler: async (ctx, { name, icon, autoResetTime, autoResetDays }) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
     const userId = identity.subject;
@@ -82,7 +84,14 @@ export const addRoutine = mutation({
       .collect();
     const maxOrder = allRoutines.reduce((m, r) => Math.max(m, r.order ?? 0), -1);
 
-    return await ctx.db.insert("routines", { userId, name, icon, order: maxOrder + 1 });
+    return await ctx.db.insert("routines", {
+      userId,
+      name,
+      icon,
+      order: maxOrder + 1,
+      ...(autoResetTime ? { autoResetTime } : {}),
+      ...(autoResetDays ? { autoResetDays } : {}),
+    });
   },
 });
 
@@ -92,8 +101,10 @@ export const addItem = mutation({
     routine: v.string(),
     name: v.string(),
     emoji: v.optional(v.string()),
+    quantity: v.optional(v.number()),
+    locationNote: v.optional(v.string()),
   },
-  handler: async (ctx, { routine, name, emoji }) => {
+  handler: async (ctx, { routine, name, emoji, quantity, locationNote }) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
     const userId = identity.subject;
@@ -114,33 +125,44 @@ export const addItem = mutation({
       isPacked: false,
       order: maxOrder + 1,
       ...(emoji ? { emoji } : {}),
+      ...(quantity !== undefined && quantity > 1 ? { quantity } : {}),
+      ...(locationNote ? { locationNote } : {}),
     });
   },
 });
 
-/** Edit an item's name and/or emoji. */
+/** Edit an item's details. */
 export const editItem = mutation({
   args: {
     id: v.id("items"),
     name: v.string(),
     emoji: v.optional(v.string()),
+    quantity: v.optional(v.number()),
+    locationNote: v.optional(v.string()),
   },
-  handler: async (ctx, { id, name, emoji }) => {
+  handler: async (ctx, { id, name, emoji, quantity, locationNote }) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
 
-    await ctx.db.patch(id, { name, emoji: emoji ?? undefined });
+    await ctx.db.patch(id, {
+      name,
+      emoji: emoji ?? undefined,
+      quantity: quantity && quantity > 1 ? quantity : undefined,
+      locationNote: locationNote ?? undefined,
+    });
   },
 });
 
-/** Update a custom routine's name and icon. */
+/** Update a custom routine's name, icon, and auto-reset schedule. */
 export const updateRoutine = mutation({
   args: {
     id: v.id("routines"),
     name: v.string(),
     icon: v.string(),
+    autoResetTime: v.optional(v.string()),
+    autoResetDays: v.optional(v.array(v.number())),
   },
-  handler: async (ctx, { id, name, icon }) => {
+  handler: async (ctx, { id, name, icon, autoResetTime, autoResetDays }) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
     const userId = identity.subject;
@@ -163,7 +185,12 @@ export const updateRoutine = mutation({
       }
     }
 
-    await ctx.db.patch(id, { name, icon });
+    await ctx.db.patch(id, {
+      name,
+      icon,
+      autoResetTime: autoResetTime ?? undefined,
+      autoResetDays: autoResetDays ?? undefined,
+    });
   },
 });
 
@@ -268,6 +295,44 @@ export const deleteAllItems = mutation({
   },
 });
 
+/** Restore items (for Undo functionality). */
+export const restoreItems = mutation({
+  args: {
+    items: v.array(
+      v.object({
+        routine: v.string(),
+        name: v.string(),
+        isPacked: v.boolean(),
+        emoji: v.optional(v.string()),
+        quantity: v.optional(v.number()),
+        locationNote: v.optional(v.string()),
+        order: v.optional(v.number()),
+      })
+    ),
+  },
+  handler: async (ctx, { items }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+    const userId = identity.subject;
+
+    const inserted = [];
+    for (const item of items) {
+      const id = await ctx.db.insert("items", {
+        userId,
+        routine: item.routine,
+        name: item.name,
+        isPacked: item.isPacked,
+        order: item.order ?? 0,
+        ...(item.emoji ? { emoji: item.emoji } : {}),
+        ...(item.quantity ? { quantity: item.quantity } : {}),
+        ...(item.locationNote ? { locationNote: item.locationNote } : {}),
+      });
+      inserted.push(id);
+    }
+    return inserted;
+  },
+});
+
 /** Reset all items across all routines for the current user (mark all as unpacked). */
 export const resetAllRoutines = mutation({
   args: {},
@@ -284,6 +349,44 @@ export const resetAllRoutines = mutation({
     for (const item of items) {
       await ctx.db.patch(item._id, { isPacked: false });
     }
+  },
+});
+
+/** Check and execute scheduled routine auto-reset based on user-configured time & active days. */
+export const checkAndExecuteAutoReset = mutation({
+  args: {
+    routineId: v.id("routines"),
+    currentDateStr: v.string(), // e.g. "2026-08-23"
+  },
+  handler: async (ctx, { routineId, currentDateStr }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return { reset: false };
+    const userId = identity.subject;
+
+    const routine = await ctx.db.get(routineId);
+    if (!routine || routine.userId !== userId) return { reset: false };
+
+    // If already reset today, skip
+    if (routine.lastResetDate === currentDateStr) {
+      return { reset: false };
+    }
+
+    // Reset all items in this routine
+    const items = await ctx.db
+      .query("items")
+      .withIndex("by_user_routine", (q) =>
+        q.eq("userId", userId).eq("routine", routine.name)
+      )
+      .collect();
+
+    for (const item of items) {
+      await ctx.db.patch(item._id, { isPacked: false });
+    }
+
+    // Mark as reset for today
+    await ctx.db.patch(routineId, { lastResetDate: currentDateStr });
+
+    return { reset: true, routineName: routine.name };
   },
 });
 
@@ -325,6 +428,8 @@ export const addItemsBatch = mutation({
       v.object({
         name: v.string(),
         emoji: v.optional(v.string()),
+        quantity: v.optional(v.number()),
+        locationNote: v.optional(v.string()),
       })
     ),
   },
@@ -356,6 +461,8 @@ export const addItemsBatch = mutation({
         isPacked: false,
         order: currentOrder,
         ...(item.emoji ? { emoji: item.emoji } : {}),
+        ...(item.quantity && item.quantity > 1 ? { quantity: item.quantity } : {}),
+        ...(item.locationNote ? { locationNote: item.locationNote } : {}),
       });
       insertedIds.push(id);
     }
@@ -373,6 +480,8 @@ export const applyPreset = mutation({
       v.object({
         name: v.string(),
         emoji: v.optional(v.string()),
+        quantity: v.optional(v.number()),
+        locationNote: v.optional(v.string()),
       })
     ),
     targetRoutine: v.optional(v.string()),
@@ -437,6 +546,8 @@ export const applyPreset = mutation({
         isPacked: false,
         order: currentOrder,
         ...(item.emoji ? { emoji: item.emoji } : {}),
+        ...(item.quantity && item.quantity > 1 ? { quantity: item.quantity } : {}),
+        ...(item.locationNote ? { locationNote: item.locationNote } : {}),
       });
       insertedIds.push(id);
     }

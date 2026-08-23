@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Id } from "@/convex/_generated/dataModel"
@@ -24,6 +24,10 @@ import {
   AlertTriangle,
   Settings,
   Sparkles,
+  Share2,
+  Download,
+  Clock,
+  Undo2,
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
@@ -46,12 +50,27 @@ import {
 } from "@/components/icon-picker-modal"
 import { SmartPresetsModal } from "@/components/smart-presets-modal"
 import { SmartIntelligenceBanner } from "@/components/smart-intelligence-banner"
+import { WeatherAlertBanner } from "@/components/weather-alert-banner"
+import { ExportModal } from "@/components/export-modal"
+import { ShareRoutineModal } from "@/components/share-routine-modal"
+import { RoutineScheduleModal } from "@/components/routine-schedule-modal"
+import { ImportSharedModal } from "@/components/import-shared-modal"
 import {
   SMART_PRESETS,
   parseMultiItemInput,
   detectIconForItem,
   PresetRoutine,
 } from "@/lib/presets"
+
+interface RestorableItem {
+  routine: string
+  name: string
+  isPacked: boolean
+  emoji?: string
+  quantity?: number
+  locationNote?: string
+  order?: number
+}
 
 export function Dashboard() {
   const [selectedRoutine, setSelectedRoutine] = useState("Work")
@@ -66,20 +85,76 @@ export function Dashboard() {
     _id: Id<"routines">
     name: string
     icon: string
+    autoResetTime?: string
+    autoResetDays?: number[]
     order?: number
   } | null>(null)
+
   const [manageItem, setManageItem] = useState<{
     _id: Id<"items">
     name: string
     emoji?: string
+    quantity?: number
+    locationNote?: string
     isPacked: boolean
     order?: number
   } | null>(null)
 
   const [editModalName, setEditModalName] = useState("")
   const [editModalIconTag, setEditModalIconTag] = useState("")
+  const [editModalQuantity, setEditModalQuantity] = useState<number | undefined>(undefined)
+  const [editModalLocationNote, setEditModalLocationNote] = useState("")
+
   const [showAboutDialog, setShowAboutDialog] = useState(false)
   const [showPresetsModal, setShowPresetsModal] = useState(false)
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      return !!params.get("import")
+    }
+    return false
+  })
+  const [sharedImportData] = useState<{
+    name: string
+    icon: string
+    items: Array<{
+      name: string
+      emoji?: string
+      quantity?: number
+      locationNote?: string
+    }>
+  } | null>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const importParam = params.get("import")
+      if (importParam) {
+        try {
+          const decoded = JSON.parse(
+            decodeURIComponent(escape(atob(decodeURIComponent(importParam))))
+          )
+          if (decoded && decoded.name && Array.isArray(decoded.items)) {
+            return decoded
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+    return null
+  })
+
+  // Floating Undo Toast State
+  const [undoToast, setUndoToast] = useState<{
+    message: string
+    items: RestorableItem[]
+  } | null>(null)
+  const undoTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Keyboard navigation highlight
+  const [focusedItemIndex, setFocusedItemIndex] = useState<number>(-1)
   const itemInputRef = useRef<HTMLInputElement>(null)
 
   // Convex mutations & queries
@@ -95,6 +170,8 @@ export function Dashboard() {
   const deleteItem = useMutation(api.pocketcheck.deleteItem)
   const resetItems = useMutation(api.pocketcheck.resetItems)
   const deleteAllItems = useMutation(api.pocketcheck.deleteAllItems)
+  const restoreItems = useMutation(api.pocketcheck.restoreItems)
+  const checkAndExecuteAutoReset = useMutation(api.pocketcheck.checkAndExecuteAutoReset)
   const reorderItems = useMutation(api.pocketcheck.reorderItems)
   const reorderRoutines = useMutation(api.pocketcheck.reorderRoutines)
 
@@ -119,9 +196,77 @@ export function Dashboard() {
     "newItem" | "editItem" | "newRoutine" | "editRoutine"
   >("newItem")
 
-  // Keyboard shortcut to focus single item input bar (Ctrl+K or Cmd+K)
+  // Seed default routines on first login
+  useEffect(() => {
+    void ensureInitialized()
+  }, [ensureInitialized])
+
+  // Auto-Reset Time check per routine
+  const currentRoutineObj = routinesList.find((r) => r.name === effectiveRoutine)
+
+  useEffect(() => {
+    if (!currentRoutineObj || !currentRoutineObj.autoResetTime) return
+
+    const checkSchedule = async () => {
+      const now = new Date()
+      const currentDay = now.getDay()
+      const activeDays = currentRoutineObj.autoResetDays ?? [1, 2, 3, 4, 5]
+
+      if (!activeDays.includes(currentDay)) return
+
+      const [hours, minutes] = currentRoutineObj.autoResetTime!.split(":").map(Number)
+      const scheduledTime = new Date()
+      scheduledTime.setHours(hours, minutes, 0, 0)
+
+      const todayStr = now.toISOString().split("T")[0]
+      if (now >= scheduledTime && currentRoutineObj.lastResetDate !== todayStr) {
+        try {
+          await checkAndExecuteAutoReset({
+            routineId: currentRoutineObj._id,
+            currentDateStr: todayStr,
+          })
+        } catch (err) {
+          console.warn("Auto-reset execution failed", err)
+        }
+      }
+    }
+
+    void checkSchedule()
+    const timer = setInterval(checkSchedule, 30000)
+    return () => clearInterval(timer)
+  }, [currentRoutineObj, checkAndExecuteAutoReset])
+
+  // Filtered items list
+  const filteredItems = items.filter((item) => {
+    if (filter === "packed") return item.isPacked
+    if (filter === "missing") return !item.isPacked
+    return true
+  })
+
+  // Handlers
+  const handleToggle = useCallback(
+    async (itemId: Id<"items">, currentPacked: boolean) => {
+      try {
+        await toggleItem({ id: itemId, isPacked: !currentPacked })
+      } catch (err) {
+        console.error("Failed to toggle item", err)
+      }
+    },
+    [toggleItem]
+  )
+
+  const handleReset = useCallback(async () => {
+    try {
+      await resetItems({ routine: effectiveRoutine })
+    } catch (err) {
+      console.error("Failed to reset list", err)
+    }
+  }, [resetItems, effectiveRoutine])
+
+  // Keyboard navigation shortcut handler (UX-02)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Focus single item input bar (Ctrl+K or Cmd+K or 'N' when not typing)
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault()
         itemInputRef.current?.focus()
@@ -129,25 +274,143 @@ export function Dashboard() {
           behavior: "smooth",
           block: "center",
         })
+        return
+      }
+
+      // If active element is an input, skip global shortcuts
+      if (
+        document.activeElement instanceof HTMLInputElement ||
+        document.activeElement instanceof HTMLTextAreaElement
+      ) {
+        return
+      }
+
+      // Space: Toggle active highlighted item or first missing
+      if (e.code === "Space") {
+        e.preventDefault()
+        if (
+          focusedItemIndex >= 0 &&
+          focusedItemIndex < filteredItems.length
+        ) {
+          const item = filteredItems[focusedItemIndex]
+          void handleToggle(item._id, item.isPacked)
+        } else if (filteredItems.length > 0) {
+          const firstMissing =
+            filteredItems.find((i) => !i.isPacked) || filteredItems[0]
+          void handleToggle(firstMissing._id, firstMissing.isPacked)
+        }
+      }
+
+      // J or Down Arrow: Navigate down list
+      if (e.key === "j" || e.key === "ArrowDown") {
+        e.preventDefault()
+        setFocusedItemIndex((prev) =>
+          prev < filteredItems.length - 1 ? prev + 1 : 0
+        )
+      }
+
+      // K or Up Arrow: Navigate up list
+      if (e.key === "k" || e.key === "ArrowUp") {
+        e.preventDefault()
+        setFocusedItemIndex((prev) =>
+          prev > 0 ? prev - 1 : filteredItems.length - 1
+        )
+      }
+
+      // Shift + U: Reset all items in current routine
+      if (e.shiftKey && e.key.toLowerCase() === "u") {
+        e.preventDefault()
+        void handleReset()
+      }
+
+      // Numbers 1-9: Switch routine tab
+      const num = parseInt(e.key, 10)
+      if (!isNaN(num) && num >= 1 && num <= routinesList.length) {
+        e.preventDefault()
+        setSelectedRoutine(routinesList[num - 1].name)
       }
     }
+
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [])
+  }, [filteredItems, focusedItemIndex, routinesList, handleToggle, handleReset])
 
-  // Seed default routines + items on first login
-  useEffect(() => {
-    void ensureInitialized()
-  }, [ensureInitialized])
+  // Trigger floating Undo toast (UX-01)
+  const triggerUndo = (message: string, itemsToRestore: RestorableItem[]) => {
+    if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current)
+    setUndoToast({ message, items: itemsToRestore })
+    undoTimeoutRef.current = setTimeout(() => {
+      setUndoToast(null)
+    }, 5000)
+  }
+
+  const handleExecuteUndo = async () => {
+    if (!undoToast || undoToast.items.length === 0) return
+    if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current)
+    try {
+      await restoreItems({ items: undoToast.items })
+      setUndoToast(null)
+    } catch (err) {
+      console.error("Failed to restore items", err)
+    }
+  }
+
+  const handleDeleteItemWithUndo = async (item: {
+    _id: Id<"items">
+    name: string
+    emoji?: string
+    quantity?: number
+    locationNote?: string
+    isPacked: boolean
+    order?: number
+  }) => {
+    try {
+      const restorable: RestorableItem = {
+        routine: effectiveRoutine,
+        name: item.name,
+        isPacked: item.isPacked,
+        emoji: item.emoji,
+        quantity: item.quantity,
+        locationNote: item.locationNote,
+        order: item.order,
+      }
+      await deleteItem({ id: item._id })
+      setManageItem(null)
+      triggerUndo(`Deleted "${item.name}"`, [restorable])
+    } catch (err) {
+      console.error("Failed to delete item", err)
+    }
+  }
+
+  const handleDeleteAllCreatedItems = async () => {
+    try {
+      const backupItems: RestorableItem[] = items.map((i) => ({
+        routine: effectiveRoutine,
+        name: i.name,
+        isPacked: i.isPacked,
+        emoji: i.emoji,
+        quantity: i.quantity,
+        locationNote: i.locationNote,
+        order: i.order,
+      }))
+      await deleteAllItems({ routine: effectiveRoutine })
+      setShowDeleteAllConfirm(false)
+      if (backupItems.length > 0) {
+        triggerUndo(
+          `Cleared ${backupItems.length} items from ${effectiveRoutine}`,
+          backupItems
+        )
+      }
+    } catch (err) {
+      console.error("Failed to delete all items", err)
+    }
+  }
 
   // Calculate progress metrics
   const totalItems = items.length
   const packedItems = items.filter((i) => i.isPacked).length
   const missingItems = totalItems - packedItems
   const percentage = totalItems > 0 ? (packedItems / totalItems) * 100 : 0
-  const currentRoutineObj = routinesList.find(
-    (r) => r.name === effectiveRoutine
-  )
 
   // Headline message
   let headline = "Let's double-check before you pack!"
@@ -157,32 +420,6 @@ export function Dashboard() {
     headline = "Excellent! You are 100% prepared to leave!"
   } else if (percentage >= 50) {
     headline = "Looking good! Keep grabbing those items!"
-  }
-
-  // Handlers
-  const handleToggle = async (itemId: Id<"items">, currentPacked: boolean) => {
-    try {
-      await toggleItem({ id: itemId, isPacked: !currentPacked })
-    } catch (err) {
-      console.error("Failed to toggle item", err)
-    }
-  }
-
-  const handleReset = async () => {
-    try {
-      await resetItems({ routine: effectiveRoutine })
-    } catch (err) {
-      console.error("Failed to reset list", err)
-    }
-  }
-
-  const handleDeleteAllCreatedItems = async () => {
-    try {
-      await deleteAllItems({ routine: effectiveRoutine })
-      setShowDeleteAllConfirm(false)
-    } catch (err) {
-      console.error("Failed to delete all items", err)
-    }
   }
 
   const handleDropItem = async (targetId: Id<"items">) => {
@@ -268,10 +505,7 @@ export function Dashboard() {
         setSelectedRoutine(res.routineName)
       }
     } catch (err) {
-      console.warn(
-        "applyPreset failed, executing client-side routine & items creation",
-        err
-      )
+      console.warn("applyPreset fallback", err)
       const existingRoutine = routinesList.find(
         (r) =>
           r.name.toLowerCase().trim() === routineNameToUse.toLowerCase().trim()
@@ -345,7 +579,7 @@ export function Dashboard() {
           items: itemsToInsert,
         })
       } catch (err) {
-        console.warn("addItemsBatch failed, adding items sequentially", err)
+        console.warn("addItemsBatch fallback", err)
         for (const item of itemsToInsert) {
           await addItem({
             routine: effectiveRoutine,
@@ -372,6 +606,10 @@ export function Dashboard() {
       console.error("Failed to add item", err)
     }
   }
+
+  // Auto-detected icon while user is typing in input (UX-04)
+  const liveDetectedIcon =
+    newItemTag || (newCustomItemName.trim() ? detectIconForItem(newCustomItemName.trim()) : null)
 
   return (
     <>
@@ -403,6 +641,28 @@ export function Dashboard() {
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowExportModal(true)}
+              className="h-8 text-xs font-bold border-border text-foreground hover:bg-muted hidden sm:flex items-center gap-1.5"
+              title="Export or Print Checklist"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Export</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowShareModal(true)}
+              className="h-8 text-xs font-bold border-border text-foreground hover:bg-muted hidden sm:flex items-center gap-1.5"
+              title="Share Checklist Link"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              <span>Share</span>
+            </Button>
+
             <Button
               variant="ghost"
               size="icon"
@@ -477,7 +737,7 @@ export function Dashboard() {
                     size="sm"
                     onClick={() => void handleReset()}
                     className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-primary uppercase hover:text-primary/80"
-                    title="Reset items in this routine to Missing position"
+                    title="Reset items in this routine to Missing position (Shift+U)"
                   >
                     <RotateCcw className="h-3.5 w-3.5" /> Uncheck All
                   </Button>
@@ -536,12 +796,38 @@ export function Dashboard() {
                           >
                             {renderRoutineIcon(routine.icon || routine.name)}
                           </div>
-                          <span className="truncate text-sm select-none">
-                            {routine.name}
-                          </span>
+                          <div className="truncate min-w-0">
+                            <span className="truncate text-sm select-none block">
+                              {routine.name}
+                            </span>
+                            {routine.autoResetTime && (
+                              <span className="text-[10px] font-mono opacity-70 flex items-center gap-1">
+                                <Clock className="h-2.5 w-2.5" />
+                                {routine.autoResetTime}
+                              </span>
+                            )}
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setManageRoutine(routine)
+                              setShowScheduleModal(true)
+                            }}
+                            className={`h-7 w-7 shrink-0 cursor-pointer rounded-lg opacity-70 transition-opacity group-hover:opacity-100 ${
+                              isActive
+                                ? "text-primary-foreground hover:bg-primary-foreground/20"
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            }`}
+                            title="Schedule Auto-Reset"
+                          >
+                            <Clock className="h-3.5 w-3.5" />
+                          </Button>
+
                           <Button
                             variant="ghost"
                             size="icon"
@@ -718,7 +1004,19 @@ export function Dashboard() {
               </div>
             </div>
 
-            {/* Smart Departure Intelligence Banner */}
+            {/* Free Weather-Aware Packing Suggestions Banner (FEAT-01) */}
+            <WeatherAlertBanner
+              currentRoutineItems={items}
+              onQuickAddItem={async (name, emoji) => {
+                await addItem({
+                  routine: effectiveRoutine,
+                  name,
+                  emoji: emoji || "Umbrella",
+                })
+              }}
+            />
+
+            {/* Smart Departure Intelligence Banner (UX-05) */}
             <SmartIntelligenceBanner
               routineName={effectiveRoutine}
               items={items}
@@ -727,7 +1025,7 @@ export function Dashboard() {
               }}
             />
 
-            {/* Quick Add Item Bar */}
+            {/* Quick Add Item Bar with Live Auto-Icon Detection (UX-03, UX-04) */}
             <Card className="border-border shadow-xs">
               <CardContent className="space-y-2 p-3.5 sm:p-4">
                 <form
@@ -747,8 +1045,8 @@ export function Dashboard() {
                       className="flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-lg px-0"
                       title="Select Icon for item"
                     >
-                      {newItemTag ? (
-                        renderItemIcon(newItemTag)
+                      {liveDetectedIcon ? (
+                        renderItemIcon(liveDetectedIcon)
                       ) : (
                         <Tag className="h-4 w-4 text-muted-foreground" />
                       )}
@@ -809,7 +1107,7 @@ export function Dashboard() {
                   }
                   return (
                     <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground px-1">
-                      <span>Tip: Type multiple items separated by commas to add at once (e.g., USB Cable, Notebook, ID Card)</span>
+                      <span>Tip: Type comma-separated items to bulk-add &bull; Space to toggle &bull; J/K to move</span>
                       <kbd className="hidden rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground sm:inline">
                         Ctrl+K to focus
                       </kbd>
@@ -821,12 +1119,6 @@ export function Dashboard() {
 
             {/* Items List */}
             {(() => {
-              const filteredItems = items.filter((item) => {
-                if (filter === "packed") return item.isPacked
-                if (filter === "missing") return !item.isPacked
-                return true
-              })
-
               return (
                 <div className="space-y-3" id="checklist-container">
                   {rawItems === undefined ? (
@@ -900,9 +1192,10 @@ export function Dashboard() {
                       </CardContent>
                     </Card>
                   ) : (
-                    filteredItems.map((item) => {
+                    filteredItems.map((item, itemIdx) => {
                       const isDragging = draggedItemId === item._id
                       const isDragOver = dragOverItemId === item._id
+                      const isFocused = focusedItemIndex === itemIdx
 
                       return (
                         <Card
@@ -933,10 +1226,13 @@ export function Dashboard() {
                             setDragOverItemId(null)
                           }}
                           onClick={() => {
+                            setFocusedItemIndex(itemIdx)
                             void handleToggle(item._id, item.isPacked)
                           }}
                           className={`relative cursor-pointer transition-all ${
                             item.isPacked ? "bg-muted/40" : "hover:bg-accent/40"
+                          } ${
+                            isFocused ? "ring-2 ring-primary ring-offset-1" : ""
                           } ${
                             isDragging
                               ? "scale-[0.98] border-dashed border-primary opacity-40"
@@ -971,21 +1267,30 @@ export function Dashboard() {
                                 )}
                               </div>
 
-                              {/* Details */}
-                              <div className="min-w-0 flex-1 select-none">
-                                <p
-                                  className={`item-name flex items-center truncate text-base font-extrabold select-none sm:text-lg ${
-                                    item.isPacked
-                                      ? "text-muted-foreground line-through decoration-muted-foreground decoration-2"
-                                      : "text-foreground"
-                                  }`}
-                                >
-                                  {renderItemIcon(item.emoji)}
-                                  <span className="truncate select-none">
-                                    {item.name}
-                                  </span>
-                                </p>
-                                <div className="mt-0.5">
+                              {/* Details (Item Name, Quantities FEAT-03, Placement Notes) */}
+                              <div className="min-w-0 flex-1 select-none space-y-0.5">
+                                <div className="flex items-center gap-2">
+                                  <p
+                                    className={`item-name flex items-center truncate text-base font-extrabold select-none sm:text-lg ${
+                                      item.isPacked
+                                        ? "text-muted-foreground line-through decoration-muted-foreground decoration-2"
+                                        : "text-foreground"
+                                    }`}
+                                  >
+                                    {renderItemIcon(item.emoji)}
+                                    <span className="truncate select-none">
+                                      {item.name}
+                                    </span>
+                                  </p>
+
+                                  {item.quantity && item.quantity > 1 && (
+                                    <span className="px-1.5 py-0.2 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-[11px] font-bold shrink-0">
+                                      {item.quantity}x
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-2">
                                   <Badge
                                     variant={
                                       item.isPacked ? "default" : "outline"
@@ -994,6 +1299,12 @@ export function Dashboard() {
                                   >
                                     {item.isPacked ? "Packed" : "Missing"}
                                   </Badge>
+
+                                  {item.locationNote && (
+                                    <span className="text-[11px] text-muted-foreground italic font-medium">
+                                      📍 {item.locationNote}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -1011,6 +1322,8 @@ export function Dashboard() {
                                   setManageItem(item)
                                   setEditModalName(item.name)
                                   setEditModalIconTag(item.emoji ?? "")
+                                  setEditModalQuantity(item.quantity)
+                                  setEditModalLocationNote(item.locationNote ?? "")
                                 }}
                                 className="h-8 w-8 cursor-pointer rounded-lg text-muted-foreground hover:text-primary"
                                 title="Control Item"
@@ -1030,9 +1343,26 @@ export function Dashboard() {
         </div>
       </main>
 
+      {/* Floating Undo Toast Notification (UX-01) */}
+      {undoToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-700 text-zinc-100 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-200">
+          <span className="text-xs font-bold text-zinc-200">
+            {undoToast.message}
+          </span>
+          <Button
+            size="sm"
+            onClick={() => void handleExecuteUndo()}
+            className="h-7 px-3 text-xs bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold flex items-center gap-1"
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+            Undo
+          </Button>
+        </div>
+      )}
+
       {/* Manage Routine Modal */}
       <Dialog
-        open={!!manageRoutine}
+        open={!!manageRoutine && !showScheduleModal}
         onOpenChange={(open) => !open && setManageRoutine(null)}
       >
         {manageRoutine && (
@@ -1168,7 +1498,7 @@ export function Dashboard() {
         )}
       </Dialog>
 
-      {/* Manage Item Modal */}
+      {/* Manage Item Modal (Quantities & Placement Notes FEAT-03) */}
       <Dialog
         open={!!manageItem}
         onOpenChange={(open) => !open && setManageItem(null)}
@@ -1207,6 +1537,40 @@ export function Dashboard() {
                     onChange={(e) => setEditModalName(e.target.value)}
                     placeholder="Item name..."
                     className="flex-1"
+                  />
+                </div>
+              </div>
+
+              {/* Quantity & Location Note Inputs (FEAT-03) */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Quantity (Optional)
+                  </label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={editModalQuantity ?? ""}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10)
+                      setEditModalQuantity(isNaN(val) ? undefined : val)
+                    }}
+                    placeholder="1"
+                    className="h-9 text-xs"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Location Note
+                  </label>
+                  <Input
+                    type="text"
+                    value={editModalLocationNote}
+                    onChange={(e) => setEditModalLocationNote(e.target.value)}
+                    placeholder="e.g. Front Pocket"
+                    className="h-9 text-xs"
                   />
                 </div>
               </div>
@@ -1258,6 +1622,8 @@ export function Dashboard() {
                         id: manageItem._id,
                         name: editModalName.trim(),
                         emoji: editModalIconTag.trim() || undefined,
+                        quantity: editModalQuantity,
+                        locationNote: editModalLocationNote.trim() || undefined,
                       })
                       setManageItem(null)
                     } catch (err) {
@@ -1272,15 +1638,7 @@ export function Dashboard() {
                 <div className="flex w-full gap-2">
                   <Button
                     variant="destructive"
-                    onClick={async () => {
-                      if (!confirm(`Delete "${manageItem.name}"?`)) return
-                      try {
-                        await deleteItem({ id: manageItem._id })
-                        setManageItem(null)
-                      } catch (err) {
-                        console.error("Failed to delete item", err)
-                      }
-                    }}
+                    onClick={() => handleDeleteItemWithUndo(manageItem)}
                     className="flex-1 text-xs font-bold tracking-wider uppercase"
                   >
                     <Trash2 className="h-4 w-4" /> Delete Item
@@ -1299,6 +1657,64 @@ export function Dashboard() {
         )}
       </Dialog>
 
+      {/* Routine Schedule Auto-Reset Modal (FEAT-02) */}
+      <RoutineScheduleModal
+        open={showScheduleModal && !!manageRoutine}
+        onOpenChange={(open) => {
+          setShowScheduleModal(open)
+          if (!open) setManageRoutine(null)
+        }}
+        routineName={manageRoutine?.name || effectiveRoutine}
+        initialTime={manageRoutine?.autoResetTime}
+        initialDays={manageRoutine?.autoResetDays}
+        onSaveSchedule={async (time, days) => {
+          if (!manageRoutine) return
+          await updateRoutine({
+            id: manageRoutine._id,
+            name: manageRoutine.name,
+            icon: manageRoutine.icon,
+            autoResetTime: time,
+            autoResetDays: days,
+          })
+        }}
+      />
+
+      {/* Universal Export & Backup Modal (FEAT-05) */}
+      <ExportModal
+        open={showExportModal}
+        onOpenChange={setShowExportModal}
+        routineName={effectiveRoutine}
+        items={items}
+      />
+
+      {/* Share Routine Modal (FEAT-04) */}
+      <ShareRoutineModal
+        open={showShareModal}
+        onOpenChange={setShowShareModal}
+        routineName={effectiveRoutine}
+        routineIcon={currentRoutineObj?.icon || "tag"}
+        items={items}
+      />
+
+      {/* Import Shared Routine Modal (FEAT-04) */}
+      <ImportSharedModal
+        open={showImportModal}
+        onOpenChange={setShowImportModal}
+        data={sharedImportData}
+        onConfirmImport={async () => {
+          if (!sharedImportData) return
+          await applyPreset({
+            name: sharedImportData.name,
+            icon: sharedImportData.icon || "tag",
+            items: sharedImportData.items,
+          })
+          setSelectedRoutine(sharedImportData.name)
+          if (typeof window !== "undefined") {
+            window.history.replaceState({}, document.title, window.location.pathname)
+          }
+        }}
+      />
+
       {/* About Project Modal */}
       <Dialog open={showAboutDialog} onOpenChange={setShowAboutDialog}>
         <DialogContent>
@@ -1310,9 +1726,9 @@ export function Dashboard() {
 
           <div className="space-y-4 py-2 select-none">
             <p className="text-sm leading-relaxed font-bold text-foreground">
-              PocketCheck is a minimal checklist tool designed to make sure you
-              never forget your keys, wallet, phone, or essential items before
-              stepping out for work, gym, or custom routines.
+              PocketCheck is an everyday carry checklist platform designed to ensure
+              you never leave essential gear behind before stepping out for work, gym,
+              or custom routines.
             </p>
 
             <a
@@ -1351,7 +1767,7 @@ export function Dashboard() {
               <span className="font-black text-primary">
                 &quot;{effectiveRoutine}&quot;
               </span>
-              ? This action cannot be undone.
+              ? You will have a 5-second Undo option.
             </p>
             <div className="flex gap-2 pt-2">
               <Button

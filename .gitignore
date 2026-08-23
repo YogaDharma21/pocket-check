@@ -36,3 +36,6 @@ coverage/
 
 # Debug
 *.map
+
+# Local Analysis Reports
+pocketcheck-improvements.html
