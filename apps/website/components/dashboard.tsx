@@ -23,6 +23,7 @@ import {
   GripVertical,
   AlertTriangle,
   Settings,
+  Sparkles,
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
@@ -43,6 +44,15 @@ import {
   renderItemIcon,
   IconPickerModal,
 } from "@/components/icon-picker-modal"
+import { SmartPresetsModal } from "@/components/smart-presets-modal"
+import { SmartIntelligenceBanner } from "@/components/smart-intelligence-banner"
+import { QuickAddModal } from "@/components/quick-add-modal"
+import {
+  SMART_PRESETS,
+  parseMultiItemInput,
+  detectIconForItem,
+  PresetRoutine,
+} from "@/lib/presets"
 
 export function Dashboard() {
   const [selectedRoutine, setSelectedRoutine] = useState("Work")
@@ -70,6 +80,8 @@ export function Dashboard() {
   const [editModalName, setEditModalName] = useState("")
   const [editModalIconTag, setEditModalIconTag] = useState("")
   const [showAboutDialog, setShowAboutDialog] = useState(false)
+  const [showPresetsModal, setShowPresetsModal] = useState(false)
+  const [showQuickAddModal, setShowQuickAddModal] = useState(false)
 
   // Convex mutations & queries
   const ensureInitialized = useMutation(api.pocketcheck.ensureInitialized)
@@ -77,6 +89,8 @@ export function Dashboard() {
   const updateRoutine = useMutation(api.pocketcheck.updateRoutine)
   const deleteRoutine = useMutation(api.pocketcheck.deleteRoutine)
   const addItem = useMutation(api.pocketcheck.addItem)
+  const addItemsBatch = useMutation(api.pocketcheck.addItemsBatch)
+  const applyPreset = useMutation(api.pocketcheck.applyPreset)
   const editItemMutation = useMutation(api.pocketcheck.editItem)
   const toggleItem = useMutation(api.pocketcheck.toggleItem)
   const deleteItem = useMutation(api.pocketcheck.deleteItem)
@@ -107,6 +121,18 @@ export function Dashboard() {
   const [iconPickerTarget, setIconPickerTarget] = useState<
     "newItem" | "editItem" | "newRoutine" | "editRoutine"
   >("newItem")
+
+  // Global keyboard shortcut for Quick Add (Ctrl+K or Cmd+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault()
+        setShowQuickAddModal((prev) => !prev)
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
 
   // Seed default routines + items on first login
   useEffect(() => {
@@ -220,6 +246,34 @@ export function Dashboard() {
     }
   }
 
+  const handleSelectPreset = async (preset: PresetRoutine) => {
+    try {
+      const res = await applyPreset({
+        name: preset.name,
+        icon: preset.icon,
+        items: preset.items,
+      })
+      if (res?.routineName) {
+        setSelectedRoutine(res.routineName)
+      }
+    } catch (err) {
+      console.error("Failed to apply preset", err)
+    }
+  }
+
+  const handleAddBatch = async (
+    newItems: Array<{ name: string; emoji?: string }>
+  ) => {
+    try {
+      await addItemsBatch({
+        routine: effectiveRoutine,
+        items: newItems,
+      })
+    } catch (err) {
+      console.error("Failed to batch add items", err)
+    }
+  }
+
   const handleCreateRoutine = async () => {
     if (!customRoutineName.trim()) return
     try {
@@ -239,11 +293,37 @@ export function Dashboard() {
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newCustomItemName.trim()) return
+
+    // Multi-item parse if commas, semicolons, or newlines exist
+    if (
+      newCustomItemName.includes(",") ||
+      newCustomItemName.includes(";") ||
+      newCustomItemName.includes("\n")
+    ) {
+      const parsed = parseMultiItemInput(newCustomItemName)
+      if (parsed.length > 0) {
+        try {
+          await addItemsBatch({
+            routine: effectiveRoutine,
+            items: parsed,
+          })
+          setNewCustomItemName("")
+          setNewItemTag("")
+        } catch (err) {
+          console.error("Failed to add batch items", err)
+        }
+        return
+      }
+    }
+
+    // Single item add
     try {
+      const detectedEmoji =
+        newItemTag.trim() || detectIconForItem(newCustomItemName.trim())
       await addItem({
         routine: effectiveRoutine,
         name: newCustomItemName.trim(),
-        emoji: newItemTag.trim() || undefined,
+        emoji: detectedEmoji !== "Tag" ? detectedEmoji : undefined,
       })
       setNewCustomItemName("")
       setNewItemTag("")
@@ -490,15 +570,27 @@ export function Dashboard() {
                   })}
                 </div>
 
-                {/* Add custom destination button */}
-                <Button
-                  variant={showCustomInput ? "default" : "outline"}
-                  onClick={() => setShowCustomInput(!showCustomInput)}
-                  className="mt-2 h-10 w-full cursor-pointer justify-center gap-2 rounded-xl text-xs font-black tracking-wider uppercase"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>New Destination</span>
-                </Button>
+                {/* Destination Actions: Smart Presets & New Destination */}
+                <div className="mt-2 flex flex-col gap-1.5">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowPresetsModal(true)}
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-xl text-xs font-black tracking-wider text-primary uppercase hover:bg-primary/10"
+                    title="Choose from smart presets (Kampus, Work, Travel)"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <span>Smart Presets</span>
+                  </Button>
+
+                  <Button
+                    variant={showCustomInput ? "default" : "outline"}
+                    onClick={() => setShowCustomInput(!showCustomInput)}
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-xl text-xs font-black tracking-wider uppercase"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>New Destination</span>
+                  </Button>
+                </div>
 
                 {/* New custom destination form */}
                 {showCustomInput && (
@@ -625,9 +717,18 @@ export function Dashboard() {
               </div>
             </div>
 
+            {/* Smart Departure Intelligence Banner */}
+            <SmartIntelligenceBanner
+              routineName={effectiveRoutine}
+              items={items}
+              onQuickPack={async (id) => {
+                await handleToggle(id, false)
+              }}
+            />
+
             {/* Quick Add Item Bar */}
             <Card className="border-border shadow-xs">
-              <CardContent className="p-3.5 sm:p-4">
+              <CardContent className="space-y-2 p-3.5 sm:p-4">
                 <form
                   onSubmit={(e) => {
                     void handleAddItem(e)
@@ -659,13 +760,35 @@ export function Dashboard() {
                       className="h-11 flex-1 text-sm font-bold"
                     />
                   </div>
-                  <Button
-                    type="submit"
-                    className="h-11 w-full cursor-pointer rounded-xl px-6 font-black tracking-wider uppercase sm:w-auto"
-                  >
-                    <Plus className="mr-1 h-4 w-4" /> Add Item
-                  </Button>
+                  <div className="flex w-full gap-2 sm:w-auto">
+                    <Button
+                      type="submit"
+                      className="h-11 flex-1 cursor-pointer rounded-xl px-5 font-black tracking-wider uppercase sm:flex-none"
+                    >
+                      <Plus className="mr-1 h-4 w-4" /> Add Item
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowQuickAddModal(true)}
+                      className="h-11 cursor-pointer gap-1.5 rounded-xl px-3.5 text-xs font-black tracking-wider text-primary uppercase hover:bg-primary/10"
+                      title="Quick Multi-Add (Ctrl+K)"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Multi-Add</span>
+                    </Button>
+                  </div>
                 </form>
+                <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground px-1">
+                  <span>Tip: Separate multiple items with commas (e.g., USB Cable, Notebook, ID Card)</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowQuickAddModal(true)}
+                    className="hidden text-primary hover:underline sm:inline-block cursor-pointer font-extrabold"
+                  >
+                    Multi-Add Modal (Ctrl+K)
+                  </button>
+                </div>
               </CardContent>
             </Card>
 
@@ -697,15 +820,51 @@ export function Dashboard() {
                     ))
                   ) : filteredItems.length === 0 ? (
                     <Card className="border-dashed">
-                      <CardContent className="flex flex-col items-center justify-center gap-2 p-8 text-center text-sm font-bold text-muted-foreground">
-                        <PackageCheck className="mb-1 h-8 w-8 text-muted-foreground opacity-40" />
-                        <span>
-                          {filter === "all"
-                            ? "No items added to this destination yet. Add your essential items above!"
-                            : filter === "packed"
-                              ? "No items are packed yet. Click items to mark them as packed!"
-                              : "All items are packed! Great job, you're 100% set to go!"}
-                        </span>
+                      <CardContent className="flex flex-col items-center justify-center gap-4 p-8 text-center text-sm font-bold text-muted-foreground">
+                        <PackageCheck className="h-10 w-10 text-muted-foreground opacity-40" />
+                        <div className="space-y-1">
+                          <p className="text-base font-extrabold text-foreground">
+                            {filter === "all"
+                              ? "No items added to this destination yet"
+                              : filter === "packed"
+                                ? "No items are packed yet"
+                                : "All items are packed!"}
+                          </p>
+                          <p className="text-xs text-muted-foreground max-w-md">
+                            {filter === "all"
+                              ? "Add items above or quick-start with one of our smart presets below:"
+                              : filter === "packed"
+                                ? "Click items to mark them as packed!"
+                                : "Great job, you are 100% set to go!"}
+                          </p>
+                        </div>
+                        {filter === "all" && (
+                          <div className="space-y-2 pt-1">
+                            <p className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                              Start with a Smart Preset:
+                            </p>
+                            <div className="flex flex-wrap justify-center gap-2">
+                              {SMART_PRESETS.map((preset) => (
+                                <Button
+                                  key={preset.id}
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => void handleSelectPreset(preset)}
+                                  className="h-8 cursor-pointer gap-1.5 rounded-lg border-border font-extrabold hover:border-primary hover:bg-primary/5 hover:text-primary"
+                                >
+                                  {renderRoutineIcon(preset.icon)}
+                                  <span>{preset.name}</span>
+                                  <Badge
+                                    variant="secondary"
+                                    className="ml-0.5 px-1 py-0 text-[9px] font-black"
+                                  >
+                                    {preset.items.length}
+                                  </Badge>
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ) : (
@@ -1181,6 +1340,37 @@ export function Dashboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Floating Action Button (FAB) for Quick Add */}
+      <div className="fixed right-6 bottom-6 z-40">
+        <Button
+          onClick={() => setShowQuickAddModal(true)}
+          size="lg"
+          className="h-13 cursor-pointer gap-2 rounded-2xl bg-primary px-4.5 font-black tracking-wider text-primary-foreground shadow-lg transition-transform hover:scale-105 active:scale-95"
+          title="Quick Add Items (Ctrl+K)"
+        >
+          <Plus className="h-5 w-5 stroke-[2.5]" />
+          <span className="text-xs font-black uppercase">Quick Add</span>
+          <kbd className="hidden rounded bg-primary-foreground/20 px-1.5 py-0.5 text-[10px] font-mono sm:inline">
+            Ctrl+K
+          </kbd>
+        </Button>
+      </div>
+
+      {/* Smart Presets Modal */}
+      <SmartPresetsModal
+        open={showPresetsModal}
+        onOpenChange={setShowPresetsModal}
+        onSelectPreset={handleSelectPreset}
+      />
+
+      {/* Quick Add Modal */}
+      <QuickAddModal
+        open={showQuickAddModal}
+        onOpenChange={setShowQuickAddModal}
+        routineName={effectiveRoutine}
+        onAddBatch={handleAddBatch}
+      />
 
       {/* Icon Picker Modal */}
       <IconPickerModal
