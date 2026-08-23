@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Id } from "@/convex/_generated/dataModel"
@@ -23,6 +23,7 @@ import {
   GripVertical,
   AlertTriangle,
   Settings,
+  Sparkles,
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
@@ -43,10 +44,18 @@ import {
   renderItemIcon,
   IconPickerModal,
 } from "@/components/icon-picker-modal"
+import { SmartPresetsModal } from "@/components/smart-presets-modal"
+import { SmartIntelligenceBanner } from "@/components/smart-intelligence-banner"
+import {
+  SMART_PRESETS,
+  parseMultiItemInput,
+  detectIconForItem,
+  PresetRoutine,
+} from "@/lib/presets"
 
 export function Dashboard() {
   const [selectedRoutine, setSelectedRoutine] = useState("Work")
-  const [showCustomInput, setShowCustomInput] = useState(false)
+  const [showNewRoutineModal, setShowNewRoutineModal] = useState(false)
   const [customRoutineName, setCustomRoutineName] = useState("")
   const [customRoutineIcon, setCustomRoutineIcon] = useState("tag")
   const [newCustomItemName, setNewCustomItemName] = useState("")
@@ -70,6 +79,8 @@ export function Dashboard() {
   const [editModalName, setEditModalName] = useState("")
   const [editModalIconTag, setEditModalIconTag] = useState("")
   const [showAboutDialog, setShowAboutDialog] = useState(false)
+  const [showPresetsModal, setShowPresetsModal] = useState(false)
+  const itemInputRef = useRef<HTMLInputElement>(null)
 
   // Convex mutations & queries
   const ensureInitialized = useMutation(api.pocketcheck.ensureInitialized)
@@ -77,6 +88,8 @@ export function Dashboard() {
   const updateRoutine = useMutation(api.pocketcheck.updateRoutine)
   const deleteRoutine = useMutation(api.pocketcheck.deleteRoutine)
   const addItem = useMutation(api.pocketcheck.addItem)
+  const addItemsBatch = useMutation(api.pocketcheck.addItemsBatch)
+  const applyPreset = useMutation(api.pocketcheck.applyPreset)
   const editItemMutation = useMutation(api.pocketcheck.editItem)
   const toggleItem = useMutation(api.pocketcheck.toggleItem)
   const deleteItem = useMutation(api.pocketcheck.deleteItem)
@@ -88,10 +101,8 @@ export function Dashboard() {
   const customRoutines = useQuery(api.pocketcheck.listRoutines) ?? []
   const routinesList = customRoutines
   const effectiveRoutine =
-    routinesList.length > 0 &&
-    !routinesList.some((r) => r.name === selectedRoutine)
-      ? routinesList[0].name
-      : selectedRoutine
+    selectedRoutine ||
+    (routinesList.length > 0 ? routinesList[0].name : "Work")
 
   const rawItems = useQuery(api.pocketcheck.listItems, {
     routine: effectiveRoutine,
@@ -107,6 +118,22 @@ export function Dashboard() {
   const [iconPickerTarget, setIconPickerTarget] = useState<
     "newItem" | "editItem" | "newRoutine" | "editRoutine"
   >("newItem")
+
+  // Keyboard shortcut to focus single item input bar (Ctrl+K or Cmd+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault()
+        itemInputRef.current?.focus()
+        itemInputRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        })
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
 
   // Seed default routines + items on first login
   useEffect(() => {
@@ -220,17 +247,71 @@ export function Dashboard() {
     }
   }
 
+  const handleSelectPreset = async (
+    preset: PresetRoutine,
+    targetRoutine?: string
+  ) => {
+    const routineNameToUse = targetRoutine || preset.name
+    setSelectedRoutine(routineNameToUse)
+
+    try {
+      const res = await applyPreset({
+        name: preset.name,
+        icon: preset.icon,
+        items: preset.items.map((i) => ({
+          name: i.name,
+          ...(i.emoji ? { emoji: i.emoji } : {}),
+        })),
+        targetRoutine: targetRoutine,
+      })
+      if (res?.routineName) {
+        setSelectedRoutine(res.routineName)
+      }
+    } catch (err) {
+      console.warn(
+        "applyPreset failed, executing client-side routine & items creation",
+        err
+      )
+      const existingRoutine = routinesList.find(
+        (r) =>
+          r.name.toLowerCase().trim() === routineNameToUse.toLowerCase().trim()
+      )
+      if (!existingRoutine) {
+        await addRoutine({
+          name: routineNameToUse,
+          icon: preset.icon,
+        })
+      }
+      setSelectedRoutine(routineNameToUse)
+
+      const existingNames = new Set(
+        items.map((i) => i.name.toLowerCase().trim())
+      )
+      for (const item of preset.items) {
+        if (!existingNames.has(item.name.toLowerCase().trim())) {
+          await addItem({
+            routine: routineNameToUse,
+            name: item.name,
+            emoji: item.emoji,
+          })
+        }
+      }
+    }
+  }
+
   const handleCreateRoutine = async () => {
     if (!customRoutineName.trim()) return
+    const routineName = customRoutineName.trim()
+    const routineIcon = customRoutineIcon || "pin"
     try {
       await addRoutine({
-        name: customRoutineName.trim(),
-        icon: customRoutineIcon || "pin",
+        name: routineName,
+        icon: routineIcon,
       })
-      setSelectedRoutine(customRoutineName.trim())
+      setSelectedRoutine(routineName)
       setCustomRoutineName("")
       setCustomRoutineIcon("tag")
-      setShowCustomInput(false)
+      setShowNewRoutineModal(false)
     } catch (err) {
       console.error("Failed to create routine", err)
     }
@@ -238,15 +319,55 @@ export function Dashboard() {
 
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newCustomItemName.trim()) return
+    const trimmed = newCustomItemName.trim()
+    if (!trimmed) return
+
+    const selectedTag = newItemTag.trim()
+    const parsed = parseMultiItemInput(trimmed, selectedTag)
+    if (parsed.length === 0) return
+
+    setNewCustomItemName("")
+    setNewItemTag("")
+
+    if (parsed.length > 1) {
+      const itemsToInsert = parsed.map((item) => ({
+        name: item.name,
+        emoji:
+          selectedTag ||
+          item.emoji ||
+          detectIconForItem(item.name) ||
+          "Tag",
+      }))
+
+      try {
+        await addItemsBatch({
+          routine: effectiveRoutine,
+          items: itemsToInsert,
+        })
+      } catch (err) {
+        console.warn("addItemsBatch failed, adding items sequentially", err)
+        for (const item of itemsToInsert) {
+          await addItem({
+            routine: effectiveRoutine,
+            name: item.name,
+            emoji: item.emoji,
+          })
+        }
+      }
+      return
+    }
+
+    // Single item add
+    const single = parsed[0]
+    const detectedEmoji =
+      selectedTag || single.emoji || detectIconForItem(single.name) || "Tag"
+
     try {
       await addItem({
         routine: effectiveRoutine,
-        name: newCustomItemName.trim(),
-        emoji: newItemTag.trim() || undefined,
+        name: single.name,
+        emoji: detectedEmoji,
       })
-      setNewCustomItemName("")
-      setNewItemTag("")
     } catch (err) {
       console.error("Failed to add item", err)
     }
@@ -258,16 +379,13 @@ export function Dashboard() {
       <header className="sticky top-0 z-50 border-b border-border bg-card shadow-xs">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
           <div className="flex shrink-0 items-center gap-2.5 select-none sm:gap-3.5">
-            <div className="rounded-xl bg-primary p-2 text-primary-foreground shadow-xs">
+            <div className="rounded-lg bg-primary p-2 text-primary-foreground shadow-xs">
               <PackageCheck className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
             <div>
               <h1 className="text-lg leading-none font-black tracking-wide text-foreground sm:text-2xl">
                 POCKET<span className="text-primary">CHECK</span>
               </h1>
-              <p className="hidden text-[10px] font-bold text-muted-foreground sm:block sm:text-xs">
-                Double-check before you leave
-              </p>
             </div>
           </div>
 
@@ -290,7 +408,7 @@ export function Dashboard() {
               size="icon"
               onClick={() => setShowAboutDialog(true)}
               title="About PocketCheck"
-              className="h-9 w-9 cursor-pointer rounded-xl text-foreground hover:bg-muted"
+              className="h-9 w-9 cursor-pointer rounded-lg text-foreground hover:bg-muted"
             >
               <Info className="h-4 w-4 sm:h-5 sm:w-5" />
               <span className="sr-only">About</span>
@@ -310,7 +428,7 @@ export function Dashboard() {
               <CardContent className="space-y-4 p-5">
                 <div className="flex items-start gap-3.5 select-none">
                   <div
-                    className={`shrink-0 rounded-2xl p-2.5 ${
+                    className={`shrink-0 rounded-lg p-2.5 ${
                       percentage === 100
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-primary"
@@ -401,9 +519,8 @@ export function Dashboard() {
                         key={routine.name}
                         onClick={() => {
                           setSelectedRoutine(routine.name)
-                          setShowCustomInput(false)
                         }}
-                        className={`group flex cursor-pointer items-center justify-between rounded-xl border p-2.5 transition-all ${
+                        className={`group flex cursor-pointer items-center justify-between rounded-lg border p-2.5 transition-all ${
                           isActive
                             ? "border-primary bg-primary font-black text-primary-foreground shadow-xs"
                             : "border-border bg-card font-bold text-foreground hover:bg-muted/60"
@@ -459,9 +576,8 @@ export function Dashboard() {
                           variant={isActive ? "default" : "outline"}
                           onClick={() => {
                             setSelectedRoutine(routine.name)
-                            setShowCustomInput(false)
                           }}
-                          className="flex h-auto w-full flex-col items-center gap-1.5 rounded-xl p-3 pt-4 text-xs font-black"
+                          className="flex h-auto w-full flex-col items-center gap-1.5 rounded-lg p-3 pt-4 text-xs font-black"
                         >
                           <span className="block select-none">
                             {renderRoutineIcon(routine.icon || routine.name)}
@@ -490,54 +606,31 @@ export function Dashboard() {
                   })}
                 </div>
 
-                {/* Add custom destination button */}
-                <Button
-                  variant={showCustomInput ? "default" : "outline"}
-                  onClick={() => setShowCustomInput(!showCustomInput)}
-                  className="mt-2 h-10 w-full cursor-pointer justify-center gap-2 rounded-xl text-xs font-black tracking-wider uppercase"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>New Destination</span>
-                </Button>
+                {/* Destination Actions: Smart Presets & New Destination */}
+                <div className="mt-2 flex flex-col gap-1.5">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowPresetsModal(true)}
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider text-primary uppercase hover:bg-primary/10"
+                    title="Choose from smart presets (Kampus, Work, Travel)"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <span>Smart Presets</span>
+                  </Button>
 
-                {/* New custom destination form */}
-                {showCustomInput && (
-                  <div className="animate-fadeIn mt-2 space-y-2 rounded-xl border border-border bg-muted/40 p-2.5">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setIconPickerTarget("newRoutine")
-                          setShowIconPicker(true)
-                        }}
-                        className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-card px-0"
-                        title="Select Destination Icon"
-                      >
-                        {renderRoutineIcon(customRoutineIcon)}
-                      </Button>
-                      <Input
-                        type="text"
-                        value={customRoutineName}
-                        onChange={(e) => setCustomRoutineName(e.target.value)}
-                        placeholder="Destination name..."
-                        className="h-10 bg-card text-sm font-bold"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") void handleCreateRoutine()
-                        }}
-                      />
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        void handleCreateRoutine()
-                      }}
-                      className="h-9 w-full cursor-pointer text-xs font-black tracking-wider uppercase"
-                    >
-                      Create Destination
-                    </Button>
-                  </div>
-                )}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setCustomRoutineName("")
+                      setCustomRoutineIcon("tag")
+                      setShowNewRoutineModal(true)
+                    }}
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider uppercase hover:bg-accent hover:text-foreground"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>New Destination</span>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -545,9 +638,9 @@ export function Dashboard() {
           {/* Right Column / Workspace (lg:col-span-8 space-y-5) */}
           <div className="space-y-5 lg:col-span-8">
             {/* Active Destination Workspace Card Header */}
-            <div className="flex flex-col justify-between gap-4 rounded-2xl border border-border bg-card p-4 shadow-xs sm:flex-row sm:items-center sm:p-5">
+            <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-card p-4 shadow-xs sm:flex-row sm:items-center sm:p-5">
               <div className="flex items-center gap-3">
-                <div className="shrink-0 rounded-xl bg-primary/10 p-3 text-primary">
+                <div className="shrink-0 rounded-lg bg-primary/10 p-3 text-primary">
                   {renderRoutineIcon(
                     currentRoutineObj?.icon || effectiveRoutine
                   )}
@@ -568,7 +661,7 @@ export function Dashboard() {
               </div>
 
               {/* Filter Segmented Control */}
-              <div className="grid grid-cols-3 gap-1 rounded-xl bg-muted/60 p-1 select-none sm:w-72">
+              <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted/60 p-1 select-none sm:w-72">
                 <button
                   type="button"
                   onClick={() => setFilter("all")}
@@ -625,9 +718,18 @@ export function Dashboard() {
               </div>
             </div>
 
+            {/* Smart Departure Intelligence Banner */}
+            <SmartIntelligenceBanner
+              routineName={effectiveRoutine}
+              items={items}
+              onQuickPack={async (id) => {
+                await handleToggle(id, false)
+              }}
+            />
+
             {/* Quick Add Item Bar */}
             <Card className="border-border shadow-xs">
-              <CardContent className="p-3.5 sm:p-4">
+              <CardContent className="space-y-2 p-3.5 sm:p-4">
                 <form
                   onSubmit={(e) => {
                     void handleAddItem(e)
@@ -642,7 +744,7 @@ export function Dashboard() {
                         setIconPickerTarget("newItem")
                         setShowIconPicker(true)
                       }}
-                      className="flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-xl px-0"
+                      className="flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-lg px-0"
                       title="Select Icon for item"
                     >
                       {newItemTag ? (
@@ -652,20 +754,68 @@ export function Dashboard() {
                       )}
                     </Button>
                     <Input
+                      ref={itemInputRef}
                       type="text"
                       value={newCustomItemName}
                       onChange={(e) => setNewCustomItemName(e.target.value)}
-                      placeholder={`Add item to ${effectiveRoutine} (e.g., Keys, Wallet, Charger)...`}
+                      placeholder={`Add item(s) to ${effectiveRoutine} (e.g. Keys, Wallet or USB Cable, Notebook, ID Card)...`}
                       className="h-11 flex-1 text-sm font-bold"
                     />
                   </div>
-                  <Button
-                    type="submit"
-                    className="h-11 w-full cursor-pointer rounded-xl px-6 font-black tracking-wider uppercase sm:w-auto"
-                  >
-                    <Plus className="mr-1 h-4 w-4" /> Add Item
-                  </Button>
+                  <div className="flex w-full gap-2 sm:w-auto">
+                    <Button
+                      type="submit"
+                      disabled={!newCustomItemName.trim()}
+                      className="h-11 w-full cursor-pointer rounded-lg px-5 font-black tracking-wider uppercase sm:w-auto"
+                    >
+                      <Plus className="mr-1 h-4 w-4" />
+                      {(() => {
+                        const parsed = parseMultiItemInput(
+                          newCustomItemName,
+                          newItemTag
+                        )
+                        if (parsed.length > 1) {
+                          return `Add ${parsed.length} Items`
+                        }
+                        return "Add Item"
+                      })()}
+                    </Button>
+                  </div>
                 </form>
+
+                {/* Live preview for multi-item comma entry */}
+                {(() => {
+                  const parsed = parseMultiItemInput(
+                    newCustomItemName,
+                    newItemTag
+                  )
+                  if (parsed.length > 1) {
+                    return (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[11px] font-bold text-muted-foreground">
+                          Adding {parsed.length} items:
+                        </span>
+                        {parsed.map((item, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-0.5 text-xs font-bold text-foreground"
+                          >
+                            {renderItemIcon(item.emoji || newItemTag || "Tag")}
+                            <span>{item.name}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )
+                  }
+                  return (
+                    <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground px-1">
+                      <span>Tip: Type multiple items separated by commas to add at once (e.g., USB Cable, Notebook, ID Card)</span>
+                      <kbd className="hidden rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground sm:inline">
+                        Ctrl+K to focus
+                      </kbd>
+                    </div>
+                  )
+                })()}
               </CardContent>
             </Card>
 
@@ -685,27 +835,68 @@ export function Dashboard() {
                         <CardContent className="flex flex-row items-center justify-between gap-3 p-3.5">
                           <div className="flex min-w-0 flex-1 items-center gap-3 select-none">
                             <Skeleton className="h-4 w-4 shrink-0 rounded-sm" />
-                            <Skeleton className="h-7 w-7 shrink-0 rounded-xl" />
+                            <Skeleton className="h-7 w-7 shrink-0 rounded-lg" />
                             <div className="min-w-0 flex-1 space-y-1.5">
                               <Skeleton className="h-5 w-28 rounded-md sm:w-36" />
                               <Skeleton className="h-3.5 w-14 rounded-full" />
                             </div>
                           </div>
-                          <Skeleton className="h-8 w-8 shrink-0 rounded-xl" />
+                          <Skeleton className="h-8 w-8 shrink-0 rounded-lg" />
                         </CardContent>
                       </Card>
                     ))
                   ) : filteredItems.length === 0 ? (
                     <Card className="border-dashed">
-                      <CardContent className="flex flex-col items-center justify-center gap-2 p-8 text-center text-sm font-bold text-muted-foreground">
-                        <PackageCheck className="mb-1 h-8 w-8 text-muted-foreground opacity-40" />
-                        <span>
-                          {filter === "all"
-                            ? "No items added to this destination yet. Add your essential items above!"
-                            : filter === "packed"
-                              ? "No items are packed yet. Click items to mark them as packed!"
-                              : "All items are packed! Great job, you're 100% set to go!"}
-                        </span>
+                      <CardContent className="flex flex-col items-center justify-center gap-4 p-8 text-center text-sm font-bold text-muted-foreground">
+                        <PackageCheck className="h-10 w-10 text-muted-foreground opacity-40" />
+                        <div className="space-y-1">
+                          <p className="text-base font-extrabold text-foreground">
+                            {filter === "all"
+                              ? "No items added to this destination yet"
+                              : filter === "packed"
+                                ? "No items are packed yet"
+                                : "All items are packed!"}
+                          </p>
+                          <p className="text-xs text-muted-foreground max-w-md">
+                            {filter === "all"
+                              ? "Add items above or quick-start with one of our smart presets below:"
+                              : filter === "packed"
+                                ? "Click items to mark them as packed!"
+                                : "Great job, you are 100% set to go!"}
+                          </p>
+                        </div>
+                        {filter === "all" && (
+                          <div className="space-y-2 pt-1">
+                            <p className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                              Start with a Smart Preset:
+                            </p>
+                            <div className="flex flex-wrap justify-center gap-2">
+                              {SMART_PRESETS.map((preset) => (
+                                <Button
+                                  key={preset.id}
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    void handleSelectPreset(
+                                      preset,
+                                      effectiveRoutine
+                                    )
+                                  }
+                                  className="h-8 cursor-pointer gap-1.5 rounded-lg border-border font-extrabold hover:border-primary hover:bg-primary/5 hover:text-primary"
+                                >
+                                  {renderRoutineIcon(preset.icon)}
+                                  <span>{preset.name}</span>
+                                  <Badge
+                                    variant="secondary"
+                                    className="ml-0.5 px-1 py-0 text-[9px] font-black"
+                                  >
+                                    {preset.items.length}
+                                  </Badge>
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ) : (
@@ -769,7 +960,7 @@ export function Dashboard() {
 
                               {/* Checkbox */}
                               <div
-                                className={`checkbox-ui flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border transition-all select-none ${
+                                className={`checkbox-ui flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-all select-none ${
                                   item.isPacked
                                     ? "border-primary bg-primary text-primary-foreground shadow-xs"
                                     : "border-border bg-card hover:border-primary/60"
@@ -821,7 +1012,7 @@ export function Dashboard() {
                                   setEditModalName(item.name)
                                   setEditModalIconTag(item.emoji ?? "")
                                 }}
-                                className="h-8 w-8 cursor-pointer rounded-xl text-muted-foreground hover:text-primary"
+                                className="h-8 w-8 cursor-pointer rounded-lg text-muted-foreground hover:text-primary"
                                 title="Control Item"
                               >
                                 <Settings className="h-4 w-4" />
@@ -863,7 +1054,7 @@ export function Dashboard() {
                       setIconPickerTarget("editRoutine")
                       setShowIconPicker(true)
                     }}
-                    className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl px-0"
+                    className="flex h-10 w-12 shrink-0 items-center justify-center rounded-lg px-0"
                     title="Select Destination Icon"
                   >
                     {renderRoutineIcon(editModalIconTag)}
@@ -1001,7 +1192,7 @@ export function Dashboard() {
                       setIconPickerTarget("editItem")
                       setShowIconPicker(true)
                     }}
-                    className="flex h-10 w-12 shrink-0 items-center justify-center rounded-xl px-0"
+                    className="flex h-10 w-12 shrink-0 items-center justify-center rounded-lg px-0"
                     title="Select Icon"
                   >
                     {editModalIconTag ? (
@@ -1179,6 +1370,88 @@ export function Dashboard() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Smart Presets Modal */}
+      <SmartPresetsModal
+        open={showPresetsModal}
+        onOpenChange={setShowPresetsModal}
+        currentRoutine={effectiveRoutine}
+        onSelectPreset={handleSelectPreset}
+      />
+
+      {/* Create New Destination Modal */}
+      <Dialog
+        open={showNewRoutineModal}
+        onOpenChange={(open) => {
+          setShowNewRoutineModal(open)
+          if (!open) {
+            setCustomRoutineName("")
+            setCustomRoutineIcon("tag")
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-black">
+              <Plus className="h-4 w-4 text-primary" /> New Destination
+            </DialogTitle>
+          </DialogHeader>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              void handleCreateRoutine()
+            }}
+            className="space-y-4 py-2 select-none"
+          >
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                Destination Icon & Name
+              </label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIconPickerTarget("newRoutine")
+                    setShowIconPicker(true)
+                  }}
+                  className="flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-lg px-0"
+                  title="Select Destination Icon"
+                >
+                  {renderRoutineIcon(customRoutineIcon)}
+                </Button>
+                <Input
+                  type="text"
+                  value={customRoutineName}
+                  onChange={(e) => setCustomRoutineName(e.target.value)}
+                  placeholder="e.g. Kampus, Work, Gym, Weekend Trip..."
+                  className="h-11 flex-1 text-sm font-bold"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowNewRoutineModal(false)}
+                className="cursor-pointer font-bold text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={!customRoutineName.trim()}
+                className="cursor-pointer font-black text-xs uppercase"
+              >
+                Create Destination
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

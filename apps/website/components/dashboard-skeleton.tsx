@@ -8,7 +8,7 @@ export function DashboardSkeleton() {
       <header className="sticky top-0 z-50 border-b border-border bg-card shadow-xs">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
           <div className="flex shrink-0 items-center gap-2.5 select-none sm:gap-3.5">
-            <Skeleton className="h-9 w-9 rounded-xl sm:h-10 sm:w-10" />
+            <Skeleton className="h-9 w-9 rounded-lg sm:h-10 sm:w-10" />
             <div className="space-y-1">
               <Skeleton className="h-6 w-32 rounded-lg sm:h-7 sm:w-36" />
               <Skeleton className="hidden h-3 w-28 rounded-md sm:block" />
@@ -20,8 +20,8 @@ export function DashboardSkeleton() {
           </div>
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            <Skeleton className="h-9 w-9 rounded-xl" />
-            <Skeleton className="h-9 w-9 rounded-xl" />
+            <Skeleton className="h-9 w-9 rounded-lg" />
+            <Skeleton className="h-9 w-9 rounded-lg" />
             <Skeleton className="h-9 w-9 rounded-full" />
           </div>
         </div>
@@ -35,7 +35,7 @@ export function DashboardSkeleton() {
             <Card className="overflow-hidden border-border shadow-xs">
               <CardContent className="space-y-4 p-5">
                 <div className="flex items-start gap-3.5 select-none">
-                  <Skeleton className="h-11 w-11 shrink-0 rounded-2xl" />
+                  <Skeleton className="h-11 w-11 shrink-0 rounded-lg" />
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center justify-between">
                       <Skeleton className="h-3.5 w-20 rounded-md" />
@@ -75,7 +75,7 @@ export function DashboardSkeleton() {
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-2.5"
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-2.5"
                     >
                       <div className="flex min-w-0 flex-1 items-center gap-3">
                         <Skeleton className="h-8 w-8 shrink-0 rounded-lg" />
@@ -91,7 +91,7 @@ export function DashboardSkeleton() {
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className="flex h-16 flex-col items-center justify-center gap-1.5 rounded-xl border border-border bg-card p-2.5"
+                      className="flex h-16 flex-col items-center justify-center gap-1.5 rounded-lg border border-border bg-card p-2.5"
                     >
                       <Skeleton className="h-5 w-5 rounded-md" />
                       <Skeleton className="h-3 w-12 rounded-md" />
@@ -99,7 +99,7 @@ export function DashboardSkeleton() {
                   ))}
                 </div>
 
-                <Skeleton className="mt-2 h-10 w-full rounded-xl" />
+                <Skeleton className="mt-2 h-10 w-full rounded-lg" />
               </CardContent>
             </Card>
           </div>
@@ -107,15 +107,15 @@ export function DashboardSkeleton() {
           {/* Right Column / Workspace Skeleton (lg:col-span-8) */}
           <div className="space-y-5 lg:col-span-8">
             {/* Workspace Header Skeleton */}
-            <div className="flex flex-col justify-between gap-4 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:p-5">
+            <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:p-5">
               <div className="flex items-center gap-3">
-                <Skeleton className="h-12 w-12 shrink-0 rounded-xl" />
+                <Skeleton className="h-12 w-12 shrink-0 rounded-lg" />
                 <div className="space-y-1.5">
                   <Skeleton className="h-6 w-36 rounded-lg" />
                   <Skeleton className="h-3.5 w-28 rounded-md" />
                 </div>
               </div>
-              <Skeleton className="h-9 w-full rounded-xl sm:w-72" />
+              <Skeleton className="h-9 w-full rounded-lg sm:w-72" />
             </div>
 
             {/* Quick Add Bar Skeleton */}
@@ -123,10 +123,10 @@ export function DashboardSkeleton() {
               <CardContent className="p-3.5 sm:p-4">
                 <div className="flex flex-col gap-2.5 sm:flex-row">
                   <div className="flex w-full gap-2 sm:flex-1">
-                    <Skeleton className="h-11 w-12 shrink-0 rounded-xl" />
-                    <Skeleton className="h-11 flex-1 rounded-xl" />
+                    <Skeleton className="h-11 w-12 shrink-0 rounded-lg" />
+                    <Skeleton className="h-11 flex-1 rounded-lg" />
                   </div>
-                  <Skeleton className="h-11 w-full rounded-xl sm:w-28" />
+                  <Skeleton className="h-11 w-full rounded-lg sm:w-28" />
                 </div>
               </CardContent>
             </Card>
@@ -138,13 +138,13 @@ export function DashboardSkeleton() {
                   <CardContent className="flex flex-row items-center justify-between gap-3 p-3.5">
                     <div className="flex min-w-0 flex-1 items-center gap-3 select-none">
                       <Skeleton className="h-4 w-4 shrink-0 rounded-sm" />
-                      <Skeleton className="h-7 w-7 shrink-0 rounded-xl" />
+                      <Skeleton className="h-7 w-7 shrink-0 rounded-lg" />
                       <div className="min-w-0 flex-1 space-y-1.5">
                         <Skeleton className="h-5 w-28 rounded-md sm:w-40" />
                         <Skeleton className="h-3.5 w-14 rounded-full" />
                       </div>
                     </div>
-                    <Skeleton className="h-8 w-8 shrink-0 rounded-xl" />
+                    <Skeleton className="h-8 w-8 shrink-0 rounded-lg" />
                   </CardContent>
                 </Card>
               ))}

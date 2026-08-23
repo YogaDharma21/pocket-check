@@ -4,7 +4,7 @@ import { v } from "convex/values";
 /** No-op kept for API compatibility — new users start with an empty slate. */
 export const ensureInitialized = mutation({
   args: {},
-  handler: async (_ctx) => {
+  handler: async () => {
     // Nothing to seed — users create their own destinations and items.
   },
 });
@@ -314,5 +314,133 @@ export const reorderRoutines = mutation({
     for (let i = 0; i < ids.length; i++) {
       await ctx.db.patch(ids[i], { order: i });
     }
+  },
+});
+
+/** Add multiple items in batch to a routine for the current user. */
+export const addItemsBatch = mutation({
+  args: {
+    routine: v.string(),
+    items: v.array(
+      v.object({
+        name: v.string(),
+        emoji: v.optional(v.string()),
+      })
+    ),
+  },
+  handler: async (ctx, { routine, items }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+    const userId = identity.subject;
+
+    if (!items || items.length === 0) return [];
+
+    // Get current max order within the routine
+    const existing = await ctx.db
+      .query("items")
+      .withIndex("by_user_routine", (q) =>
+        q.eq("userId", userId).eq("routine", routine)
+      )
+      .collect();
+    let currentOrder = existing.reduce((m, i) => Math.max(m, i.order ?? 0), -1);
+
+    const insertedIds = [];
+    for (const item of items) {
+      const trimmed = item.name?.trim();
+      if (!trimmed) continue;
+      currentOrder += 1;
+      const id = await ctx.db.insert("items", {
+        userId,
+        routine,
+        name: trimmed,
+        isPacked: false,
+        order: currentOrder,
+        ...(item.emoji ? { emoji: item.emoji } : {}),
+      });
+      insertedIds.push(id);
+    }
+
+    return insertedIds;
+  },
+});
+
+/** Create a preset routine and populate it with preset items. */
+export const applyPreset = mutation({
+  args: {
+    name: v.string(),
+    icon: v.string(),
+    items: v.array(
+      v.object({
+        name: v.string(),
+        emoji: v.optional(v.string()),
+      })
+    ),
+    targetRoutine: v.optional(v.string()),
+  },
+  handler: async (ctx, { name, icon, items, targetRoutine }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+    const userId = identity.subject;
+
+    const routineName = targetRoutine?.trim() || name.trim();
+
+    // Check if routine already exists
+    const allRoutines = await ctx.db
+      .query("routines")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+
+    const existingRoutine = allRoutines.find(
+      (r) => r.name.toLowerCase().trim() === routineName.toLowerCase().trim()
+    );
+
+    let finalRoutineName = routineName;
+    if (!existingRoutine) {
+      const maxOrder = allRoutines.reduce((m, r) => Math.max(m, r.order ?? 0), -1);
+      await ctx.db.insert("routines", {
+        userId,
+        name: routineName,
+        icon: icon || "tag",
+        order: maxOrder + 1,
+      });
+    } else {
+      finalRoutineName = existingRoutine.name;
+    }
+
+    // Insert items that do not already exist in the routine
+    const existingItems = await ctx.db
+      .query("items")
+      .withIndex("by_user_routine", (q) =>
+        q.eq("userId", userId).eq("routine", finalRoutineName)
+      )
+      .collect();
+
+    const existingNames = new Set(
+      existingItems.map((i) => i.name.toLowerCase().trim())
+    );
+    let currentOrder = existingItems.reduce(
+      (m, i) => Math.max(m, i.order ?? 0),
+      -1
+    );
+
+    const insertedIds = [];
+    for (const item of items) {
+      const trimmed = item.name?.trim();
+      if (!trimmed || existingNames.has(trimmed.toLowerCase())) {
+        continue;
+      }
+      currentOrder += 1;
+      const id = await ctx.db.insert("items", {
+        userId,
+        routine: finalRoutineName,
+        name: trimmed,
+        isPacked: false,
+        order: currentOrder,
+        ...(item.emoji ? { emoji: item.emoji } : {}),
+      });
+      insertedIds.push(id);
+    }
+
+    return { routineName: finalRoutineName, insertedIds };
   },
 });

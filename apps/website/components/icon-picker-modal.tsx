@@ -490,7 +490,7 @@ function IconPickerModalInner({
               {Array.from({ length: 18 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="flex flex-col items-center justify-center p-2 rounded-xl border border-border/50 gap-1.5 h-16"
+                  className="flex flex-col items-center justify-center p-2 rounded-lg border border-border/50 gap-1.5 h-16"
                 >
                   <Skeleton className="w-5 h-5 rounded-md" />
                   <Skeleton className="w-10 h-2.5 rounded-sm" />
@@ -507,7 +507,7 @@ function IconPickerModalInner({
                   onOpenChange(false);
                   handleSearchChange("");
                 }}
-                className={`flex flex-col items-center justify-center p-2 rounded-xl border text-xs gap-1 transition-all cursor-pointer h-16 ${
+                className={`flex flex-col items-center justify-center p-2 rounded-lg border text-xs gap-1 transition-all cursor-pointer h-16 ${
                   !selectedKey
                     ? "border-primary bg-primary/10 text-primary font-black"
                     : "border-border hover:bg-muted text-muted-foreground"
@@ -526,7 +526,7 @@ function IconPickerModalInner({
                     onOpenChange(false);
                     handleSearchChange("");
                   }}
-                  className="flex flex-col items-center justify-center p-2 rounded-xl border border-dashed border-primary bg-primary/5 hover:bg-primary/15 text-primary text-xs gap-1 transition-all cursor-pointer h-16"
+                  className="flex flex-col items-center justify-center p-2 rounded-lg border border-dashed border-primary bg-primary/5 hover:bg-primary/15 text-primary text-xs gap-1 transition-all cursor-pointer h-16"
                   title={`Use "${cleanQuery}" directly`}
                 >
                   <span className="text-base leading-none">
@@ -557,7 +557,7 @@ function IconPickerModalInner({
                       handleSearchChange("");
                     }}
                     title={displayName}
-                    className={`flex flex-col items-center justify-center p-2 rounded-xl border text-xs gap-1 transition-all cursor-pointer h-16 ${
+                    className={`flex flex-col items-center justify-center p-2 rounded-lg border text-xs gap-1 transition-all cursor-pointer h-16 ${
                       isSelected
                         ? "border-primary bg-primary/10 text-primary font-black shadow-xs"
                         : "border-border hover:bg-muted/80 text-foreground"
