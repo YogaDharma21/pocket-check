@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef, useCallback } from "react"
+import { useEffect, useState, useRef, useCallback, useMemo } from "react"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Id } from "@/convex/_generated/dataModel"
@@ -28,6 +28,8 @@ import {
   Download,
   Clock,
   Undo2,
+  Compass,
+  MapPin,
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
@@ -73,7 +75,7 @@ interface RestorableItem {
 }
 
 export function Dashboard() {
-  const [selectedRoutine, setSelectedRoutine] = useState("Work")
+  const [selectedRoutine, setSelectedRoutine] = useState<string>("")
   const [showNewRoutineModal, setShowNewRoutineModal] = useState(false)
   const [customRoutineName, setCustomRoutineName] = useState("")
   const [customRoutineIcon, setCustomRoutineIcon] = useState("tag")
@@ -175,15 +177,17 @@ export function Dashboard() {
   const reorderItems = useMutation(api.pocketcheck.reorderItems)
   const reorderRoutines = useMutation(api.pocketcheck.reorderRoutines)
 
-  const customRoutines = useQuery(api.pocketcheck.listRoutines) ?? []
-  const routinesList = customRoutines
-  const effectiveRoutine =
-    selectedRoutine ||
-    (routinesList.length > 0 ? routinesList[0].name : "Work")
+  const customRoutines = useQuery(api.pocketcheck.listRoutines)
+  const routinesList = useMemo(() => customRoutines ?? [], [customRoutines])
+  const currentRoutineObj =
+    routinesList.find((r) => r.name === selectedRoutine) ||
+    (routinesList.length > 0 ? routinesList[0] : null)
+  const effectiveRoutine = currentRoutineObj ? currentRoutineObj.name : ""
 
-  const rawItems = useQuery(api.pocketcheck.listItems, {
-    routine: effectiveRoutine,
-  })
+  const rawItems = useQuery(
+    api.pocketcheck.listItems,
+    effectiveRoutine ? { routine: effectiveRoutine } : "skip"
+  )
   const items = rawItems ?? []
 
   // Filter & Drag State
@@ -202,8 +206,6 @@ export function Dashboard() {
   }, [ensureInitialized])
 
   // Auto-Reset Time check per routine
-  const currentRoutineObj = routinesList.find((r) => r.name === effectiveRoutine)
-
   useEffect(() => {
     if (!currentRoutineObj || !currentRoutineObj.autoResetTime) return
 
@@ -256,6 +258,7 @@ export function Dashboard() {
   )
 
   const handleReset = useCallback(async () => {
+    if (!effectiveRoutine) return
     try {
       await resetItems({ routine: effectiveRoutine })
     } catch (err) {
@@ -383,6 +386,7 @@ export function Dashboard() {
   }
 
   const handleDeleteAllCreatedItems = async () => {
+    if (!effectiveRoutine) return
     try {
       const backupItems: RestorableItem[] = items.map((i) => ({
         routine: effectiveRoutine,
@@ -414,7 +418,9 @@ export function Dashboard() {
 
   // Headline message
   let headline = "Let's double-check before you pack!"
-  if (totalItems === 0) {
+  if (!effectiveRoutine) {
+    headline = "No destinations created yet."
+  } else if (totalItems === 0) {
     headline = "Your pocket list is empty. Add items below!"
   } else if (packedItems === totalItems) {
     headline = "Excellent! You are 100% prepared to leave!"
@@ -553,6 +559,7 @@ export function Dashboard() {
 
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!effectiveRoutine) return
     const trimmed = newCustomItemName.trim()
     if (!trimmed) return
 
@@ -628,24 +635,27 @@ export function Dashboard() {
           </div>
 
           {/* Active Routine Pill on Desktop */}
-          <div className="hidden items-center gap-2 rounded-full border border-border bg-muted/60 px-3.5 py-1.5 text-xs font-extrabold select-none md:flex">
-            <span className="text-muted-foreground">Active Routine:</span>
-            <span className="flex items-center gap-1.5 font-black text-foreground">
-              {renderRoutineIcon(currentRoutineObj?.icon || effectiveRoutine)}
-              <span>{effectiveRoutine}</span>
-            </span>
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            <span className="font-bold text-muted-foreground">
-              {packedItems}/{totalItems} Packed
-            </span>
-          </div>
+          {effectiveRoutine ? (
+            <div className="hidden items-center gap-2 rounded-full border border-border bg-muted/60 px-3.5 py-1.5 text-xs font-extrabold select-none md:flex">
+              <span className="text-muted-foreground">Active Routine:</span>
+              <span className="flex items-center gap-1.5 font-black text-foreground">
+                {renderRoutineIcon(currentRoutineObj?.icon || effectiveRoutine)}
+                <span>{effectiveRoutine}</span>
+              </span>
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <span className="font-bold text-muted-foreground">
+                {packedItems}/{totalItems} Packed
+              </span>
+            </div>
+          ) : null}
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <Button
               variant="outline"
               size="sm"
+              disabled={!effectiveRoutine}
               onClick={() => setShowExportModal(true)}
-              className="h-8 text-xs font-bold border-border text-foreground hover:bg-muted hidden sm:flex items-center gap-1.5"
+              className="h-8 text-xs font-bold border-border text-foreground hover:bg-muted hidden sm:flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
               title="Export or Print Checklist"
             >
               <Download className="h-3.5 w-3.5" />
@@ -655,8 +665,9 @@ export function Dashboard() {
             <Button
               variant="outline"
               size="sm"
+              disabled={!effectiveRoutine}
               onClick={() => setShowShareModal(true)}
-              className="h-8 text-xs font-bold border-border text-foreground hover:bg-muted hidden sm:flex items-center gap-1.5"
+              className="h-8 text-xs font-bold border-border text-foreground hover:bg-muted hidden sm:flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
               title="Share Checklist Link"
             >
               <Share2 className="h-3.5 w-3.5" />
@@ -735,8 +746,9 @@ export function Dashboard() {
                   <Button
                     variant="ghost"
                     size="sm"
+                    disabled={!effectiveRoutine || totalItems === 0}
                     onClick={() => void handleReset()}
-                    className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-primary uppercase hover:text-primary/80"
+                    className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-primary uppercase hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed"
                     title="Reset items in this routine to Missing position (Shift+U)"
                   >
                     <RotateCcw className="h-3.5 w-3.5" /> Uncheck All
@@ -744,8 +756,9 @@ export function Dashboard() {
                   <Button
                     variant="ghost"
                     size="sm"
+                    disabled={!effectiveRoutine || totalItems === 0}
                     onClick={() => setShowDeleteAllConfirm(true)}
-                    className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-destructive uppercase hover:text-destructive/80"
+                    className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-destructive uppercase hover:text-destructive/80 disabled:opacity-40 disabled:cursor-not-allowed"
                     title="Delete all created items in this routine"
                   >
                     <Trash2 className="h-3.5 w-3.5" /> Clear List
@@ -770,127 +783,139 @@ export function Dashboard() {
                 </Badge>
               </CardHeader>
               <CardContent className="space-y-2 p-3 pt-0">
-                {/* Desktop vertical list view */}
-                <div className="hidden flex-col gap-1.5 lg:flex">
-                  {routinesList.map((routine) => {
-                    const isActive = routine.name === effectiveRoutine
-                    return (
-                      <div
-                        key={routine.name}
-                        onClick={() => {
-                          setSelectedRoutine(routine.name)
-                        }}
-                        className={`group flex cursor-pointer items-center justify-between rounded-lg border p-2.5 transition-all ${
-                          isActive
-                            ? "border-primary bg-primary font-black text-primary-foreground shadow-xs"
-                            : "border-border bg-card font-bold text-foreground hover:bg-muted/60"
-                        }`}
-                      >
-                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                {routinesList.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-4 text-center">
+                    <Compass className="h-6 w-6 text-muted-foreground mb-1.5 opacity-60" />
+                    <p className="text-xs font-bold text-foreground">No destinations yet</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Add a destination or choose a preset below.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Desktop vertical list view */}
+                    <div className="hidden flex-col gap-1.5 lg:flex">
+                      {routinesList.map((routine) => {
+                        const isActive = routine.name === effectiveRoutine
+                        return (
                           <div
-                            className={`shrink-0 rounded-lg p-2 ${
+                            key={routine.name}
+                            onClick={() => {
+                              setSelectedRoutine(routine.name)
+                            }}
+                            className={`group flex cursor-pointer items-center justify-between rounded-lg border p-2.5 transition-all ${
                               isActive
-                                ? "bg-primary-foreground/15 text-primary-foreground"
-                                : "bg-muted text-foreground"
+                                ? "border-primary bg-primary font-black text-primary-foreground shadow-xs"
+                                : "border-border bg-card font-bold text-foreground hover:bg-muted/60"
                             }`}
                           >
-                            {renderRoutineIcon(routine.icon || routine.name)}
+                            <div className="flex min-w-0 flex-1 items-center gap-3">
+                              <div
+                                className={`shrink-0 rounded-lg p-2 ${
+                                  isActive
+                                    ? "bg-primary-foreground/15 text-primary-foreground"
+                                    : "bg-muted text-foreground"
+                                }`}
+                              >
+                                {renderRoutineIcon(routine.icon || routine.name)}
+                              </div>
+                              <div className="truncate min-w-0">
+                                <span className="truncate text-sm select-none block">
+                                  {routine.name}
+                                </span>
+                                {routine.autoResetTime && (
+                                  <span className="text-[10px] font-mono opacity-70 flex items-center gap-1">
+                                    <Clock className="h-2.5 w-2.5" />
+                                    {routine.autoResetTime}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setManageRoutine(routine)
+                                  setShowScheduleModal(true)
+                                }}
+                                className={`h-7 w-7 shrink-0 cursor-pointer rounded-lg opacity-70 transition-opacity group-hover:opacity-100 ${
+                                  isActive
+                                    ? "text-primary-foreground hover:bg-primary-foreground/20"
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                }`}
+                                title="Schedule Auto-Reset"
+                              >
+                                <Clock className="h-3.5 w-3.5" />
+                              </Button>
+
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setManageRoutine(routine)
+                                  setEditModalName(routine.name)
+                                  setEditModalIconTag(routine.icon)
+                                }}
+                                className={`h-7 w-7 shrink-0 cursor-pointer rounded-lg opacity-70 transition-opacity group-hover:opacity-100 ${
+                                  isActive
+                                    ? "text-primary-foreground hover:bg-primary-foreground/20"
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                }`}
+                                title="Destination Settings"
+                              >
+                                <Settings className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </div>
-                          <div className="truncate min-w-0">
-                            <span className="truncate text-sm select-none block">
-                              {routine.name}
-                            </span>
-                            {routine.autoResetTime && (
-                              <span className="text-[10px] font-mono opacity-70 flex items-center gap-1">
-                                <Clock className="h-2.5 w-2.5" />
-                                {routine.autoResetTime}
+                        )
+                      })}
+                    </div>
+
+                    {/* Mobile / Tablet grid view */}
+                    <div className="grid grid-cols-3 gap-2 lg:hidden">
+                      {routinesList.map((routine) => {
+                        const isActive = routine.name === effectiveRoutine
+                        return (
+                          <div key={routine.name} className="relative">
+                            <Button
+                              variant={isActive ? "default" : "outline"}
+                              onClick={() => {
+                                setSelectedRoutine(routine.name)
+                              }}
+                              className="flex h-auto w-full flex-col items-center gap-1.5 rounded-lg p-3 pt-4 text-xs font-black"
+                            >
+                              <span className="block select-none">
+                                {renderRoutineIcon(routine.icon || routine.name)}
                               </span>
-                            )}
+                              <span className="max-w-full truncate select-none">
+                                {routine.name}
+                              </span>
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setManageRoutine(routine)
+                                setEditModalName(routine.name)
+                                setEditModalIconTag(routine.icon)
+                              }}
+                              className="absolute top-1 right-1 h-5 w-5 rounded-md bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground"
+                              title="Control"
+                            >
+                              <Settings className="h-3 w-3" />
+                            </Button>
                           </div>
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setManageRoutine(routine)
-                              setShowScheduleModal(true)
-                            }}
-                            className={`h-7 w-7 shrink-0 cursor-pointer rounded-lg opacity-70 transition-opacity group-hover:opacity-100 ${
-                              isActive
-                                ? "text-primary-foreground hover:bg-primary-foreground/20"
-                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                            }`}
-                            title="Schedule Auto-Reset"
-                          >
-                            <Clock className="h-3.5 w-3.5" />
-                          </Button>
-
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setManageRoutine(routine)
-                              setEditModalName(routine.name)
-                              setEditModalIconTag(routine.icon)
-                            }}
-                            className={`h-7 w-7 shrink-0 cursor-pointer rounded-lg opacity-70 transition-opacity group-hover:opacity-100 ${
-                              isActive
-                                ? "text-primary-foreground hover:bg-primary-foreground/20"
-                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                            }`}
-                            title="Destination Settings"
-                          >
-                            <Settings className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {/* Mobile / Tablet grid view */}
-                <div className="grid grid-cols-3 gap-2 lg:hidden">
-                  {routinesList.map((routine) => {
-                    const isActive = routine.name === effectiveRoutine
-                    return (
-                      <div key={routine.name} className="relative">
-                        <Button
-                          variant={isActive ? "default" : "outline"}
-                          onClick={() => {
-                            setSelectedRoutine(routine.name)
-                          }}
-                          className="flex h-auto w-full flex-col items-center gap-1.5 rounded-lg p-3 pt-4 text-xs font-black"
-                        >
-                          <span className="block select-none">
-                            {renderRoutineIcon(routine.icon || routine.name)}
-                          </span>
-                          <span className="max-w-full truncate select-none">
-                            {routine.name}
-                          </span>
-                        </Button>
-
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setManageRoutine(routine)
-                            setEditModalName(routine.name)
-                            setEditModalIconTag(routine.icon)
-                          }}
-                          className="absolute top-1 right-1 h-5 w-5 rounded-md bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground"
-                          title="Control"
-                        >
-                          <Settings className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    )
-                  })}
-                </div>
+                        )
+                      })}
+                    </div>
+                  </>
+                )}
 
                 {/* Destination Actions: Smart Presets & New Destination */}
                 <div className="mt-2 flex flex-col gap-1.5">
@@ -923,8 +948,45 @@ export function Dashboard() {
 
           {/* Right Column / Workspace (lg:col-span-8 space-y-5) */}
           <div className="space-y-5 lg:col-span-8">
-            {/* Active Destination Workspace Card Header */}
-            <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-card p-4 shadow-xs sm:flex-row sm:items-center sm:p-5">
+            {!effectiveRoutine ? (
+              <Card className="border-border shadow-xs">
+                <CardContent className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                  <div className="rounded-full bg-primary/10 p-4 text-primary mb-4">
+                    <MapPin className="h-8 w-8" />
+                  </div>
+                  <h2 className="text-xl font-black text-foreground sm:text-2xl mb-1">
+                    Ready to Start Packing?
+                  </h2>
+                  <p className="text-sm font-medium text-muted-foreground max-w-md mb-6">
+                    Create your first destination or choose from smart presets like Work, Gym, Campus, or Travel to organize your essential gear.
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <Button
+                      onClick={() => setShowPresetsModal(true)}
+                      className="font-black text-xs uppercase tracking-wider h-10 px-5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                    >
+                      <Sparkles className="h-4 w-4 mr-1.5" />
+                      Browse Smart Presets
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setCustomRoutineName("")
+                        setCustomRoutineIcon("tag")
+                        setShowNewRoutineModal(true)
+                      }}
+                      className="font-black text-xs uppercase tracking-wider h-10 px-5 cursor-pointer"
+                    >
+                      <Plus className="h-4 w-4 mr-1.5" />
+                      Create Custom Destination
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Active Destination Workspace Card Header */}
+                <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-card p-4 shadow-xs sm:flex-row sm:items-center sm:p-5">
               <div className="flex items-center gap-3">
                 <div className="shrink-0 rounded-lg bg-primary/10 p-3 text-primary">
                   {renderRoutineIcon(
@@ -1339,7 +1401,9 @@ export function Dashboard() {
                 </div>
               )
             })()}
-          </div>
+          </>
+        )}
+      </div>
         </div>
       </main>
 
@@ -1474,7 +1538,13 @@ export function Dashboard() {
                       )
                         return
                       try {
-                        await deleteRoutine({ id: manageRoutine._id })
+                        const routineToDeleteName = manageRoutine.name
+                        const routineToDeleteId = manageRoutine._id
+                        await deleteRoutine({ id: routineToDeleteId })
+                        const remaining = routinesList.filter((r) => r._id !== routineToDeleteId)
+                        if (selectedRoutine === routineToDeleteName || effectiveRoutine === routineToDeleteName) {
+                          setSelectedRoutine(remaining.length > 0 ? remaining[0].name : "")
+                        }
                         setManageRoutine(null)
                       } catch (err) {
                         console.error("Failed to delete routine", err)

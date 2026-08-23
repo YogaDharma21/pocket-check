@@ -36,7 +36,7 @@ export default function DashboardScreen() {
   const { signOut } = useAuth();
   const { user } = useUser();
 
-  const [selectedRoutine, setSelectedRoutine] = useState("Work");
+  const [selectedRoutine, setSelectedRoutine] = useState<string>("");
   const [filter, setFilter] = useState<FilterType>("all");
 
   // Modals state
@@ -62,19 +62,29 @@ export default function DashboardScreen() {
   const reorderItems = useMutation(api.pocketcheck.reorderItems);
   const reorderRoutines = useMutation(api.pocketcheck.reorderRoutines);
 
-  const rawItems = useQuery(api.pocketcheck.listItems, { routine: selectedRoutine }) ?? [];
   const rawRoutines = useQuery(api.pocketcheck.listRoutines) ?? [];
+  const routines: RoutineItem[] = rawRoutines.map((r) => ({
+    _id: r._id,
+    name: r.name,
+    icon: r.icon,
+    order: r.order,
+  }));
+
+  const activeRoutine = routines.find((r) => r.name === selectedRoutine);
+  const effectiveRoutine = activeRoutine
+    ? activeRoutine.name
+    : routines.length > 0
+    ? routines[0].name
+    : "";
+
+  const rawItems = useQuery(
+    api.pocketcheck.listItems,
+    effectiveRoutine ? { routine: effectiveRoutine } : "skip"
+  ) ?? [];
 
   useEffect(() => {
     void ensureInitialized();
   }, [ensureInitialized]);
-
-  // Auto-select available routine
-  useEffect(() => {
-    if (rawRoutines.length > 0 && !rawRoutines.find((r) => r.name === selectedRoutine)) {
-      setSelectedRoutine(rawRoutines[0].name);
-    }
-  }, [rawRoutines, selectedRoutine]);
 
   const items: ItemData[] = rawItems.map((i) => ({
     _id: i._id,
@@ -83,13 +93,6 @@ export default function DashboardScreen() {
     isPacked: i.isPacked,
     emoji: i.emoji,
     order: i.order,
-  }));
-
-  const routines: RoutineItem[] = rawRoutines.map((r) => ({
-    _id: r._id,
-    name: r.name,
-    icon: r.icon,
-    order: r.order,
   }));
 
   // Calculations
@@ -113,17 +116,19 @@ export default function DashboardScreen() {
   };
 
   const handleReset = async () => {
+    if (!effectiveRoutine) return;
     try {
-      await resetItems({ routine: selectedRoutine });
+      await resetItems({ routine: effectiveRoutine });
     } catch (err) {
       console.error("Failed to reset list", err);
     }
   };
 
   const handleClearList = () => {
+    if (!effectiveRoutine) return;
     Alert.alert(
       "Clear All Items",
-      `Are you sure you want to delete all items in "${selectedRoutine}"?`,
+      `Are you sure you want to delete all items in "${effectiveRoutine}"?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -131,7 +136,7 @@ export default function DashboardScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteAllItems({ routine: selectedRoutine });
+              await deleteAllItems({ routine: effectiveRoutine });
             } catch (err) {
               console.error("Failed to clear list", err);
             }
@@ -155,7 +160,7 @@ export default function DashboardScreen() {
       const routine = routines.find((r) => r._id === id);
       if (!routine) return;
       await updateRoutine({ id, name: newName, icon: routine.icon || "tag" });
-      if (selectedRoutine === routine.name) {
+      if (selectedRoutine === routine.name || effectiveRoutine === routine.name) {
         setSelectedRoutine(newName);
       }
     } catch (err) {
@@ -165,7 +170,12 @@ export default function DashboardScreen() {
 
   const handleDeleteRoutine = async (id: Id<"routines">) => {
     try {
+      const routineToDelete = routines.find((r) => r._id === id);
       await deleteRoutine({ id });
+      if (routineToDelete && (selectedRoutine === routineToDelete.name || effectiveRoutine === routineToDelete.name)) {
+        const remaining = routines.filter((r) => r._id !== id);
+        setSelectedRoutine(remaining.length > 0 ? remaining[0].name : "");
+      }
     } catch (err) {
       console.error("Failed to delete routine", err);
     }
@@ -187,9 +197,10 @@ export default function DashboardScreen() {
   };
 
   const handleAddItem = async (name: string, iconKey?: string) => {
+    if (!effectiveRoutine) return;
     try {
       await addItem({
-        routine: selectedRoutine,
+        routine: effectiveRoutine,
         name,
         emoji: iconKey || undefined,
       });
@@ -324,7 +335,7 @@ export default function DashboardScreen() {
           {/* Routine Switcher */}
           <RoutineSwitcher
             routines={routines}
-            selectedRoutine={selectedRoutine}
+            selectedRoutine={effectiveRoutine}
             onSelectRoutine={setSelectedRoutine}
             onOpenRoutineSettings={(routine) => setManageRoutine(routine)}
             onCreateRoutine={handleCreateRoutine}
