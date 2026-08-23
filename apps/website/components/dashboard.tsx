@@ -320,21 +320,31 @@ export function Dashboard() {
     const trimmed = newCustomItemName.trim()
     if (!trimmed) return
 
-    const parsed = parseMultiItemInput(trimmed)
+    const selectedTag = newItemTag.trim()
+    const parsed = parseMultiItemInput(trimmed, selectedTag)
     if (parsed.length === 0) return
 
     setNewCustomItemName("")
     setNewItemTag("")
 
     if (parsed.length > 1) {
+      const itemsToInsert = parsed.map((item) => ({
+        name: item.name,
+        emoji:
+          selectedTag ||
+          item.emoji ||
+          detectIconForItem(item.name) ||
+          "Tag",
+      }))
+
       try {
         await addItemsBatch({
           routine: effectiveRoutine,
-          items: parsed,
+          items: itemsToInsert,
         })
       } catch (err) {
         console.warn("addItemsBatch failed, adding items sequentially", err)
-        for (const item of parsed) {
+        for (const item of itemsToInsert) {
           await addItem({
             routine: effectiveRoutine,
             name: item.name,
@@ -348,13 +358,13 @@ export function Dashboard() {
     // Single item add
     const single = parsed[0]
     const detectedEmoji =
-      newItemTag.trim() || single.emoji || detectIconForItem(single.name)
+      selectedTag || single.emoji || detectIconForItem(single.name) || "Tag"
 
     try {
       await addItem({
         routine: effectiveRoutine,
         name: single.name,
-        emoji: detectedEmoji !== "Tag" ? detectedEmoji : undefined,
+        emoji: detectedEmoji,
       })
     } catch (err) {
       console.error("Failed to add item", err)
@@ -798,7 +808,10 @@ export function Dashboard() {
                     >
                       <Plus className="mr-1 h-4 w-4" />
                       {(() => {
-                        const parsed = parseMultiItemInput(newCustomItemName)
+                        const parsed = parseMultiItemInput(
+                          newCustomItemName,
+                          newItemTag
+                        )
                         if (parsed.length > 1) {
                           return `Add ${parsed.length} Items`
                         }
@@ -810,7 +823,10 @@ export function Dashboard() {
 
                 {/* Live preview for multi-item comma entry */}
                 {(() => {
-                  const parsed = parseMultiItemInput(newCustomItemName)
+                  const parsed = parseMultiItemInput(
+                    newCustomItemName,
+                    newItemTag
+                  )
                   if (parsed.length > 1) {
                     return (
                       <div className="flex flex-wrap items-center gap-1.5 pt-1">
@@ -822,7 +838,7 @@ export function Dashboard() {
                             key={idx}
                             className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-0.5 text-xs font-bold text-foreground"
                           >
-                            {renderItemIcon(item.emoji)}
+                            {renderItemIcon(item.emoji || newItemTag || "Tag")}
                             <span>{item.name}</span>
                           </span>
                         ))}

@@ -248,7 +248,8 @@ export function detectIconForItem(name: string): string {
  * Example input: "USB Cable, Notebook, ID Card" or multi-line list.
  */
 export function parseMultiItemInput(
-  rawInput: string
+  rawInput: string,
+  fallbackIcon?: string
 ): Array<{ name: string; emoji?: string }> {
   if (!rawInput || !rawInput.trim()) return []
 
@@ -261,11 +262,19 @@ export function parseMultiItemInput(
     )
     .filter((token) => token.length > 0)
 
+  const cleanFallback =
+    fallbackIcon && fallbackIcon.trim() ? fallbackIcon.trim() : undefined
+
   return rawTokens.map((name) => {
-    const icon = detectIconForItem(name)
+    const detected = detectIconForItem(name)
+    const finalIcon =
+      detected && detected !== "Tag"
+        ? detected
+        : cleanFallback || detected || "Tag"
+
     return {
       name,
-      ...(icon && icon !== "Tag" ? { emoji: icon } : {}),
+      emoji: finalIcon,
     }
   })
 }
