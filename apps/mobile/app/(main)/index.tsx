@@ -8,9 +8,10 @@ import {
   useColorScheme,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "@clerk/clerk-expo";
+import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { useQuery, useMutation } from "convex/react";
 import { Ionicons } from "@expo/vector-icons";
@@ -34,6 +35,7 @@ import { ExportModal } from "../../components/ExportModal";
 import { ShareRoutineModal } from "../../components/ShareRoutineModal";
 import { ScheduleModal } from "../../components/ScheduleModal";
 import { UndoToast } from "../../components/UndoToast";
+import { UserProfileModal } from "../../components/UserProfileModal";
 import { PresetRoutine } from "../../lib/presets";
 
 interface RestorableItem {
@@ -53,6 +55,7 @@ export default function DashboardScreen() {
   const router = useRouter();
 
   const { signOut } = useAuth();
+  const { user } = useUser();
 
   const [selectedRoutine, setSelectedRoutine] = useState<string>("");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -65,6 +68,7 @@ export default function DashboardScreen() {
   const [newItemIconKey, setNewItemIconKey] = useState<string>("");
   const [editItemIconKey, setEditItemIconKey] = useState<string>("");
   const [showAboutModal, setShowAboutModal] = useState(false);
+  const [showUserModal, setShowUserModal] = useState(false);
   const [showPresetsModal, setShowPresetsModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -549,16 +553,38 @@ export default function DashboardScreen() {
               />
             </TouchableOpacity>
 
+            {/* User Profile Avatar Button */}
             <TouchableOpacity
-              style={styles.headerBtn}
-              onPress={handleSignOut}
+              style={styles.userAvatarBtn}
+              onPress={() => setShowUserModal(true)}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              activeOpacity={0.7}
             >
-              <Ionicons
-                name="log-out-outline"
-                size={20}
-                color={colors.mutedForeground}
-              />
+              {user?.imageUrl ? (
+                <Image
+                  source={{ uri: user.imageUrl }}
+                  style={[styles.headerAvatar, { borderColor: colors.border }]}
+                />
+              ) : (
+                <View
+                  style={[
+                    styles.headerAvatarFallback,
+                    {
+                      backgroundColor: colors.primary,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.headerAvatarText,
+                      { color: colors.primaryForeground },
+                    ]}
+                  >
+                    {(user?.fullName || user?.firstName || "U")[0].toUpperCase()}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -818,6 +844,14 @@ export default function DashboardScreen() {
           theme={theme}
         />
 
+        <UserProfileModal
+          visible={showUserModal}
+          onClose={() => setShowUserModal(false)}
+          user={user}
+          onSignOut={handleSignOut}
+          theme={theme}
+        />
+
         {/* Floating 5-Second Undo Toast */}
         {undoToast && (
           <UndoToast
@@ -870,10 +904,31 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: 12,
   },
   headerBtn: {
     padding: 4,
+  },
+  userAvatarBtn: {
+    padding: 2,
+  },
+  headerAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
+  headerAvatarFallback: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerAvatarText: {
+    fontSize: 12,
+    fontWeight: "900",
   },
   scrollBody: {
     padding: 16,
