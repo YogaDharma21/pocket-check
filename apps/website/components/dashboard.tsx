@@ -631,7 +631,7 @@ export function Dashboard() {
             </div>
             <div>
               <h1 className="text-lg leading-none font-black tracking-wide text-foreground sm:text-2xl">
-                POCKET<span className="text-primary">CHECK</span>
+                POCKET<span className="text-primary">CHECKER</span>
               </h1>
             </div>
           </div>
@@ -680,7 +680,7 @@ export function Dashboard() {
               variant="ghost"
               size="icon"
               onClick={() => setShowAboutDialog(true)}
-              title="About PocketCheck"
+              title="About PocketChecker"
               className="h-9 w-9 cursor-pointer rounded-lg text-foreground hover:bg-muted"
             >
               <Info className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -1863,13 +1863,13 @@ export function Dashboard() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Info className="h-5 w-5 text-primary" /> About PocketCheck
+              <Info className="h-5 w-5 text-primary" /> About PocketChecker
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-2 select-none">
             <p className="text-sm leading-relaxed font-bold text-foreground">
-              PocketCheck is an everyday carry checklist platform designed to ensure
+              PocketChecker is an everyday carry checklist platform designed to ensure
               you never leave essential gear behind before stepping out for work, gym,
               or custom routines.
             </p>

@@ -508,7 +508,7 @@ export default function DashboardScreen() {
               />
             </View>
             <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-              POCKET<Text style={{ color: colors.mutedForeground }}>CHECK</Text>
+              POCKET<Text style={{ color: colors.mutedForeground }}>CHECKER</Text>
             </Text>
           </View>
 

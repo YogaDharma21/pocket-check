@@ -69,8 +69,8 @@ export function ShareRoutineModal({
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Check out my "${routineName}" packing checklist on PocketCheck: ${shareUrl}`,
-        title: `PocketCheck - Share ${routineName}`,
+        message: `Check out my "${routineName}" packing checklist on PocketChecker: ${shareUrl}`,
+        title: `PocketChecker - Share ${routineName}`,
       });
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
@@ -96,7 +96,7 @@ export function ShareRoutineModal({
               </View>
 
               <Text style={[styles.description, { color: colors.mutedForeground }]}>
-                Anyone with this link can 1-click import this checklist into their PocketCheck account.
+                Anyone with this link can 1-click import this checklist into their PocketChecker account.
               </Text>
 
               <View style={[styles.previewCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>

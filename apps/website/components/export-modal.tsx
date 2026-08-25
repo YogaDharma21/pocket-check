@@ -34,7 +34,7 @@ export function ExportModal({
   const [copied, setCopied] = React.useState(false)
 
   const generateMarkdown = () => {
-    let md = `# PocketCheck — ${routineName} Checklist\n\n`
+    let md = `# PocketChecker — ${routineName} Checklist\n\n`
     md += `*Exported on ${new Date().toLocaleDateString()}*\n\n`
     items.forEach((item) => {
       const check = item.isPacked ? "[x]" : "[ ]"

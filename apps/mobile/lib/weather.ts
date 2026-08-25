@@ -55,15 +55,15 @@ export async function fetchDailyWeather(
 
     if (isRainExpected) {
       description = `Rain expected (${precipitationProbability}%)`;
-      suggestion = `Rain predicted today (${precipitationProbability}%) \u2014 pack an umbrella or raincoat!`;
+      suggestion = `Rain predicted today (${precipitationProbability}%) — pack an umbrella or raincoat!`;
       suggestedItem = { name: "Umbrella", emoji: "Umbrella" };
     } else if (isHotDay) {
-      description = `Sunny & hot (${temperatureMax}\u00B0C)`;
-      suggestion = `High heat today (${temperatureMax}\u00B0C) \u2014 bring sunglasses & sunscreen!`;
+      description = `Sunny & hot (${temperatureMax}°C)`;
+      suggestion = `High heat today (${temperatureMax}°C) — bring sunglasses & sunscreen!`;
       suggestedItem = { name: "Sunglasses", emoji: "Glasses" };
     } else if (isColdDay) {
-      description = `Chilly weather (${temperatureMax}\u00B0C)`;
-      suggestion = `Cold day (${temperatureMax}\u00B0C) \u2014 pack a warm jacket!`;
+      description = `Chilly weather (${temperatureMax}°C)`;
+      suggestion = `Cold day (${temperatureMax}°C) — pack a warm jacket!`;
       suggestedItem = { name: "Jacket", emoji: "Shirt" };
     }
 

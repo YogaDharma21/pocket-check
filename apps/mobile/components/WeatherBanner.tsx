@@ -54,11 +54,11 @@ export function WeatherBanner({
                   undefined;
               }
             } catch {
-              // reverse geocode optional fallback
+              // reverse geocode fallback
             }
           }
         } catch (locErr) {
-          console.warn("Location permission or acquisition not available, using default", locErr);
+          console.warn("Location not available, using default", locErr);
         }
 
         const data = await fetchDailyWeather(lat, lon, locName);
@@ -106,38 +106,43 @@ export function WeatherBanner({
         styles.banner,
         {
           backgroundColor: colors.card,
-          borderColor: "rgba(59, 130, 246, 0.3)",
+          borderColor: "rgba(59, 130, 246, 0.35)",
         },
       ]}
     >
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={styles.iconBox}>
-            <Ionicons name={iconName} size={18} color="#3b82f6" />
-          </View>
-          <View style={styles.headerTextCol}>
-            <View style={styles.headerTitleRow}>
-              <Text style={styles.headerLabel}>WEATHER INTELLIGENCE</Text>
-              <Text style={[styles.weatherStats, { color: colors.mutedForeground }]}>
-                {weather.locationName ? `${weather.locationName} \u2022 ` : ""}
-                {weather.temperatureMax}\u00B0C / {weather.precipitationProbability}% Rain
-              </Text>
-            </View>
-            <Text style={[styles.suggestionText, { color: colors.foreground }]}>
-              {weather.suggestion}
-            </Text>
-          </View>
+      {/* Top Header Row with Icon, Title, and Close Button */}
+      <View style={styles.headerRow}>
+        <View style={styles.iconBox}>
+          <Ionicons name={iconName} size={20} color="#3b82f6" />
+        </View>
+
+        <View style={styles.headerInfoCol}>
+          <Text style={styles.headerLabel}>WEATHER INTELLIGENCE</Text>
+          <Text
+            style={[styles.weatherStats, { color: colors.mutedForeground }]}
+            numberOfLines={1}
+          >
+            {weather.locationName ? `${weather.locationName} • ` : ""}
+            {`${weather.temperatureMax}°C / ${weather.precipitationProbability}% Rain`}
+          </Text>
         </View>
 
         <TouchableOpacity
           style={styles.dismissBtn}
           onPress={() => setDismissed(true)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          activeOpacity={0.7}
         >
           <Ionicons name="close" size={18} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>
 
+      {/* Suggestion Text */}
+      <Text style={[styles.suggestionText, { color: colors.foreground }]}>
+        {weather.suggestion}
+      </Text>
+
+      {/* Action Row */}
       <View style={styles.actionRow}>
         {weather.suggestedItem && !isItemInList && (
           <TouchableOpacity
@@ -150,8 +155,9 @@ export function WeatherBanner({
                 );
               }
             }}
+            activeOpacity={0.7}
           >
-            <Ionicons name="add" size={14} color="#3b82f6" />
+            <Ionicons name="add" size={15} color="#3b82f6" />
             <Text style={styles.addBtnText}>
               Add {weather.suggestedItem.name}
             </Text>
@@ -183,62 +189,84 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 14,
     marginVertical: 6,
-    gap: 8,
+    gap: 10,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  headerLeft: {
+  headerRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 10,
-    flex: 1,
   },
   iconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: "rgba(59, 130, 246, 0.1)",
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "rgba(59, 130, 246, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.25)",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 2,
   },
-  headerTextCol: {
+  headerInfoCol: {
     flex: 1,
     gap: 2,
-  },
-  headerTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    flexWrap: "wrap",
+    justifyContent: "center",
   },
   headerLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "900",
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
     color: "#3b82f6",
   },
   weatherStats: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "600",
-  },
-  suggestionText: {
-    fontSize: 12,
-    fontWeight: "600",
-    lineHeight: 16,
   },
   dismissBtn: {
-    padding: 2,
+    padding: 4,
+    marginLeft: 4,
+  },
+  suggestionText: {
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 18,
+    paddingHorizontal: 2,
   },
   actionRow: {
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
+    marginTop: 2,
   },
   addBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(59, 130, 246, 0.4)",
+    backgroundColor: "rgba(59, 130, 246, 0.12)",
+  },
+  addBtnText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#3b82f6",
+  },
+  notPackedBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(245, 158, 11, 0.4)",
+    backgroundColor: "rgba(245, 158, 11, 0.1)",
+  },
+  notPackedText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#f59e0b",
+  },
+  packedBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
@@ -246,41 +274,12 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(59, 130, 246, 0.4)",
-    backgroundColor: "rgba(59, 130, 246, 0.1)",
-  },
-  addBtnText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#3b82f6",
-  },
-  notPackedBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "rgba(245, 158, 11, 0.4)",
-    backgroundColor: "rgba(245, 158, 11, 0.1)",
-  },
-  notPackedText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#f59e0b",
-  },
-  packedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
     borderColor: "rgba(16, 185, 129, 0.4)",
     backgroundColor: "rgba(16, 185, 129, 0.1)",
   },
   packedText: {
-    fontSize: 10,
-    fontWeight: "700",
+    fontSize: 11,
+    fontWeight: "800",
     color: "#10b981",
   },
 });

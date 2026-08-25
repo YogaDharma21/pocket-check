@@ -44,7 +44,7 @@ export function AboutModal({ visible, onClose, theme }: AboutModalProps) {
                     color={colors.primary}
                   />
                   <Text style={[styles.title, { color: colors.foreground }]}>
-                    About PocketCheck
+                    About PocketChecker
                   </Text>
                 </View>
                 <TouchableOpacity onPress={onClose}>
@@ -57,7 +57,7 @@ export function AboutModal({ visible, onClose, theme }: AboutModalProps) {
               </View>
 
               <Text style={[styles.description, { color: colors.foreground }]}>
-                PocketCheck is a minimal checklist tool designed to make sure
+                PocketChecker is a minimal checklist tool designed to make sure
                 you never forget your keys, wallet, phone, or essential items
                 before stepping out for work, gym, or custom routines.
               </Text>

@@ -72,7 +72,7 @@ export default function SignInScreen() {
             />
           </View>
           <Text style={[styles.title, { color: colors.foreground }]}>
-            POCKET<Text style={{ color: colors.mutedForeground }}>CHECK</Text>
+            POCKET<Text style={{ color: colors.mutedForeground }}>CHECKER</Text>
           </Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
             Double-check your pockets before you step out! Never forget your
@@ -130,7 +130,7 @@ export default function SignInScreen() {
           </TouchableOpacity>
 
           <Text style={[styles.disclaimer, { color: colors.mutedForeground }]}>
-            Sign in or create your PocketCheck account in seconds with your Google Account.
+            Sign in or create your PocketChecker account in seconds with your Google Account.
           </Text>
         </View>
 

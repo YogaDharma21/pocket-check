@@ -38,7 +38,7 @@ export function UserProfileModal({
     user?.firstName ||
     (user?.primaryEmailAddress?.emailAddress
       ? user.primaryEmailAddress.emailAddress.split("@")[0]
-      : "PocketCheck User");
+      : "PocketChecker User");
 
   const email = user?.primaryEmailAddress?.emailAddress || "";
   const avatarUrl = user?.imageUrl;
@@ -174,7 +174,7 @@ export function UserProfileModal({
                     size={18}
                     color="#ffffff"
                   />
-                  <Text style={styles.signOutBtnText}>Log Out of PocketCheck</Text>
+                  <Text style={styles.signOutBtnText}>Log Out of PocketChecker</Text>
                 </TouchableOpacity>
               </View>
             </View>

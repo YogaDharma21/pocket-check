@@ -39,7 +39,7 @@ export function ExportModal({
 
   const generateMarkdown = () => {
     const date = new Date().toLocaleDateString();
-    let md = `# PocketCheck -- ${routineName} Checklist\n\n*Exported on ${date}*\n\n`;
+    let md = `# PocketChecker -- ${routineName} Checklist\n\n*Exported on ${date}*\n\n`;
     items.forEach((item) => {
       const checkbox = item.isPacked ? "[x]" : "[ ]";
       const quantity = item.quantity && item.quantity > 1 ? ` (${item.quantity}x)` : "";
@@ -70,7 +70,7 @@ export function ExportModal({
     try {
       await Share.share({
         message: content,
-        title: `PocketCheck - ${routineName} Export`,
+        title: `PocketChecker - ${routineName} Export`,
       });
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
