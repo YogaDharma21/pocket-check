@@ -32,6 +32,7 @@ export function UserProfileModal({
   theme,
 }: UserProfileModalProps) {
   const colors = Colors[theme];
+  const [avatarError, setAvatarError] = React.useState(false);
 
   const displayName =
     user?.fullName ||
@@ -97,10 +98,11 @@ export function UserProfileModal({
                   },
                 ]}
               >
-                {avatarUrl ? (
+                {avatarUrl && !avatarError ? (
                   <Image
                     source={{ uri: avatarUrl }}
                     style={styles.avatarLarge}
+                    onError={() => setAvatarError(true)}
                   />
                 ) : (
                   <View

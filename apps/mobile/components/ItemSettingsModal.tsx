@@ -87,11 +87,15 @@ export function ItemSettingsModal({
                   { backgroundColor: colors.card, borderColor: colors.border },
                 ]}
               >
+                {/* Header */}
                 <View style={styles.header}>
                   <Text style={[styles.title, { color: colors.foreground }]}>
                     Item Settings
                   </Text>
-                  <TouchableOpacity onPress={onClose}>
+                  <TouchableOpacity
+                    onPress={onClose}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
                     <Ionicons
                       name="close"
                       size={20}
@@ -115,6 +119,7 @@ export function ItemSettingsModal({
                         },
                       ]}
                       onPress={onOpenIconPicker}
+                      activeOpacity={0.7}
                     >
                       {renderItemIconHelper(
                         selectedIconKey || item.emoji || "cube-outline",
@@ -124,7 +129,7 @@ export function ItemSettingsModal({
                     </TouchableOpacity>
                     <TextInput
                       style={[
-                        styles.input,
+                        styles.nameInput,
                         {
                           backgroundColor: colors.background,
                           borderColor: colors.border,
@@ -139,15 +144,15 @@ export function ItemSettingsModal({
                   </View>
                 </View>
 
-                {/* Quantity + Location Note Fields */}
-                <View style={styles.inputRow}>
-                  <View style={[styles.field, { flex: 1 }]}>
+                {/* Quantity + Location Note Fields in a 2-Column Row */}
+                <View style={styles.twoColRow}>
+                  <View style={[styles.fieldCol, { flex: 1 }]}>
                     <Text style={[styles.label, { color: colors.mutedForeground }]}>
                       QUANTITY
                     </Text>
                     <TextInput
                       style={[
-                        styles.input,
+                        styles.fieldInput,
                         {
                           backgroundColor: colors.background,
                           borderColor: colors.border,
@@ -161,13 +166,13 @@ export function ItemSettingsModal({
                       keyboardType="number-pad"
                     />
                   </View>
-                  <View style={[styles.field, { flex: 2 }]}>
+                  <View style={[styles.fieldCol, { flex: 2.2 }]}>
                     <Text style={[styles.label, { color: colors.mutedForeground }]}>
                       LOCATION NOTE
                     </Text>
                     <TextInput
                       style={[
-                        styles.input,
+                        styles.fieldInput,
                         {
                           backgroundColor: colors.background,
                           borderColor: colors.border,
@@ -194,19 +199,23 @@ export function ItemSettingsModal({
                         {
                           backgroundColor: colors.background,
                           borderColor: colors.border,
-                          opacity: isFirst ? 0.3 : 1,
+                          opacity: isFirst ? 0.35 : 1,
                         },
                       ]}
                       onPress={() => onMove(item._id, -1)}
                       disabled={isFirst}
+                      activeOpacity={0.7}
                     >
                       <Ionicons
                         name="arrow-up"
                         size={16}
-                        color={colors.foreground}
+                        color={isFirst ? colors.mutedForeground : colors.foreground}
                       />
                       <Text
-                        style={[styles.btnText, { color: colors.foreground }]}
+                        style={[
+                          styles.btnText,
+                          { color: isFirst ? colors.mutedForeground : colors.foreground },
+                        ]}
                       >
                         Move Up
                       </Text>
@@ -218,21 +227,25 @@ export function ItemSettingsModal({
                         {
                           backgroundColor: colors.background,
                           borderColor: colors.border,
-                          opacity: isLast ? 0.3 : 1,
+                          opacity: isLast ? 0.35 : 1,
                         },
                       ]}
                       onPress={() => onMove(item._id, 1)}
                       disabled={isLast}
+                      activeOpacity={0.7}
                     >
                       <Text
-                        style={[styles.btnText, { color: colors.foreground }]}
+                        style={[
+                          styles.btnText,
+                          { color: isLast ? colors.mutedForeground : colors.foreground },
+                        ]}
                       >
                         Move Down
                       </Text>
                       <Ionicons
                         name="arrow-down"
                         size={16}
-                        color={colors.foreground}
+                        color={isLast ? colors.mutedForeground : colors.foreground}
                       />
                     </TouchableOpacity>
                   </View>
@@ -245,6 +258,7 @@ export function ItemSettingsModal({
                     { backgroundColor: colors.primary },
                   ]}
                   onPress={handleSave}
+                  activeOpacity={0.85}
                 >
                   <Text
                     style={[
@@ -263,6 +277,7 @@ export function ItemSettingsModal({
                     { backgroundColor: colors.destructive },
                   ]}
                   onPress={() => setShowDeleteConfirm(true)}
+                  activeOpacity={0.85}
                 >
                   <Ionicons
                     name="trash-outline"
@@ -307,15 +322,18 @@ export function ItemSettingsModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: "rgba(0,0,0,0.65)",
     justifyContent: "center",
     padding: 20,
   },
   card: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     padding: 20,
     gap: 16,
+    maxWidth: 440,
+    width: "100%",
+    alignSelf: "center",
   },
   header: {
     flexDirection: "row",
@@ -332,23 +350,41 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 11,
     fontWeight: "900",
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
   inputRow: {
     flexDirection: "row",
     gap: 8,
+    alignItems: "center",
   },
   iconBtn: {
-    width: 44,
-    height: 44,
+    width: 46,
+    height: 46,
     borderRadius: 12,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-  input: {
+  nameInput: {
     flex: 1,
-    height: 44,
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  twoColRow: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "flex-start",
+  },
+  fieldCol: {
+    gap: 6,
+  },
+  fieldInput: {
+    height: 46,
+    width: "100%",
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: 12,
@@ -361,7 +397,7 @@ const styles = StyleSheet.create({
   },
   reorderBtn: {
     flex: 1,
-    height: 40,
+    height: 42,
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: "row",
@@ -374,20 +410,20 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   saveBtn: {
-    height: 44,
-    borderRadius: 12,
+    height: 46,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 4,
   },
   saveBtnText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "900",
     letterSpacing: 0.5,
   },
   deleteBtn: {
-    height: 44,
-    borderRadius: 12,
+    height: 46,
+    borderRadius: 14,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

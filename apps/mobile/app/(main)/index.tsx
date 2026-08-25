@@ -83,6 +83,7 @@ export default function DashboardScreen() {
     variant: "destructive" | "warning" | "primary";
     onConfirm: () => void;
   } | null>(null);
+  const [avatarError, setAvatarError] = useState(false);
 
   // Undo Toast state
   const [undoToast, setUndoToast] = useState<{
@@ -574,10 +575,11 @@ export default function DashboardScreen() {
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               activeOpacity={0.7}
             >
-              {user?.imageUrl ? (
+              {user?.imageUrl && !avatarError ? (
                 <Image
                   source={{ uri: user.imageUrl }}
                   style={[styles.headerAvatar, { borderColor: colors.border }]}
+                  onError={() => setAvatarError(true)}
                 />
               ) : (
                 <View
@@ -595,7 +597,7 @@ export default function DashboardScreen() {
                       { color: colors.primaryForeground },
                     ]}
                   >
-                    {(user?.fullName || user?.firstName || "U")[0].toUpperCase()}
+                    {(user?.fullName || user?.firstName || user?.primaryEmailAddress?.emailAddress || "U")[0].toUpperCase()}
                   </Text>
                 </View>
               )}
