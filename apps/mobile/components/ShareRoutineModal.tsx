@@ -58,9 +58,9 @@ export function ShareRoutineModal({
       } catch {
         encoded = btoa(jsonStr);
       }
-      return `https://pocketcheck.vercel.app?import=${encodeURIComponent(encoded)}`;
+      return `https://pocketchecker.my.id?import=${encodeURIComponent(encoded)}`;
     } catch {
-      return `https://pocketcheck.vercel.app`;
+      return `https://pocketchecker.my.id`;
     }
   };
 

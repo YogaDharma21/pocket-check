@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import { Colors } from "../constants/theme";
 import { WeatherData, fetchDailyWeather } from "../lib/weather";
 
@@ -24,7 +25,43 @@ export function WeatherBanner({
     let isMounted = true;
     async function loadWeather() {
       try {
-        const data = await fetchDailyWeather();
+        let lat: number | undefined;
+        let lon: number | undefined;
+        let locName: string | undefined;
+
+        try {
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          if (status === "granted") {
+            const pos = await Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.Balanced,
+            });
+            lat = pos.coords.latitude;
+            lon = pos.coords.longitude;
+
+            try {
+              const geocoded = await Location.reverseGeocodeAsync({
+                latitude: lat,
+                longitude: lon,
+              });
+              if (geocoded && geocoded.length > 0) {
+                const geo = geocoded[0];
+                locName =
+                  geo.city ||
+                  geo.subregion ||
+                  geo.district ||
+                  geo.region ||
+                  geo.name ||
+                  undefined;
+              }
+            } catch {
+              // reverse geocode optional fallback
+            }
+          }
+        } catch (locErr) {
+          console.warn("Location permission or acquisition not available, using default", locErr);
+        }
+
+        const data = await fetchDailyWeather(lat, lon, locName);
         if (isMounted) {
           setWeather(data);
         }
@@ -82,6 +119,7 @@ export function WeatherBanner({
             <View style={styles.headerTitleRow}>
               <Text style={styles.headerLabel}>WEATHER INTELLIGENCE</Text>
               <Text style={[styles.weatherStats, { color: colors.mutedForeground }]}>
+                {weather.locationName ? `${weather.locationName} \u2022 ` : ""}
                 {weather.temperatureMax}\u00B0C / {weather.precipitationProbability}% Rain
               </Text>
             </View>

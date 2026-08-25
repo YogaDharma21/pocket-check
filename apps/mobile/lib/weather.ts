@@ -14,6 +14,7 @@ export interface WeatherData {
   isColdDay: boolean;
   description: string;
   suggestion: string | null;
+  locationName?: string;
   suggestedItem: {
     name: string;
     emoji: string;
@@ -22,7 +23,8 @@ export interface WeatherData {
 
 export async function fetchDailyWeather(
   lat?: number,
-  lon?: number
+  lon?: number,
+  locationName?: string
 ): Promise<WeatherData | null> {
   try {
     // Default fallback coordinates (approx. Jakarta / Central)
@@ -75,6 +77,7 @@ export async function fetchDailyWeather(
       isColdDay,
       description,
       suggestion,
+      locationName: locationName || undefined,
       suggestedItem,
     };
   } catch {
