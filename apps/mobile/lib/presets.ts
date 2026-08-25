@@ -1,6 +1,8 @@
 export interface PresetItem {
   name: string;
   emoji?: string;
+  quantity?: number;
+  locationNote?: string;
 }
 
 export interface PresetRoutine {

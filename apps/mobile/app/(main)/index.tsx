@@ -328,14 +328,16 @@ export default function DashboardScreen() {
         items: preset.items.map((i) => ({
           name: i.name,
           ...(i.emoji ? { emoji: i.emoji } : {}),
+          ...(i.quantity ? { quantity: i.quantity } : {}),
+          ...(i.locationNote ? { locationNote: i.locationNote } : {}),
         })),
-        targetRoutine: targetRoutine,
+        ...(targetRoutine ? { targetRoutine } : {}),
       });
       if (res?.routineName) {
         setSelectedRoutine(res.routineName);
       }
     } catch (err) {
-      console.warn("applyPreset fallback", err);
+      console.warn("applyPreset fallback:", err);
       const existingRoutine = routines.find(
         (r) => r.name.toLowerCase().trim() === routineNameToUse.toLowerCase().trim()
       );
@@ -348,14 +350,19 @@ export default function DashboardScreen() {
       setSelectedRoutine(routineNameToUse);
 
       const existingNames = new Set(items.map((i) => i.name.toLowerCase().trim()));
-      for (const item of preset.items) {
-        if (!existingNames.has(item.name.toLowerCase().trim())) {
-          await addItem({
-            routine: routineNameToUse,
-            name: item.name,
-            emoji: item.emoji,
-          });
-        }
+      const newItems = preset.items.filter(
+        (i) => !existingNames.has(i.name.toLowerCase().trim())
+      );
+      if (newItems.length > 0) {
+        await addItemsBatch({
+          routine: routineNameToUse,
+          items: newItems.map((i) => ({
+            name: i.name,
+            emoji: i.emoji,
+            quantity: i.quantity,
+            locationNote: i.locationNote,
+          })),
+        });
       }
     }
   };
