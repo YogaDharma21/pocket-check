@@ -10,7 +10,8 @@ This repository is organized as a monorepo containing the web application, mobil
 pocket-check/
 ├── apps/
 │   ├── website/        # Next.js 16 web application (React 19, Tailwind CSS v4, Base UI)
-│   └── mobile/         # Expo SDK 54 mobile application (React Native, Expo Router)
+│   ├── mobile/         # Expo SDK 54 mobile application (React Native, Expo Router)
+│   └── desktop/        # Electron desktop application (React 19, Vite, Tailwind CSS v4, Lucide)
 ├── docs/               # Architecture and design documentation
 └── .github/
     └── workflows/      # GitHub Actions CI/CD pipelines
@@ -31,6 +32,7 @@ pocket-check/
 
 - **Frontend (Web)**: Next.js 16 (App Router), React 19, Tailwind CSS v4, Base UI / Radix primitives, Lucide Icons
 - **Mobile**: React Native 0.81, Expo SDK 54, Expo Router v6
+- **Desktop**: Electron 34, React 19, Vite 6, Tailwind CSS v4, Lucide Icons, electron-builder
 - **Database & Realtime**: Convex Cloud
 - **Authentication**: Clerk
 - **CI/CD**: GitHub Actions with path-based change detection
@@ -83,11 +85,39 @@ pocket-check/
    npm run start
    ```
 
+### Desktop Application Setup
+
+1. Navigate to the desktop directory:
+   ```bash
+   cd apps/desktop
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables in `apps/desktop/.env.local`:
+   ```env
+   VITE_CONVEX_URL=https://<your-convex-app>.convex.cloud
+   VITE_CLERK_PUBLISHABLE_KEY=pk_test_<your-clerk-key>
+   ```
+
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+5. Run test suite:
+   ```bash
+   npm test
+   ```
+
 ## CI/CD Workflow
 
 The repository includes GitHub Actions workflows configured in `.github/workflows/ci.yml`:
-- Path-based filtering triggers validation only on relevant directory changes (`apps/website/**` or `apps/mobile/**`).
-- Automated typechecking (`tsc --noEmit`), linting (`eslint`), and production builds (`next build`).
+- Path-based filtering triggers validation only on relevant directory changes (`apps/website/**`, `apps/mobile/**`, or `apps/desktop/**`).
+- Automated typechecking (`tsc --noEmit`), linting (`eslint`), and production builds.
 
 ## License
 
