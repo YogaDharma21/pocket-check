@@ -11,6 +11,8 @@ export interface ItemData {
   name: string;
   isPacked: boolean;
   emoji?: string;
+  quantity?: number;
+  locationNote?: string;
   order?: number;
 }
 
@@ -88,29 +90,44 @@ export function ChecklistItem({
             >
               {item.name}
             </Text>
+            {item.quantity != null && item.quantity > 1 && (
+              <View style={styles.quantityBadge}>
+                <Text style={styles.quantityText}>{item.quantity}x</Text>
+              </View>
+            )}
           </View>
-          <View
-            style={[
-              styles.badge,
-              {
-                backgroundColor: item.isPacked
-                  ? colors.primary
-                  : colors.muted,
-              },
-            ]}
-          >
-            <Text
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <View
               style={[
-                styles.badgeText,
+                styles.badge,
                 {
-                  color: item.isPacked
-                    ? colors.primaryForeground
-                    : colors.mutedForeground,
+                  backgroundColor: item.isPacked
+                    ? colors.primary
+                    : colors.muted,
                 },
               ]}
             >
-              {item.isPacked ? "Packed" : "Missing"}
-            </Text>
+              <Text
+                style={[
+                  styles.badgeText,
+                  {
+                    color: item.isPacked
+                      ? colors.primaryForeground
+                      : colors.mutedForeground,
+                  },
+                ]}
+              >
+                {item.isPacked ? "Packed" : "Missing"}
+              </Text>
+            </View>
+            {item.locationNote ? (
+              <Text
+                style={[styles.locationNote, { color: colors.mutedForeground }]}
+                numberOfLines={1}
+              >
+                {"\uD83D\uDCCD"} {item.locationNote}
+              </Text>
+            ) : null}
           </View>
         </View>
       </View>
@@ -182,5 +199,24 @@ const styles = StyleSheet.create({
   },
   settingsBtn: {
     padding: 6,
+  },
+  quantityBadge: {
+    backgroundColor: "#27272a",
+    borderWidth: 1,
+    borderColor: "#3f3f46",
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  quantityText: {
+    fontSize: 11,
+    fontWeight: "700",
+    fontFamily: "monospace",
+    color: "#a1a1aa",
+  },
+  locationNote: {
+    fontSize: 11,
+    fontStyle: "italic",
+    fontWeight: "500",
   },
 });

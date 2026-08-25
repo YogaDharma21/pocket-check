@@ -7,18 +7,18 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   StyleSheet,
-  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/theme";
 import { ItemData } from "./ChecklistItem";
 import { renderItemIconHelper } from "./IconPicker";
+import { ConfirmModal } from "./ConfirmModal";
 
 interface ItemSettingsModalProps {
   visible: boolean;
   onClose: () => void;
   item: ItemData | null;
-  onSave: (id: ItemData["_id"], newName: string, iconKey?: string) => void;
+  onSave: (id: ItemData["_id"], newName: string, iconKey?: string, quantity?: number, locationNote?: string) => void;
   onDelete: (id: ItemData["_id"]) => void;
   onMove: (id: ItemData["_id"], direction: -1 | 1) => void;
   onOpenIconPicker: () => void;
@@ -43,10 +43,15 @@ export function ItemSettingsModal({
 }: ItemSettingsModalProps) {
   const colors = Colors[theme];
   const [name, setName] = useState("");
+  const [quantity, setQuantity] = useState<string>("");
+  const [locationNote, setLocationNote] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (item) {
       setName(item.name);
+      setQuantity(item.quantity && item.quantity > 1 ? String(item.quantity) : "");
+      setLocationNote(item.locationNote ?? "");
     }
   }, [item]);
 
@@ -54,196 +59,281 @@ export function ItemSettingsModal({
 
   const handleSave = () => {
     if (!name.trim()) return;
-    onSave(item._id, name.trim(), selectedIconKey);
+    const qty = parseInt(quantity, 10);
+    onSave(
+      item._id,
+      name.trim(),
+      selectedIconKey,
+      isNaN(qty) || qty < 1 ? undefined : qty,
+      locationNote.trim() || undefined
+    );
     onClose();
   };
 
-  const handleDelete = () => {
-    Alert.alert(
-      "Delete Item",
-      `Are you sure you want to delete "${item.name}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            onDelete(item._id);
-            onClose();
-          },
-        },
-      ]
-    );
-  };
-
   return (
-    <Modal
-      visible={visible}
-      animationType="fade"
-      transparent
-      onRequestClose={onClose}
-    >
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <View
-              style={[
-                styles.card,
-                { backgroundColor: colors.card, borderColor: colors.border },
-              ]}
-            >
-              <View style={styles.header}>
-                <Text style={[styles.title, { color: colors.foreground }]}>
-                  Item Settings
-                </Text>
-                <TouchableOpacity onPress={onClose}>
+    <>
+      <Modal
+        visible={visible && !showDeleteConfirm}
+        animationType="fade"
+        transparent
+        onRequestClose={onClose}
+      >
+        <TouchableWithoutFeedback onPress={onClose}>
+          <View style={styles.overlay}>
+            <TouchableWithoutFeedback>
+              <View
+                style={[
+                  styles.card,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
+              >
+                {/* Header */}
+                <View style={styles.header}>
+                  <Text style={[styles.title, { color: colors.foreground }]}>
+                    Item Settings
+                  </Text>
+                  <TouchableOpacity
+                    onPress={onClose}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Ionicons
+                      name="close"
+                      size={20}
+                      color={colors.mutedForeground}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Name + Icon Field */}
+                <View style={styles.field}>
+                  <Text style={[styles.label, { color: colors.mutedForeground }]}>
+                    ITEM NAME & ICON
+                  </Text>
+                  <View style={styles.inputRow}>
+                    <TouchableOpacity
+                      style={[
+                        styles.iconBtn,
+                        {
+                          backgroundColor: colors.background,
+                          borderColor: colors.border,
+                        },
+                      ]}
+                      onPress={onOpenIconPicker}
+                      activeOpacity={0.7}
+                    >
+                      {renderItemIconHelper(
+                        selectedIconKey || item.emoji || "cube-outline",
+                        colors.foreground,
+                        22
+                      )}
+                    </TouchableOpacity>
+                    <TextInput
+                      style={[
+                        styles.nameInput,
+                        {
+                          backgroundColor: colors.background,
+                          borderColor: colors.border,
+                          color: colors.foreground,
+                        },
+                      ]}
+                      value={name}
+                      onChangeText={setName}
+                      placeholder="Item name..."
+                      placeholderTextColor={colors.mutedForeground}
+                    />
+                  </View>
+                </View>
+
+                {/* Quantity + Location Note Fields in a 2-Column Row */}
+                <View style={styles.twoColRow}>
+                  <View style={[styles.fieldCol, { flex: 1 }]}>
+                    <Text style={[styles.label, { color: colors.mutedForeground }]}>
+                      QUANTITY
+                    </Text>
+                    <TextInput
+                      style={[
+                        styles.fieldInput,
+                        {
+                          backgroundColor: colors.background,
+                          borderColor: colors.border,
+                          color: colors.foreground,
+                        },
+                      ]}
+                      value={quantity}
+                      onChangeText={setQuantity}
+                      placeholder="1"
+                      placeholderTextColor={colors.mutedForeground}
+                      keyboardType="number-pad"
+                    />
+                  </View>
+                  <View style={[styles.fieldCol, { flex: 2.2 }]}>
+                    <Text style={[styles.label, { color: colors.mutedForeground }]}>
+                      LOCATION NOTE
+                    </Text>
+                    <TextInput
+                      style={[
+                        styles.fieldInput,
+                        {
+                          backgroundColor: colors.background,
+                          borderColor: colors.border,
+                          color: colors.foreground,
+                        },
+                      ]}
+                      value={locationNote}
+                      onChangeText={setLocationNote}
+                      placeholder="e.g. Front pocket"
+                      placeholderTextColor={colors.mutedForeground}
+                    />
+                  </View>
+                </View>
+
+                {/* Reorder Buttons */}
+                <View style={styles.field}>
+                  <Text style={[styles.label, { color: colors.mutedForeground }]}>
+                    REORDER
+                  </Text>
+                  <View style={styles.reorderRow}>
+                    <TouchableOpacity
+                      style={[
+                        styles.reorderBtn,
+                        {
+                          backgroundColor: colors.background,
+                          borderColor: colors.border,
+                          opacity: isFirst ? 0.35 : 1,
+                        },
+                      ]}
+                      onPress={() => onMove(item._id, -1)}
+                      disabled={isFirst}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons
+                        name="arrow-up"
+                        size={16}
+                        color={isFirst ? colors.mutedForeground : colors.foreground}
+                      />
+                      <Text
+                        style={[
+                          styles.btnText,
+                          { color: isFirst ? colors.mutedForeground : colors.foreground },
+                        ]}
+                      >
+                        Move Up
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.reorderBtn,
+                        {
+                          backgroundColor: colors.background,
+                          borderColor: colors.border,
+                          opacity: isLast ? 0.35 : 1,
+                        },
+                      ]}
+                      onPress={() => onMove(item._id, 1)}
+                      disabled={isLast}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[
+                          styles.btnText,
+                          { color: isLast ? colors.mutedForeground : colors.foreground },
+                        ]}
+                      >
+                        Move Down
+                      </Text>
+                      <Ionicons
+                        name="arrow-down"
+                        size={16}
+                        color={isLast ? colors.mutedForeground : colors.foreground}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Save Button */}
+                <TouchableOpacity
+                  style={[
+                    styles.saveBtn,
+                    { backgroundColor: colors.primary },
+                  ]}
+                  onPress={handleSave}
+                  activeOpacity={0.85}
+                >
+                  <Text
+                    style={[
+                      styles.saveBtnText,
+                      { color: colors.primaryForeground },
+                    ]}
+                  >
+                    Save Changes
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Delete Button */}
+                <TouchableOpacity
+                  style={[
+                    styles.deleteBtn,
+                    { backgroundColor: colors.destructive },
+                  ]}
+                  onPress={() => setShowDeleteConfirm(true)}
+                  activeOpacity={0.85}
+                >
                   <Ionicons
-                    name="close"
-                    size={20}
-                    color={colors.mutedForeground}
+                    name="trash-outline"
+                    size={16}
+                    color={colors.destructiveForeground}
                   />
+                  <Text
+                    style={[
+                      styles.deleteBtnText,
+                      { color: colors.destructiveForeground },
+                    ]}
+                  >
+                    Delete Item
+                  </Text>
                 </TouchableOpacity>
               </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
 
-              <View style={styles.field}>
-                <Text style={[styles.label, { color: colors.mutedForeground }]}>
-                  ITEM ICON & NAME
-                </Text>
-                <View style={styles.inputRow}>
-                  <TouchableOpacity
-                    style={[
-                      styles.iconBtn,
-                      {
-                        backgroundColor: colors.background,
-                        borderColor: colors.border,
-                      },
-                    ]}
-                    onPress={onOpenIconPicker}
-                  >
-                    {selectedIconKey ? (
-                      renderItemIconHelper(selectedIconKey, colors.foreground, 20)
-                    ) : (
-                      <Ionicons
-                        name="pricetag-outline"
-                        size={20}
-                        color={colors.mutedForeground}
-                      />
-                    )}
-                  </TouchableOpacity>
-
-                  <TextInput
-                    style={[
-                      styles.input,
-                      {
-                        backgroundColor: colors.background,
-                        borderColor: colors.border,
-                        color: colors.foreground,
-                      },
-                    ]}
-                    value={name}
-                    onChangeText={setName}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.field}>
-                <Text style={[styles.label, { color: colors.mutedForeground }]}>
-                  CHANGE ORDER
-                </Text>
-                <View style={styles.reorderRow}>
-                  <TouchableOpacity
-                    style={[
-                      styles.reorderBtn,
-                      {
-                        backgroundColor: colors.background,
-                        borderColor: colors.border,
-                        opacity: isFirst ? 0.4 : 1,
-                      },
-                    ]}
-                    disabled={isFirst}
-                    onPress={() => onMove(item._id, -1)}
-                  >
-                    <Ionicons
-                      name="chevron-up"
-                      size={16}
-                      color={colors.foreground}
-                    />
-                    <Text
-                      style={[styles.btnText, { color: colors.foreground }]}
-                    >
-                      Move Up
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.reorderBtn,
-                      {
-                        backgroundColor: colors.background,
-                        borderColor: colors.border,
-                        opacity: isLast ? 0.4 : 1,
-                      },
-                    ]}
-                    disabled={isLast}
-                    onPress={() => onMove(item._id, 1)}
-                  >
-                    <Text
-                      style={[styles.btnText, { color: colors.foreground }]}
-                    >
-                      Move Down
-                    </Text>
-                    <Ionicons
-                      name="chevron-down"
-                      size={16}
-                      color={colors.foreground}
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <TouchableOpacity
-                style={[styles.saveBtn, { backgroundColor: colors.primary }]}
-                onPress={handleSave}
-              >
-                <Text
-                  style={[
-                    styles.saveBtnText,
-                    { color: colors.primaryForeground },
-                  ]}
-                >
-                  SAVE CHANGES
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.deleteBtn, { backgroundColor: "#ef4444" }]}
-                onPress={handleDelete}
-              >
-                <Ionicons name="trash-outline" size={16} color="#ffffff" />
-                <Text style={[styles.deleteBtnText, { color: "#ffffff" }]}>
-                  DELETE ITEM
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
-    </Modal>
+      {/* Custom Confirmation Modal */}
+      <ConfirmModal
+        visible={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={() => {
+          setShowDeleteConfirm(false);
+          onDelete(item._id);
+          onClose();
+        }}
+        title="Delete Item"
+        message={`Are you sure you want to delete "${item.name}" from your packing checklist?`}
+        confirmText="Delete Item"
+        cancelText="Keep Item"
+        variant="destructive"
+        theme={theme}
+      />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: "rgba(0,0,0,0.65)",
     justifyContent: "center",
     padding: 20,
   },
   card: {
-    borderRadius: 20,
+    borderRadius: 22,
     borderWidth: 1,
     padding: 20,
     gap: 16,
+    maxWidth: 440,
+    width: "100%",
+    alignSelf: "center",
   },
   header: {
     flexDirection: "row",
@@ -260,23 +350,41 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 11,
     fontWeight: "900",
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
   inputRow: {
     flexDirection: "row",
     gap: 8,
+    alignItems: "center",
   },
   iconBtn: {
-    width: 44,
-    height: 44,
+    width: 46,
+    height: 46,
     borderRadius: 12,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-  input: {
+  nameInput: {
     flex: 1,
-    height: 44,
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  twoColRow: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "flex-start",
+  },
+  fieldCol: {
+    gap: 6,
+  },
+  fieldInput: {
+    height: 46,
+    width: "100%",
     borderRadius: 12,
     borderWidth: 1,
     paddingHorizontal: 12,
@@ -289,7 +397,7 @@ const styles = StyleSheet.create({
   },
   reorderBtn: {
     flex: 1,
-    height: 40,
+    height: 42,
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: "row",
@@ -302,20 +410,20 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   saveBtn: {
-    height: 44,
-    borderRadius: 12,
+    height: 46,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 4,
   },
   saveBtnText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "900",
     letterSpacing: 0.5,
   },
   deleteBtn: {
-    height: 44,
-    borderRadius: 12,
+    height: 46,
+    borderRadius: 14,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

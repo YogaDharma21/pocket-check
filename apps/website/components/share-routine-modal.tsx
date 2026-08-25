@@ -73,7 +73,7 @@ export function ShareRoutineModal({
             Share {routineName} Routine
           </DialogTitle>
           <DialogDescription className="text-xs text-zinc-400">
-            Anyone with this link can preview and 1-click import this checklist into their PocketCheck account.
+            Anyone with this link can preview and 1-click import this checklist into their PocketChecker account.
           </DialogDescription>
         </DialogHeader>
 

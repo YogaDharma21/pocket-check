@@ -19,7 +19,7 @@ const fontMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PocketCheck - Double-check your pockets",
+  title: "PocketChecker - Double-check your pockets",
   description:
     "Double-check your pockets before you step out! Create packing lists for work, the gym, or your custom routines.",
 };

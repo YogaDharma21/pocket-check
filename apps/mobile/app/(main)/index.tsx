@@ -6,11 +6,11 @@ import {
   ScrollView,
   StyleSheet,
   useColorScheme,
-  Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "@clerk/clerk-expo";
+import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { useQuery, useMutation } from "convex/react";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,6 +27,26 @@ import { IconPickerModal } from "../../components/IconPicker";
 import { RoutineSettingsModal } from "../../components/RoutineSettingsModal";
 import { ItemSettingsModal } from "../../components/ItemSettingsModal";
 import { AboutModal } from "../../components/AboutModal";
+import { SmartPresetsModal } from "../../components/SmartPresetsModal";
+import { SmartIntelligenceBanner } from "../../components/SmartIntelligenceBanner";
+import { WeatherBanner } from "../../components/WeatherBanner";
+import { ExportModal } from "../../components/ExportModal";
+import { ShareRoutineModal } from "../../components/ShareRoutineModal";
+import { ScheduleModal } from "../../components/ScheduleModal";
+import { UndoToast } from "../../components/UndoToast";
+import { UserProfileModal } from "../../components/UserProfileModal";
+import { ConfirmModal } from "../../components/ConfirmModal";
+import { PresetRoutine } from "../../lib/presets";
+
+interface RestorableItem {
+  routine: string;
+  name: string;
+  isPacked: boolean;
+  emoji?: string;
+  quantity?: number;
+  locationNote?: string;
+  order?: number;
+}
 
 export default function DashboardScreen() {
   const colorScheme = useColorScheme() ?? "dark";
@@ -35,6 +55,7 @@ export default function DashboardScreen() {
   const router = useRouter();
 
   const { signOut } = useAuth();
+  const { user } = useUser();
 
   const [selectedRoutine, setSelectedRoutine] = useState<string>("");
   const [filter, setFilter] = useState<FilterType>("all");
@@ -47,6 +68,28 @@ export default function DashboardScreen() {
   const [newItemIconKey, setNewItemIconKey] = useState<string>("");
   const [editItemIconKey, setEditItemIconKey] = useState<string>("");
   const [showAboutModal, setShowAboutModal] = useState(false);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [showPresetsModal, setShowPresetsModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [scheduleTargetRoutine, setScheduleTargetRoutine] = useState<RoutineItem | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    confirmText: string;
+    cancelText?: string;
+    variant: "destructive" | "warning" | "primary";
+    onConfirm: () => void;
+  } | null>(null);
+  const [avatarError, setAvatarError] = useState(false);
+
+  // Undo Toast state
+  const [undoToast, setUndoToast] = useState<{
+    message: string;
+    items: RestorableItem[];
+  } | null>(null);
 
   // Convex mutations & queries
   const ensureInitialized = useMutation(api.pocketcheck.ensureInitialized);
@@ -54,11 +97,15 @@ export default function DashboardScreen() {
   const updateRoutine = useMutation(api.pocketcheck.updateRoutine);
   const deleteRoutine = useMutation(api.pocketcheck.deleteRoutine);
   const addItem = useMutation(api.pocketcheck.addItem);
+  const addItemsBatch = useMutation(api.pocketcheck.addItemsBatch);
+  const applyPreset = useMutation(api.pocketcheck.applyPreset);
   const editItemMutation = useMutation(api.pocketcheck.editItem);
   const toggleItem = useMutation(api.pocketcheck.toggleItem);
   const deleteItem = useMutation(api.pocketcheck.deleteItem);
   const resetItems = useMutation(api.pocketcheck.resetItems);
   const deleteAllItems = useMutation(api.pocketcheck.deleteAllItems);
+  const restoreItems = useMutation(api.pocketcheck.restoreItems);
+  const checkAndExecuteAutoReset = useMutation(api.pocketcheck.checkAndExecuteAutoReset);
   const reorderItems = useMutation(api.pocketcheck.reorderItems);
   const reorderRoutines = useMutation(api.pocketcheck.reorderRoutines);
 
@@ -69,6 +116,9 @@ export default function DashboardScreen() {
     name: r.name,
     icon: r.icon,
     order: r.order,
+    autoResetTime: r.autoResetTime,
+    autoResetDays: r.autoResetDays,
+    lastResetDate: r.lastResetDate,
   }));
 
   const activeRoutine = routines.find((r) => r.name === selectedRoutine);
@@ -77,6 +127,8 @@ export default function DashboardScreen() {
     : routines.length > 0
     ? routines[0].name
     : "";
+
+  const currentRoutineObj = routines.find((r) => r.name === effectiveRoutine);
 
   const rawItems = useQuery(
     api.pocketcheck.listItems,
@@ -88,12 +140,47 @@ export default function DashboardScreen() {
     void ensureInitialized();
   }, [ensureInitialized]);
 
+  // Auto-Reset Time check per routine (background check interval)
+  useEffect(() => {
+    if (!currentRoutineObj || !currentRoutineObj.autoResetTime) return;
+
+    const checkSchedule = async () => {
+      const now = new Date();
+      const currentDay = now.getDay();
+      const activeDays = currentRoutineObj.autoResetDays ?? [1, 2, 3, 4, 5];
+
+      if (!activeDays.includes(currentDay)) return;
+
+      const [hours, minutes] = currentRoutineObj.autoResetTime!.split(":").map(Number);
+      const scheduledTime = new Date();
+      scheduledTime.setHours(hours, minutes, 0, 0);
+
+      const todayStr = now.toISOString().split("T")[0];
+      if (now >= scheduledTime && currentRoutineObj.lastResetDate !== todayStr) {
+        try {
+          await checkAndExecuteAutoReset({
+            routineId: currentRoutineObj._id,
+            currentDateStr: todayStr,
+          });
+        } catch (err) {
+          console.warn("Auto-reset execution failed", err);
+        }
+      }
+    };
+
+    void checkSchedule();
+    const timer = setInterval(checkSchedule, 30000);
+    return () => clearInterval(timer);
+  }, [currentRoutineObj, checkAndExecuteAutoReset]);
+
   const items: ItemData[] = (rawItems ?? []).map((i) => ({
     _id: i._id,
     routine: i.routine,
     name: i.name,
     isPacked: i.isPacked,
     emoji: i.emoji,
+    quantity: i.quantity,
+    locationNote: i.locationNote,
     order: i.order,
   }));
 
@@ -107,6 +194,21 @@ export default function DashboardScreen() {
     if (filter === "missing") return !item.isPacked;
     return true;
   });
+
+  // Undo Toast Trigger
+  const triggerUndo = (message: string, itemsToRestore: RestorableItem[]) => {
+    setUndoToast({ message, items: itemsToRestore });
+  };
+
+  const handleExecuteUndo = async () => {
+    if (!undoToast || undoToast.items.length === 0) return;
+    try {
+      await restoreItems({ items: undoToast.items });
+      setUndoToast(null);
+    } catch (err) {
+      console.error("Failed to restore items", err);
+    }
+  };
 
   // Handlers
   const handleToggle = async (itemId: Id<"items">, currentPacked: boolean) => {
@@ -128,24 +230,36 @@ export default function DashboardScreen() {
 
   const handleClearList = () => {
     if (!effectiveRoutine) return;
-    Alert.alert(
-      "Clear All Items",
-      `Are you sure you want to delete all items in "${effectiveRoutine}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete All",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteAllItems({ routine: effectiveRoutine });
-            } catch (err) {
-              console.error("Failed to clear list", err);
-            }
-          },
-        },
-      ]
-    );
+    setConfirmDialog({
+      visible: true,
+      title: "Clear All Items",
+      message: `Are you sure you want to delete all items in "${effectiveRoutine}"? This action cannot be undone.`,
+      confirmText: "Delete All Items",
+      cancelText: "Keep Items",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          const backupItems: RestorableItem[] = items.map((i) => ({
+            routine: effectiveRoutine,
+            name: i.name,
+            isPacked: i.isPacked,
+            emoji: i.emoji,
+            quantity: i.quantity,
+            locationNote: i.locationNote,
+            order: i.order,
+          }));
+          await deleteAllItems({ routine: effectiveRoutine });
+          if (backupItems.length > 0) {
+            triggerUndo(
+              `Cleared ${backupItems.length} items from ${effectiveRoutine}`,
+              backupItems
+            );
+          }
+        } catch (err) {
+          console.error("Failed to clear list", err);
+        }
+      },
+    });
   };
 
   const handleCreateRoutine = async (name: string, icon: string) => {
@@ -161,7 +275,13 @@ export default function DashboardScreen() {
     try {
       const routine = routines.find((r) => r._id === id);
       if (!routine) return;
-      await updateRoutine({ id, name: newName, icon: routine.icon || "tag" });
+      await updateRoutine({
+        id,
+        name: newName,
+        icon: routine.icon || "tag",
+        autoResetTime: routine.autoResetTime,
+        autoResetDays: routine.autoResetDays,
+      });
       if (selectedRoutine === routine.name || effectiveRoutine === routine.name) {
         setSelectedRoutine(newName);
       }
@@ -198,6 +318,56 @@ export default function DashboardScreen() {
     }
   };
 
+  const handleSelectPreset = async (preset: PresetRoutine, targetRoutine?: string) => {
+    const routineNameToUse = targetRoutine || preset.name;
+    setSelectedRoutine(routineNameToUse);
+
+    try {
+      const res = await applyPreset({
+        name: preset.name,
+        icon: preset.icon,
+        items: preset.items.map((i) => ({
+          name: i.name,
+          ...(i.emoji ? { emoji: i.emoji } : {}),
+          ...(i.quantity ? { quantity: i.quantity } : {}),
+          ...(i.locationNote ? { locationNote: i.locationNote } : {}),
+        })),
+        ...(targetRoutine ? { targetRoutine } : {}),
+      });
+      if (res?.routineName) {
+        setSelectedRoutine(res.routineName);
+      }
+    } catch (err) {
+      console.warn("applyPreset fallback:", err);
+      const existingRoutine = routines.find(
+        (r) => r.name.toLowerCase().trim() === routineNameToUse.toLowerCase().trim()
+      );
+      if (!existingRoutine) {
+        await addRoutine({
+          name: routineNameToUse,
+          icon: preset.icon,
+        });
+      }
+      setSelectedRoutine(routineNameToUse);
+
+      const existingNames = new Set(items.map((i) => i.name.toLowerCase().trim()));
+      const newItems = preset.items.filter(
+        (i) => !existingNames.has(i.name.toLowerCase().trim())
+      );
+      if (newItems.length > 0) {
+        await addItemsBatch({
+          routine: routineNameToUse,
+          items: newItems.map((i) => ({
+            name: i.name,
+            emoji: i.emoji,
+            quantity: i.quantity,
+            locationNote: i.locationNote,
+          })),
+        });
+      }
+    }
+  };
+
   const handleAddItem = async (name: string, iconKey?: string) => {
     if (!effectiveRoutine) return;
     try {
@@ -212,16 +382,41 @@ export default function DashboardScreen() {
     }
   };
 
+  const handleAddItemsBatch = async (batchItems: { name: string; emoji?: string }[]) => {
+    if (!effectiveRoutine || batchItems.length === 0) return;
+    try {
+      await addItemsBatch({
+        routine: effectiveRoutine,
+        items: batchItems,
+      });
+      setNewItemIconKey("");
+    } catch (err) {
+      console.warn("addItemsBatch fallback", err);
+      for (const item of batchItems) {
+        await addItem({
+          routine: effectiveRoutine,
+          name: item.name,
+          emoji: item.emoji,
+        });
+      }
+      setNewItemIconKey("");
+    }
+  };
+
   const handleSaveItem = async (
     id: Id<"items">,
     newName: string,
-    iconKey?: string
+    iconKey?: string,
+    quantity?: number,
+    locationNote?: string
   ) => {
     try {
       await editItemMutation({
         id,
         name: newName,
         emoji: iconKey || undefined,
+        quantity,
+        locationNote,
       });
     } catch (err) {
       console.error("Failed to edit item", err);
@@ -229,8 +424,23 @@ export default function DashboardScreen() {
   };
 
   const handleDeleteItem = async (id: Id<"items">) => {
+    const itemToDelete = items.find((i) => i._id === id);
     try {
-      await deleteItem({ id });
+      if (itemToDelete) {
+        const restorable: RestorableItem = {
+          routine: effectiveRoutine,
+          name: itemToDelete.name,
+          isPacked: itemToDelete.isPacked,
+          emoji: itemToDelete.emoji,
+          quantity: itemToDelete.quantity,
+          locationNote: itemToDelete.locationNote,
+          order: itemToDelete.order,
+        };
+        await deleteItem({ id });
+        triggerUndo(`Deleted "${itemToDelete.name}"`, [restorable]);
+      } else {
+        await deleteItem({ id });
+      }
     } catch (err) {
       console.error("Failed to delete item", err);
     }
@@ -251,22 +461,39 @@ export default function DashboardScreen() {
     }
   };
 
+  const handleSaveSchedule = async (time?: string, days?: number[]) => {
+    const target = scheduleTargetRoutine || currentRoutineObj;
+    if (!target) return;
+    try {
+      await updateRoutine({
+        id: target._id,
+        name: target.name,
+        icon: target.icon || "tag",
+        autoResetTime: time,
+        autoResetDays: days,
+      });
+    } catch (err) {
+      console.error("Failed to update routine schedule", err);
+    }
+  };
+
   const handleSignOut = () => {
-    Alert.alert("Sign Out", "Are you sure you want to log out of PocketCheck?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Log Out",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await signOut();
-            router.replace("/(auth)/sign-in");
-          } catch (err) {
-            console.error("Sign out error", err);
-          }
-        },
+    setConfirmDialog({
+      visible: true,
+      title: "Sign Out",
+      message: "Are you sure you want to log out of PocketChecker?",
+      confirmText: "Log Out",
+      cancelText: "Stay Signed In",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          await signOut();
+          router.replace("/(auth)/sign-in");
+        } catch (err) {
+          console.error("Sign out error", err);
+        }
       },
-    ]);
+    });
   };
 
   return (
@@ -296,28 +523,84 @@ export default function DashboardScreen() {
               />
             </View>
             <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-              POCKET<Text style={{ color: colors.mutedForeground }}>CHECK</Text>
+              POCKET<Text style={{ color: colors.mutedForeground }}>CHECKER</Text>
             </Text>
           </View>
 
           <View style={styles.headerRight}>
+            {effectiveRoutine ? (
+              <>
+                <TouchableOpacity
+                  style={styles.headerBtn}
+                  onPress={() => setShowExportModal(true)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons
+                    name="download-outline"
+                    size={20}
+                    color={colors.foreground}
+                  />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.headerBtn}
+                  onPress={() => setShowShareModal(true)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons
+                    name="share-social-outline"
+                    size={20}
+                    color={colors.foreground}
+                  />
+                </TouchableOpacity>
+              </>
+            ) : null}
+
             <TouchableOpacity
               style={styles.headerBtn}
               onPress={() => setShowAboutModal(true)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Ionicons
                 name="information-circle-outline"
-                size={24}
+                size={22}
                 color={colors.foreground}
               />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.headerBtn} onPress={handleSignOut}>
-              <Ionicons
-                name="log-out-outline"
-                size={22}
-                color={colors.mutedForeground}
-              />
+            {/* User Profile Avatar Button */}
+            <TouchableOpacity
+              style={styles.userAvatarBtn}
+              onPress={() => setShowUserModal(true)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              activeOpacity={0.7}
+            >
+              {user?.imageUrl && !avatarError ? (
+                <Image
+                  source={{ uri: user.imageUrl }}
+                  style={[styles.headerAvatar, { borderColor: colors.border }]}
+                  onError={() => setAvatarError(true)}
+                />
+              ) : (
+                <View
+                  style={[
+                    styles.headerAvatarFallback,
+                    {
+                      backgroundColor: colors.primary,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.headerAvatarText,
+                      { color: colors.primaryForeground },
+                    ]}
+                  >
+                    {(user?.fullName || user?.firstName || user?.primaryEmailAddress?.emailAddress || "U")[0].toUpperCase()}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -341,8 +624,30 @@ export default function DashboardScreen() {
             onSelectRoutine={setSelectedRoutine}
             onOpenRoutineSettings={(routine) => setManageRoutine(routine)}
             onCreateRoutine={handleCreateRoutine}
+            onOpenPresets={() => setShowPresetsModal(true)}
             theme={theme}
           />
+
+          {/* Weather Intelligence Banner */}
+          {effectiveRoutine ? (
+            <WeatherBanner
+              currentRoutineItems={items}
+              onQuickAddItem={(name, emoji) => void handleAddItem(name, emoji)}
+              theme={theme}
+            />
+          ) : null}
+
+          {/* Smart Departure Intelligence Banner */}
+          {effectiveRoutine && items.length > 0 ? (
+            <SmartIntelligenceBanner
+              routineName={effectiveRoutine}
+              items={items}
+              onQuickPack={async (id) => {
+                await handleToggle(id, false);
+              }}
+              theme={theme}
+            />
+          ) : null}
 
           {/* Filter Tabs & Quick Actions */}
           <FilterTabs
@@ -410,6 +715,17 @@ export default function DashboardScreen() {
                     ? "No items packed yet. Tap items to pack them!"
                     : "All items are packed! Great job!"}
                 </Text>
+                {filter === "all" && (
+                  <TouchableOpacity
+                    style={[styles.presetQuickBtn, { backgroundColor: colors.primary, marginTop: 12 }]}
+                    onPress={() => setShowPresetsModal(true)}
+                  >
+                    <Ionicons name="sparkles" size={14} color={colors.primaryForeground} />
+                    <Text style={[styles.presetQuickBtnText, { color: colors.primaryForeground }]}>
+                      Browse Smart Presets
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             ) : (
               filteredItems.map((item) => (
@@ -427,16 +743,19 @@ export default function DashboardScreen() {
             )}
           </View>
 
-          {/* Add Item Form */}
-          <AddItemForm
-            onAddItem={handleAddItem}
-            onOpenIconPicker={() => {
-              setIconPickerTarget("newItem");
-              setShowIconPicker(true);
-            }}
-            selectedIconKey={newItemIconKey}
-            theme={theme}
-          />
+          {/* Add Item Form with Multi-Item Batch Support & Auto-Icon Detection */}
+          {effectiveRoutine ? (
+            <AddItemForm
+              onAddItem={handleAddItem}
+              onAddItemsBatch={handleAddItemsBatch}
+              onOpenIconPicker={() => {
+                setIconPickerTarget("newItem");
+                setShowIconPicker(true);
+              }}
+              selectedIconKey={newItemIconKey}
+              theme={theme}
+            />
+          ) : null}
         </ScrollView>
 
         {/* Modals */}
@@ -463,6 +782,10 @@ export default function DashboardScreen() {
           onSave={handleSaveRoutine}
           onDelete={handleDeleteRoutine}
           onMove={handleMoveRoutine}
+          onOpenSchedule={(r) => {
+            setScheduleTargetRoutine(r);
+            setShowScheduleModal(true);
+          }}
           isFirst={
             routines.findIndex((r) => r._id === manageRoutine?._id) <= 0
           }
@@ -493,11 +816,86 @@ export default function DashboardScreen() {
           theme={theme}
         />
 
+        <SmartPresetsModal
+          visible={showPresetsModal}
+          onClose={() => setShowPresetsModal(false)}
+          currentRoutine={effectiveRoutine}
+          onSelectPreset={handleSelectPreset}
+          theme={theme}
+        />
+
+        <ExportModal
+          visible={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          routineName={effectiveRoutine}
+          items={items}
+          theme={theme}
+        />
+
+        <ShareRoutineModal
+          visible={showShareModal}
+          onClose={() => setShowShareModal(false)}
+          routineName={effectiveRoutine}
+          routineIcon={currentRoutineObj?.icon || "tag"}
+          items={items}
+          theme={theme}
+        />
+
+        <ScheduleModal
+          visible={showScheduleModal}
+          onClose={() => {
+            setShowScheduleModal(false);
+            setScheduleTargetRoutine(null);
+          }}
+          routineName={scheduleTargetRoutine?.name || effectiveRoutine}
+          initialTime={scheduleTargetRoutine?.autoResetTime || currentRoutineObj?.autoResetTime}
+          initialDays={scheduleTargetRoutine?.autoResetDays || currentRoutineObj?.autoResetDays}
+          onSaveSchedule={handleSaveSchedule}
+          theme={theme}
+        />
+
         <AboutModal
           visible={showAboutModal}
           onClose={() => setShowAboutModal(false)}
           theme={theme}
         />
+
+        <UserProfileModal
+          visible={showUserModal}
+          onClose={() => setShowUserModal(false)}
+          user={user}
+          onSignOut={handleSignOut}
+          theme={theme}
+        />
+
+        {/* Global Custom Confirmation Modal */}
+        {confirmDialog && (
+          <ConfirmModal
+            visible={confirmDialog.visible}
+            onClose={() => setConfirmDialog(null)}
+            onConfirm={() => {
+              const action = confirmDialog.onConfirm;
+              setConfirmDialog(null);
+              action();
+            }}
+            title={confirmDialog.title}
+            message={confirmDialog.message}
+            confirmText={confirmDialog.confirmText}
+            cancelText={confirmDialog.cancelText}
+            variant={confirmDialog.variant}
+            theme={theme}
+          />
+        )}
+
+        {/* Floating 5-Second Undo Toast */}
+        {undoToast && (
+          <UndoToast
+            message={undoToast.message}
+            onUndo={() => void handleExecuteUndo()}
+            onDismiss={() => setUndoToast(null)}
+            theme={theme}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -546,6 +944,27 @@ const styles = StyleSheet.create({
   headerBtn: {
     padding: 4,
   },
+  userAvatarBtn: {
+    padding: 2,
+  },
+  headerAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
+  headerAvatarFallback: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerAvatarText: {
+    fontSize: 12,
+    fontWeight: "900",
+  },
   scrollBody: {
     padding: 16,
     paddingBottom: 40,
@@ -566,5 +985,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
     textAlign: "center",
+  },
+  presetQuickBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  presetQuickBtnText: {
+    fontSize: 12,
+    fontWeight: "800",
   },
 });

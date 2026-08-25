@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   useColorScheme,
-  Linking,
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -56,8 +55,8 @@ export default function SignInScreen() {
       style={[styles.safeArea, { backgroundColor: colors.background }]}
       edges={["top", "bottom", "left", "right"]}
     >
-      <View style={styles.container}>
-        {/* Header / Logo Section */}
+      <View style={styles.centerContainer}>
+        {/* Branding Section */}
         <View style={styles.logoSection}>
           <View
             style={[
@@ -72,7 +71,7 @@ export default function SignInScreen() {
             />
           </View>
           <Text style={[styles.title, { color: colors.foreground }]}>
-            POCKET<Text style={{ color: colors.mutedForeground }}>CHECK</Text>
+            POCKET<Text style={{ color: colors.mutedForeground }}>CHECKER</Text>
           </Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
             Double-check your pockets before you step out! Never forget your
@@ -128,32 +127,7 @@ export default function SignInScreen() {
               </>
             )}
           </TouchableOpacity>
-
-          <Text style={[styles.disclaimer, { color: colors.mutedForeground }]}>
-            Sign in or create your PocketCheck account in seconds with your Google Account.
-          </Text>
         </View>
-
-        {/* Footer GitHub Link */}
-        <TouchableOpacity
-          style={[
-            styles.githubBtn,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-          onPress={() =>
-            Linking.openURL("https://github.com/YogaDharma21/pocket-check")
-          }
-        >
-          <Ionicons name="git-branch" size={16} color={colors.foreground} />
-          <Text style={[styles.githubText, { color: colors.foreground }]}>
-            github.com/yogaDharma21/pocket-check
-          </Text>
-          <Ionicons
-            name="open-outline"
-            size={12}
-            color={colors.mutedForeground}
-          />
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -163,18 +137,23 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  container: {
+  centerContainer: {
     flex: 1,
-    padding: 24,
-    justifyContent: "space-between",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    maxWidth: 420,
+    width: "100%",
+    alignSelf: "center",
   },
   logoSection: {
     alignItems: "center",
-    marginTop: 24,
+    marginBottom: 28,
+    width: "100%",
   },
   iconBox: {
-    width: 84,
-    height: 84,
+    width: 86,
+    height: 86,
     borderRadius: 26,
     borderWidth: 1,
     alignItems: "center",
@@ -185,18 +164,18 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "900",
     letterSpacing: 1.5,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   subtitle: {
     fontSize: 14,
     fontWeight: "600",
     textAlign: "center",
     lineHeight: 22,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   authSection: {
-    gap: 16,
-    marginBottom: 24,
+    width: "100%",
+    gap: 12,
   },
   errorBox: {
     flexDirection: "row",
@@ -219,30 +198,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
+    width: "100%",
   },
   googleBtnText: {
     fontSize: 14,
     fontWeight: "900",
     letterSpacing: 1,
-  },
-  disclaimer: {
-    fontSize: 12,
-    fontWeight: "600",
-    textAlign: "center",
-    lineHeight: 18,
-    paddingHorizontal: 20,
-  },
-  githubBtn: {
-    height: 46,
-    borderRadius: 14,
-    borderWidth: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  githubText: {
-    fontSize: 12,
-    fontWeight: "800",
   },
 });
