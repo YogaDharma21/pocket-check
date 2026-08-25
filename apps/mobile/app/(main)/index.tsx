@@ -6,7 +6,6 @@ import {
   ScrollView,
   StyleSheet,
   useColorScheme,
-  Alert,
   ActivityIndicator,
   Image,
 } from "react-native";
@@ -36,6 +35,7 @@ import { ShareRoutineModal } from "../../components/ShareRoutineModal";
 import { ScheduleModal } from "../../components/ScheduleModal";
 import { UndoToast } from "../../components/UndoToast";
 import { UserProfileModal } from "../../components/UserProfileModal";
+import { ConfirmModal } from "../../components/ConfirmModal";
 import { PresetRoutine } from "../../lib/presets";
 
 interface RestorableItem {
@@ -74,6 +74,15 @@ export default function DashboardScreen() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [scheduleTargetRoutine, setScheduleTargetRoutine] = useState<RoutineItem | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    confirmText: string;
+    cancelText?: string;
+    variant: "destructive" | "warning" | "primary";
+    onConfirm: () => void;
+  } | null>(null);
 
   // Undo Toast state
   const [undoToast, setUndoToast] = useState<{
@@ -220,39 +229,36 @@ export default function DashboardScreen() {
 
   const handleClearList = () => {
     if (!effectiveRoutine) return;
-    Alert.alert(
-      "Clear All Items",
-      `Are you sure you want to delete all items in "${effectiveRoutine}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete All",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const backupItems: RestorableItem[] = items.map((i) => ({
-                routine: effectiveRoutine,
-                name: i.name,
-                isPacked: i.isPacked,
-                emoji: i.emoji,
-                quantity: i.quantity,
-                locationNote: i.locationNote,
-                order: i.order,
-              }));
-              await deleteAllItems({ routine: effectiveRoutine });
-              if (backupItems.length > 0) {
-                triggerUndo(
-                  `Cleared ${backupItems.length} items from ${effectiveRoutine}`,
-                  backupItems
-                );
-              }
-            } catch (err) {
-              console.error("Failed to clear list", err);
-            }
-          },
-        },
-      ]
-    );
+    setConfirmDialog({
+      visible: true,
+      title: "Clear All Items",
+      message: `Are you sure you want to delete all items in "${effectiveRoutine}"? This action cannot be undone.`,
+      confirmText: "Delete All Items",
+      cancelText: "Keep Items",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          const backupItems: RestorableItem[] = items.map((i) => ({
+            routine: effectiveRoutine,
+            name: i.name,
+            isPacked: i.isPacked,
+            emoji: i.emoji,
+            quantity: i.quantity,
+            locationNote: i.locationNote,
+            order: i.order,
+          }));
+          await deleteAllItems({ routine: effectiveRoutine });
+          if (backupItems.length > 0) {
+            triggerUndo(
+              `Cleared ${backupItems.length} items from ${effectiveRoutine}`,
+              backupItems
+            );
+          }
+        } catch (err) {
+          console.error("Failed to clear list", err);
+        }
+      },
+    });
   };
 
   const handleCreateRoutine = async (name: string, icon: string) => {
@@ -464,21 +470,22 @@ export default function DashboardScreen() {
   };
 
   const handleSignOut = () => {
-    Alert.alert("Sign Out", "Are you sure you want to log out of PocketCheck?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Log Out",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await signOut();
-            router.replace("/(auth)/sign-in");
-          } catch (err) {
-            console.error("Sign out error", err);
-          }
-        },
+    setConfirmDialog({
+      visible: true,
+      title: "Sign Out",
+      message: "Are you sure you want to log out of PocketChecker?",
+      confirmText: "Log Out",
+      cancelText: "Stay Signed In",
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          await signOut();
+          router.replace("/(auth)/sign-in");
+        } catch (err) {
+          console.error("Sign out error", err);
+        }
       },
-    ]);
+    });
   };
 
   return (
@@ -851,6 +858,25 @@ export default function DashboardScreen() {
           onSignOut={handleSignOut}
           theme={theme}
         />
+
+        {/* Global Custom Confirmation Modal */}
+        {confirmDialog && (
+          <ConfirmModal
+            visible={confirmDialog.visible}
+            onClose={() => setConfirmDialog(null)}
+            onConfirm={() => {
+              const action = confirmDialog.onConfirm;
+              setConfirmDialog(null);
+              action();
+            }}
+            title={confirmDialog.title}
+            message={confirmDialog.message}
+            confirmText={confirmDialog.confirmText}
+            cancelText={confirmDialog.cancelText}
+            variant={confirmDialog.variant}
+            theme={theme}
+          />
+        )}
 
         {/* Floating 5-Second Undo Toast */}
         {undoToast && (
