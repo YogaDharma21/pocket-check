@@ -20,6 +20,7 @@ interface RoutineSettingsModalProps {
   onSave: (id: RoutineItem["_id"], newName: string) => void;
   onDelete: (id: RoutineItem["_id"]) => void;
   onMove: (id: RoutineItem["_id"], direction: -1 | 1) => void;
+  onOpenSchedule?: (routine: RoutineItem) => void;
   isFirst: boolean;
   isLast: boolean;
   theme: "light" | "dark";
@@ -32,6 +33,7 @@ export function RoutineSettingsModal({
   onSave,
   onDelete,
   onMove,
+  onOpenSchedule,
   isFirst,
   isLast,
   theme,
@@ -173,6 +175,43 @@ export function RoutineSettingsModal({
                 </View>
               </View>
 
+              {onOpenSchedule && (
+                <TouchableOpacity
+                  style={[
+                    styles.scheduleBtn,
+                    {
+                      backgroundColor: colors.background,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                  onPress={() => {
+                    onClose();
+                    onOpenSchedule(routine);
+                  }}
+                >
+                  <Ionicons
+                    name="time-outline"
+                    size={20}
+                    color={routine.autoResetTime ? "#10b981" : colors.mutedForeground}
+                  />
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text style={[styles.scheduleBtnTitle, { color: colors.foreground }]}>
+                      Auto-Reset Schedule
+                    </Text>
+                    <Text style={[styles.scheduleBtnSubtitle, { color: colors.mutedForeground }]}>
+                      {routine.autoResetTime
+                        ? `Daily reset active at ${routine.autoResetTime}`
+                        : "Configure automatic daily uncheck"}
+                    </Text>
+                  </View>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color={colors.mutedForeground}
+                  />
+                </TouchableOpacity>
+              )}
+
               <TouchableOpacity
                 style={[styles.saveBtn, { backgroundColor: colors.primary }]}
                 onPress={handleSave}
@@ -259,6 +298,22 @@ const styles = StyleSheet.create({
   btnText: {
     fontSize: 12,
     fontWeight: "800",
+  },
+  scheduleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 10,
+  },
+  scheduleBtnTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  scheduleBtnSubtitle: {
+    fontSize: 11,
+    fontWeight: "600",
   },
   saveBtn: {
     height: 44,

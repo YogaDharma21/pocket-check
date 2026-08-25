@@ -18,7 +18,7 @@ interface ItemSettingsModalProps {
   visible: boolean;
   onClose: () => void;
   item: ItemData | null;
-  onSave: (id: ItemData["_id"], newName: string, iconKey?: string) => void;
+  onSave: (id: ItemData["_id"], newName: string, iconKey?: string, quantity?: number, locationNote?: string) => void;
   onDelete: (id: ItemData["_id"]) => void;
   onMove: (id: ItemData["_id"], direction: -1 | 1) => void;
   onOpenIconPicker: () => void;
@@ -43,10 +43,14 @@ export function ItemSettingsModal({
 }: ItemSettingsModalProps) {
   const colors = Colors[theme];
   const [name, setName] = useState("");
+  const [quantity, setQuantity] = useState<string>("");
+  const [locationNote, setLocationNote] = useState("");
 
   useEffect(() => {
     if (item) {
       setName(item.name);
+      setQuantity(item.quantity && item.quantity > 1 ? String(item.quantity) : "");
+      setLocationNote(item.locationNote ?? "");
     }
   }, [item]);
 
@@ -54,7 +58,14 @@ export function ItemSettingsModal({
 
   const handleSave = () => {
     if (!name.trim()) return;
-    onSave(item._id, name.trim(), selectedIconKey);
+    const qty = parseInt(quantity, 10);
+    onSave(
+      item._id,
+      name.trim(),
+      selectedIconKey,
+      isNaN(qty) || qty < 1 ? undefined : qty,
+      locationNote.trim() || undefined
+    );
     onClose();
   };
 
@@ -142,6 +153,52 @@ export function ItemSettingsModal({
                     ]}
                     value={name}
                     onChangeText={setName}
+                  />
+                </View>
+              </View>
+
+              {/* Quantity & Location Note */}
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1, gap: 6 }}>
+                  <Text style={[styles.label, { color: colors.mutedForeground }]}>
+                    QUANTITY (OPTIONAL)
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: colors.background,
+                        borderColor: colors.border,
+                        color: colors.foreground,
+                        height: 40,
+                      },
+                    ]}
+                    value={quantity}
+                    onChangeText={setQuantity}
+                    placeholder="1"
+                    placeholderTextColor={colors.mutedForeground}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                  />
+                </View>
+                <View style={{ flex: 1, gap: 6 }}>
+                  <Text style={[styles.label, { color: colors.mutedForeground }]}>
+                    LOCATION NOTE
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: colors.background,
+                        borderColor: colors.border,
+                        color: colors.foreground,
+                        height: 40,
+                      },
+                    ]}
+                    value={locationNote}
+                    onChangeText={setLocationNote}
+                    placeholder="e.g. Front Pocket"
+                    placeholderTextColor={colors.mutedForeground}
                   />
                 </View>
               </View>

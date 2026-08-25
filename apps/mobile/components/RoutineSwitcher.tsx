@@ -16,6 +16,9 @@ export interface RoutineItem {
   name: string;
   icon: string;
   order?: number;
+  autoResetTime?: string;
+  autoResetDays?: number[];
+  lastResetDate?: string;
 }
 
 interface RoutineSwitcherProps {
@@ -24,6 +27,7 @@ interface RoutineSwitcherProps {
   onSelectRoutine: (name: string) => void;
   onOpenRoutineSettings: (routine: RoutineItem) => void;
   onCreateRoutine: (name: string, icon: string) => void;
+  onOpenPresets?: () => void;
   theme: "light" | "dark";
 }
 
@@ -62,6 +66,7 @@ export function RoutineSwitcher({
   onSelectRoutine,
   onOpenRoutineSettings,
   onCreateRoutine,
+  onOpenPresets,
   theme,
 }: RoutineSwitcherProps) {
   const colors = Colors[theme];
@@ -136,6 +141,29 @@ export function RoutineSwitcher({
             </View>
           );
         })}
+
+        {onOpenPresets && (
+          <TouchableOpacity
+            style={[
+              styles.routineButton,
+              styles.addButton,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+              },
+            ]}
+            onPress={onOpenPresets}
+          >
+            <Ionicons
+              name="sparkles-outline"
+              size={20}
+              color={colors.primary}
+            />
+            <Text style={[styles.routineText, { color: colors.foreground }]}>
+              Presets
+            </Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
           style={[

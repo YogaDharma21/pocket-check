@@ -1,17 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/theme";
 import { renderItemIconHelper } from "./IconPicker";
+import { parseMultiItemInput, detectIconForItem } from "../lib/presets";
 
 interface AddItemFormProps {
   onAddItem: (name: string, iconKey?: string) => void;
+  onAddItemsBatch: (items: { name: string; emoji?: string }[]) => void;
   onOpenIconPicker: () => void;
   selectedIconKey?: string;
   theme: "light" | "dark";
@@ -19,6 +22,7 @@ interface AddItemFormProps {
 
 export function AddItemForm({
   onAddItem,
+  onAddItemsBatch,
   onOpenIconPicker,
   selectedIconKey,
   theme,
@@ -26,9 +30,32 @@ export function AddItemForm({
   const colors = Colors[theme];
   const [name, setName] = useState("");
 
+  // Live auto-icon detection while typing
+  const liveDetectedIcon = useMemo(() => {
+    if (selectedIconKey) return selectedIconKey;
+    const trimmed = name.trim();
+    if (!trimmed) return null;
+    const detected = detectIconForItem(trimmed);
+    return detected !== "Tag" ? detected : null;
+  }, [name, selectedIconKey]);
+
+  // Parse multi-item input
+  const parsedItems = useMemo(() => {
+    return parseMultiItemInput(name, selectedIconKey);
+  }, [name, selectedIconKey]);
+
+  const isMultiItem = parsedItems.length > 1;
+
   const handleSubmit = () => {
     if (!name.trim()) return;
-    onAddItem(name.trim(), selectedIconKey);
+
+    if (isMultiItem) {
+      onAddItemsBatch(parsedItems);
+    } else {
+      const detectedEmoji =
+        selectedIconKey || detectIconForItem(name.trim());
+      onAddItem(name.trim(), detectedEmoji !== "Tag" ? detectedEmoji : selectedIconKey);
+    }
     setName("");
   };
 
@@ -51,7 +78,9 @@ export function AddItemForm({
           ]}
           onPress={onOpenIconPicker}
         >
-          {selectedIconKey ? (
+          {liveDetectedIcon ? (
+            renderItemIconHelper(liveDetectedIcon, colors.primary, 20)
+          ) : selectedIconKey ? (
             renderItemIconHelper(selectedIconKey, colors.primary, 20)
           ) : (
             <Ionicons
@@ -79,8 +108,15 @@ export function AddItemForm({
         />
 
         <TouchableOpacity
-          style={[styles.addBtn, { backgroundColor: colors.primary }]}
+          style={[
+            styles.addBtn,
+            {
+              backgroundColor: colors.primary,
+              opacity: name.trim() ? 1 : 0.5,
+            },
+          ]}
           onPress={handleSubmit}
+          disabled={!name.trim()}
         >
           <Text
             style={[
@@ -88,10 +124,51 @@ export function AddItemForm({
               { color: colors.primaryForeground },
             ]}
           >
-            ADD
+            {isMultiItem ? `ADD ${parsedItems.length}` : "ADD"}
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Multi-item preview chips */}
+      {isMultiItem && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.previewRow}
+          contentContainerStyle={styles.previewContent}
+        >
+          <Text style={[styles.previewLabel, { color: colors.mutedForeground }]}>
+            Adding {parsedItems.length} items:
+          </Text>
+          {parsedItems.map((item, idx) => (
+            <View
+              key={idx}
+              style={[
+                styles.previewChip,
+                {
+                  backgroundColor: colors.muted,
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              {renderItemIconHelper(item.emoji || "Tag", colors.foreground, 14)}
+              <Text
+                style={[styles.previewChipText, { color: colors.foreground }]}
+                numberOfLines={1}
+              >
+                {item.name}
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
+      )}
+
+      {/* Tip text */}
+      {!isMultiItem && (
+        <Text style={[styles.tipText, { color: colors.mutedForeground }]}>
+          Tip: Type comma-separated items to bulk-add
+        </Text>
+      )}
     </View>
   );
 }
@@ -142,5 +219,37 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "900",
     letterSpacing: 0.5,
+  },
+  previewRow: {
+    marginTop: 10,
+    maxHeight: 36,
+  },
+  previewContent: {
+    alignItems: "center",
+    gap: 6,
+    paddingRight: 8,
+  },
+  previewLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    marginRight: 4,
+  },
+  previewChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  previewChipText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  tipText: {
+    fontSize: 11,
+    fontWeight: "600",
+    marginTop: 8,
   },
 });
