@@ -54,6 +54,7 @@ import {
   playResetSound,
 } from "@/lib/sound";
 import { isOnlineBackendConfigured, useOfflineData } from "@/components/ConvexClientProvider";
+import { OnlineDashboard } from "@/components/OnlineDashboard";
 
 interface RestorableItem {
   routine: string;
@@ -1244,17 +1245,4 @@ function OfflineDashboard({
       </Dialog>
     </>
   );
-}
-
-// -----------------------------------------------------------------------------
-// Online Dashboard (Clerk + Convex live sync)
-// -----------------------------------------------------------------------------
-function OnlineDashboard({
-  onStatusChange,
-}: {
-  onStatusChange?: (routine: string, packedRatio: string) => void;
-}) {
-  // Same structure calling useQuery / useMutation with identical UI layout
-  // Falls back gracefully to OfflineDashboard if any error occurs
-  return <OfflineDashboard onStatusChange={onStatusChange} />;
 }
