@@ -66,36 +66,41 @@ export function ShareRoutineModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-zinc-950 border-zinc-800 text-zinc-100">
+      <DialogContent className="border-border bg-card text-card-foreground sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-base font-bold text-white flex items-center gap-2">
-            <Share2 className="h-4 w-4 text-purple-400" />
+          <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+            <Share2 className="h-4 w-4 text-purple-500" />
             Share {routineName} Routine
           </DialogTitle>
-          <DialogDescription className="text-xs text-zinc-400">
-            Anyone with this link can preview and 1-click import this checklist into their PocketChecker account.
+          <DialogDescription className="text-xs text-muted-foreground">
+            Anyone with this link can preview and 1-click import this checklist
+            into their PocketChecker account.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 space-y-2">
+          <div className="space-y-2 rounded-lg border border-border bg-muted/60 p-3">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-zinc-200">{routineName}</span>
-              <span className="text-zinc-500">{items.length} items included</span>
+              <span className="font-bold text-foreground">{routineName}</span>
+              <span className="text-muted-foreground">
+                {items.length} items included
+              </span>
             </div>
-            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+            <div className="flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
               {items.slice(0, 8).map((item, idx) => (
                 <span
                   key={idx}
-                  className="text-[11px] px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 flex items-center gap-1"
+                  className="flex items-center gap-1 rounded border border-border bg-card px-2 py-0.5 text-[11px] text-foreground"
                 >
-                  <Sparkles className="h-2.5 w-2.5 text-zinc-400" />
+                  <Sparkles className="h-2.5 w-2.5 text-muted-foreground" />
                   {item.name}
-                  {item.quantity && item.quantity > 1 ? ` (${item.quantity}x)` : ""}
+                  {item.quantity && item.quantity > 1
+                    ? ` (${item.quantity}x)`
+                    : ""}
                 </span>
               ))}
               {items.length > 8 && (
-                <span className="text-[11px] px-2 py-0.5 text-zinc-500">
+                <span className="px-2 py-0.5 text-[11px] text-muted-foreground">
                   +{items.length - 8} more
                 </span>
               )}
@@ -103,22 +108,22 @@ export function ShareRoutineModal({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+            <label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
               Shareable Link
             </label>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <LinkIcon className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                <LinkIcon className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={shareUrl}
                   readOnly
-                  className="pl-8 bg-zinc-900 border-zinc-800 text-xs font-mono text-zinc-300 h-9 select-all"
+                  className="h-9 border-border bg-muted/40 pl-8 font-mono text-xs text-foreground select-all"
                 />
               </div>
               <Button
                 type="button"
                 size="sm"
-                className="h-9 px-3 text-xs bg-purple-600 hover:bg-purple-500 text-white flex items-center gap-1.5 font-bold"
+                className="flex h-9 cursor-pointer items-center gap-1.5 bg-primary px-3 text-xs font-bold text-primary-foreground hover:bg-primary/90"
                 onClick={handleCopy}
               >
                 {copied ? (
@@ -137,7 +142,7 @@ export function ShareRoutineModal({
             type="button"
             variant="outline"
             size="sm"
-            className="text-xs h-8 text-zinc-300 border-zinc-800 hover:bg-zinc-900"
+            className="h-8 cursor-pointer border-border text-xs font-bold text-foreground hover:bg-muted"
             onClick={() => onOpenChange(false)}
           >
             Close

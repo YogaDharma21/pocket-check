@@ -38,7 +38,8 @@ export function ExportModal({
     md += `*Exported on ${new Date().toLocaleDateString()}*\n\n`
     items.forEach((item) => {
       const check = item.isPacked ? "[x]" : "[ ]"
-      const qty = item.quantity && item.quantity > 1 ? ` (${item.quantity}x)` : ""
+      const qty =
+        item.quantity && item.quantity > 1 ? ` (${item.quantity}x)` : ""
       const note = item.locationNote ? ` — *${item.locationNote}*` : ""
       md += `- ${check} ${item.name}${qty}${note}\n`
     })
@@ -137,10 +138,10 @@ export function ExportModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-zinc-950 border-zinc-800 text-zinc-100">
+      <DialogContent className="border-border bg-card text-card-foreground sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-base font-bold text-white flex items-center gap-2">
-            <Download className="h-4 w-4 text-emerald-400" />
+          <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+            <Download className="h-4 w-4 text-emerald-500" />
             Export &amp; Backup {routineName}
           </DialogTitle>
         </DialogHeader>
@@ -151,7 +152,7 @@ export function ExportModal({
               type="button"
               size="sm"
               variant={format === "markdown" ? "default" : "outline"}
-              className="text-xs h-8 flex items-center gap-1.5"
+              className="flex h-8 cursor-pointer items-center gap-1.5 text-xs font-bold"
               onClick={() => setFormat("markdown")}
             >
               <FileText className="h-3.5 w-3.5" />
@@ -161,7 +162,7 @@ export function ExportModal({
               type="button"
               size="sm"
               variant={format === "json" ? "default" : "outline"}
-              className="text-xs h-8 flex items-center gap-1.5"
+              className="flex h-8 cursor-pointer items-center gap-1.5 text-xs font-bold"
               onClick={() => setFormat("json")}
             >
               <Code2 className="h-3.5 w-3.5" />
@@ -170,18 +171,18 @@ export function ExportModal({
           </div>
 
           <div className="relative">
-            <pre className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-mono text-zinc-300 max-h-48 overflow-y-auto whitespace-pre-wrap">
+            <pre className="max-h-48 overflow-y-auto rounded-lg border border-border bg-muted/60 p-3 font-mono text-xs whitespace-pre-wrap text-foreground">
               {content}
             </pre>
           </div>
         </div>
 
-        <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between">
+        <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-between">
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="text-xs h-8 text-zinc-300 border-zinc-800 hover:bg-zinc-900 flex items-center gap-1.5"
+            className="flex h-8 cursor-pointer items-center gap-1.5 border-border text-xs font-bold text-foreground hover:bg-muted"
             onClick={handlePrint}
           >
             <Printer className="h-3.5 w-3.5" />
@@ -193,11 +194,11 @@ export function ExportModal({
               type="button"
               variant="outline"
               size="sm"
-              className="text-xs h-8 text-zinc-300 border-zinc-800 hover:bg-zinc-900 flex items-center gap-1.5"
+              className="flex h-8 cursor-pointer items-center gap-1.5 border-border text-xs font-bold text-foreground hover:bg-muted"
               onClick={handleCopy}
             >
               {copied ? (
-                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                <Check className="h-3.5 w-3.5 text-emerald-500" />
               ) : (
                 <Copy className="h-3.5 w-3.5" />
               )}
@@ -206,7 +207,7 @@ export function ExportModal({
             <Button
               type="button"
               size="sm"
-              className="text-xs h-8 bg-zinc-100 text-zinc-900 hover:bg-white flex items-center gap-1.5"
+              className="flex h-8 cursor-pointer items-center gap-1.5 bg-primary text-xs font-bold text-primary-foreground hover:bg-primary/90"
               onClick={handleDownload}
             >
               <Download className="h-3.5 w-3.5" />
