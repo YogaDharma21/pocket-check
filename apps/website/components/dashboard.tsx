@@ -1938,11 +1938,6 @@ export function Dashboard() {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base font-black">
-              <img
-                src="/icon-192.png"
-                alt="PocketChecker"
-                className="h-5 w-5 rounded-md border border-border object-contain"
-              />
               <span>Menu</span>
             </DialogTitle>
           </DialogHeader>
