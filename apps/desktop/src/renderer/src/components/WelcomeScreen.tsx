@@ -1,3 +1,4 @@
+import { SignInButton, SignUpButton } from "@clerk/clerk-react";
 import {
   PackageCheck,
   ShieldCheck,
@@ -10,11 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { isOnlineBackendConfigured } from "@/components/ConvexClientProvider";
 
 export function WelcomeScreen({
-  onGetStarted,
+  onContinueAsGuest,
 }: {
-  onGetStarted?: () => void;
+  onContinueAsGuest?: () => void;
 }) {
   return (
     <div className="animate-fadeIn mx-auto flex w-full max-w-6xl flex-1 items-center justify-center p-4 sm:p-6 lg:p-12">
@@ -78,15 +80,45 @@ export function WelcomeScreen({
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Auth Action Buttons */}
           <div className="mx-auto flex max-w-md flex-col gap-3 pt-4 sm:flex-row lg:mx-0">
-            <Button
-              onClick={onGetStarted}
-              className="flex-1 cursor-pointer rounded-lg py-6 text-base font-black tracking-wider uppercase shadow-md"
-            >
-              Open PocketCheck <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
+            {isOnlineBackendConfigured ? (
+              <>
+                <SignInButton mode="modal">
+                  <Button className="flex-1 cursor-pointer rounded-lg py-6 text-base font-black tracking-wider uppercase shadow-md">
+                    Log In <ArrowRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <Button
+                    variant="outline"
+                    className="flex-1 cursor-pointer rounded-lg py-6 text-base font-black tracking-wider uppercase"
+                  >
+                    Create Account
+                  </Button>
+                </SignUpButton>
+              </>
+            ) : (
+              <Button
+                onClick={onContinueAsGuest}
+                className="flex-1 cursor-pointer rounded-lg py-6 text-base font-black tracking-wider uppercase shadow-md"
+              >
+                Open PocketCheck <ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
+            )}
           </div>
+
+          {isOnlineBackendConfigured && onContinueAsGuest && (
+            <div className="text-center lg:text-left pt-1">
+              <button
+                type="button"
+                onClick={onContinueAsGuest}
+                className="text-xs font-bold text-muted-foreground hover:text-foreground cursor-pointer underline underline-offset-4"
+              >
+                Or continue offline as Guest
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Right / Interactive Preview Card */}

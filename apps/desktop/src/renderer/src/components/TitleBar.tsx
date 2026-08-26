@@ -1,6 +1,49 @@
 import { useEffect, useState } from "react";
-import { Minus, Square, Copy, X } from "lucide-react";
+import { Minus, Square, Copy, X, User, LogIn } from "lucide-react";
+import { UserButton, SignedIn, SignedOut, SignInButton } from "@clerk/clerk-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { isOnlineBackendConfigured } from "@/components/ConvexClientProvider";
+import { Button } from "@/components/ui/button";
+
+export function UserAuthMenu() {
+  if (isOnlineBackendConfigured) {
+    return (
+      <div className="flex items-center gap-1.5 app-no-drag">
+        <SignedIn>
+          <UserButton
+            appearance={{
+              elements: {
+                userButtonAvatarBox: "h-6 w-6 rounded-md",
+                userButtonTrigger: "focus:shadow-none focus:outline-none cursor-pointer",
+              },
+            }}
+          />
+        </SignedIn>
+        <SignedOut>
+          <SignInButton mode="modal">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2.5 text-xs font-bold gap-1 cursor-pointer"
+            >
+              <LogIn className="h-3 w-3" /> Log In
+            </Button>
+          </SignInButton>
+        </SignedOut>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md select-none"
+      title="Offline Desktop Mode"
+    >
+      <User className="h-3 w-3" />
+      <span>Guest</span>
+    </div>
+  );
+}
 
 interface TitleBarProps {
   currentRoutine?: string;
@@ -59,7 +102,8 @@ export function TitleBar({ currentRoutine, packedRatio }: TitleBarProps) {
       <div className="flex-1 h-full min-w-4" />
 
       {/* Right: Actions & Window Controls */}
-      <div className="flex items-center gap-1 app-no-drag">
+      <div className="flex items-center gap-1.5 app-no-drag">
+        <UserAuthMenu />
         <ThemeToggle />
 
         {!isMac && (

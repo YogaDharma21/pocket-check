@@ -14,6 +14,8 @@ import {
   Undo2,
   Compass,
   MapPin,
+  Share2,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -627,52 +629,78 @@ function OfflineDashboard({
                     </div>
                   </div>
 
-                  {/* Filter Segmented Control */}
-                  <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted/60 p-1 select-none sm:w-72">
-                    <button
-                      type="button"
-                      onClick={() => setFilter("all")}
-                      className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
-                        filter === "all"
-                          ? "bg-card text-foreground shadow-xs ring-1 ring-border"
-                          : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-                      }`}
-                    >
-                      <span>All</span>
-                      <Badge variant="secondary" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold">
-                        {items.length}
-                      </Badge>
-                    </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Share & Export Quick Actions */}
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowShareModal(true)}
+                        className="h-8 text-xs font-bold gap-1 cursor-pointer border-border"
+                        title="Share Destination Routine"
+                      >
+                        <Share2 className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Share</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowExportModal(true)}
+                        className="h-8 text-xs font-bold gap-1 cursor-pointer border-border"
+                        title="Export Destination Checklist (Markdown, JSON, Print)"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Export</span>
+                      </Button>
+                    </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setFilter("missing")}
-                      className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
-                        filter === "missing"
-                          ? "bg-card text-destructive shadow-xs ring-1 ring-destructive/30"
-                          : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-                      }`}
-                    >
-                      <span>Missing</span>
-                      <Badge variant="destructive" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold">
-                        {missingItems}
-                      </Badge>
-                    </button>
+                    {/* Filter Segmented Control */}
+                    <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted/60 p-1 select-none w-full sm:w-64">
+                      <button
+                        type="button"
+                        onClick={() => setFilter("all")}
+                        className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
+                          filter === "all"
+                            ? "bg-card text-foreground shadow-xs ring-1 ring-border"
+                            : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                        }`}
+                      >
+                        <span>All</span>
+                        <Badge variant="secondary" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold">
+                          {items.length}
+                        </Badge>
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={() => setFilter("packed")}
-                      className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
-                        filter === "packed"
-                          ? "bg-card text-primary shadow-xs ring-1 ring-primary/30"
-                          : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-                      }`}
-                    >
-                      <span>Packed</span>
-                      <Badge variant="default" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold">
-                        {packedItems}
-                      </Badge>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setFilter("missing")}
+                        className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
+                          filter === "missing"
+                            ? "bg-card text-destructive shadow-xs ring-1 ring-destructive/30"
+                            : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                        }`}
+                      >
+                        <span>Missing</span>
+                        <Badge variant="destructive" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold">
+                          {missingItems}
+                        </Badge>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setFilter("packed")}
+                        className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
+                          filter === "packed"
+                            ? "bg-card text-primary shadow-xs ring-1 ring-primary/30"
+                            : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                        }`}
+                      >
+                        <span>Packed</span>
+                        <Badge variant="default" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold">
+                          {packedItems}
+                        </Badge>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
