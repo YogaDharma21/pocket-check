@@ -22,6 +22,17 @@ export const metadata: Metadata = {
   title: "PocketChecker - Double-check your pockets",
   description:
     "Double-check your pockets before you step out! Create packing lists for work, the gym, or your custom routines.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({

@@ -3,6 +3,7 @@ import {
   Modal,
   View,
   Text,
+  Image,
   TouchableOpacity,
   TouchableWithoutFeedback,
   Linking,
@@ -38,11 +39,18 @@ export function AboutModal({ visible, onClose, theme }: AboutModalProps) {
             >
               <View style={styles.header}>
                 <View style={styles.titleRow}>
-                  <Ionicons
-                    name="information-circle"
-                    size={22}
-                    color={colors.primary}
-                  />
+                  <View
+                    style={[
+                      styles.iconBadge,
+                      { borderColor: colors.border },
+                    ]}
+                  >
+                    <Image
+                      source={require("../assets/images/icon.png")}
+                      style={styles.iconImage}
+                      resizeMode="contain"
+                    />
+                  </View>
                   <Text style={[styles.title, { color: colors.foreground }]}>
                     About PocketChecker
                   </Text>
@@ -119,7 +127,18 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
+  },
+  iconBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  iconImage: {
+    width: "100%",
+    height: "100%",
   },
   title: {
     fontSize: 18,
