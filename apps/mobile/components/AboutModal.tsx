@@ -3,7 +3,6 @@ import {
   Modal,
   View,
   Text,
-  Image,
   TouchableOpacity,
   TouchableWithoutFeedback,
   Linking,
@@ -38,23 +37,9 @@ export function AboutModal({ visible, onClose, theme }: AboutModalProps) {
               ]}
             >
               <View style={styles.header}>
-                <View style={styles.titleRow}>
-                  <View
-                    style={[
-                      styles.iconBadge,
-                      { borderColor: colors.border },
-                    ]}
-                  >
-                    <Image
-                      source={require("../assets/images/icon.png")}
-                      style={styles.iconImage}
-                      resizeMode="contain"
-                    />
-                  </View>
-                  <Text style={[styles.title, { color: colors.foreground }]}>
-                    About PocketChecker
-                  </Text>
-                </View>
+                <Text style={[styles.title, { color: colors.foreground }]}>
+                  About PocketChecker
+                </Text>
                 <TouchableOpacity onPress={onClose}>
                   <Ionicons
                     name="close"
@@ -89,7 +74,11 @@ export function AboutModal({ visible, onClose, theme }: AboutModalProps) {
                   size={18}
                   color={colors.foreground}
                 />
-                <Text style={[styles.githubText, { color: colors.foreground }]}>
+                <Text
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  style={[styles.githubText, { color: colors.foreground }]}
+                >
                   github.com/yogaDharma21/pocket-check
                 </Text>
                 <Ionicons
@@ -124,22 +113,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  iconBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  iconImage: {
-    width: "100%",
-    height: "100%",
-  },
   title: {
     fontSize: 18,
     fontWeight: "900",
@@ -162,5 +135,6 @@ const styles = StyleSheet.create({
   githubText: {
     fontSize: 12,
     fontWeight: "800",
+    flexShrink: 1,
   },
 });

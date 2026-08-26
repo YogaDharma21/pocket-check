@@ -2055,16 +2055,9 @@ export function Dashboard() {
 
       {/* About Project Modal */}
       <Dialog open={showAboutDialog} onOpenChange={setShowAboutDialog}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2.5">
-              <img
-                src="/icon-192.png"
-                alt="PocketChecker"
-                className="h-6 w-6 rounded-md border border-border object-contain"
-              />
-              <span>About PocketChecker</span>
-            </DialogTitle>
+            <DialogTitle>About PocketChecker</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-2 select-none">
@@ -2078,15 +2071,17 @@ export function Dashboard() {
               href="https://github.com/YogaDharma21/pocket-check"
               target="_blank"
               rel="noopener noreferrer"
-              className="block pt-2"
+              className="block pt-1"
             >
               <Button
                 variant="outline"
-                className="w-full gap-2 text-xs font-bold"
+                className="h-auto w-full gap-2 px-3 py-2.5 text-xs font-bold sm:text-sm"
               >
-                <GitBranch className="h-4 w-4 text-primary" />
-                <span>github.com/yogaDharma21/pocket-check</span>
-                <ExternalLink className="h-3 w-3 opacity-60" />
+                <GitBranch className="h-4 w-4 shrink-0 text-primary" />
+                <span className="min-w-0 flex-1 truncate text-center">
+                  github.com/yogaDharma21/pocket-check
+                </span>
+                <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-60" />
               </Button>
             </a>
           </div>
