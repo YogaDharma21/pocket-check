@@ -1106,88 +1106,28 @@ export function Dashboard() {
             ) : (
               <>
                 {/* Active Destination Workspace Card Header */}
-                <div className="flex flex-col gap-3.5 rounded-lg border border-border bg-card p-4 shadow-xs sm:p-5">
-                  <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="shrink-0 rounded-lg bg-primary/10 p-2.5 text-primary sm:p-3">
-                        {renderRoutineIcon(
-                          currentRoutineObj?.icon || effectiveRoutine
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h2 className="truncate text-lg font-black text-foreground sm:text-2xl">
-                            {effectiveRoutine}
-                          </h2>
-                          <Badge
-                            variant="secondary"
-                            className="shrink-0 text-xs font-black"
-                          >
-                            {items.length} items
-                          </Badge>
-                        </div>
-                        <p className="text-xs font-bold text-muted-foreground">
-                          {packedItems} packed &bull; {missingItems} remaining
-                        </p>
-                      </div>
+                <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-card p-4 shadow-xs sm:flex-row sm:items-center sm:p-5">
+                  <div className="flex items-center gap-3">
+                    <div className="shrink-0 rounded-lg bg-primary/10 p-2.5 text-primary sm:p-3">
+                      {renderRoutineIcon(
+                        currentRoutineObj?.icon || effectiveRoutine
+                      )}
                     </div>
-
-                    {/* Destination Action Toolbar */}
-                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5 sm:pt-0">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowExportModal(true)}
-                        className="h-8 cursor-pointer gap-1.5 rounded-lg border-border px-2.5 text-xs font-bold text-foreground hover:bg-muted"
-                        title="Export or Print Checklist"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        <span>Export</span>
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowShareModal(true)}
-                        className="h-8 cursor-pointer gap-1.5 rounded-lg border-border px-2.5 text-xs font-bold text-foreground hover:bg-muted"
-                        title="Share Checklist Link"
-                      >
-                        <Share2 className="h-3.5 w-3.5" />
-                        <span>Share</span>
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          if (currentRoutineObj) {
-                            setManageRoutine(currentRoutineObj)
-                            setShowScheduleModal(true)
-                          }
-                        }}
-                        className="h-8 cursor-pointer gap-1.5 rounded-lg border-border px-2.5 text-xs font-bold text-foreground hover:bg-muted"
-                        title="Schedule Auto-Reset"
-                      >
-                        <Clock className="h-3.5 w-3.5" />
-                        <span className="inline">Schedule</span>
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          if (currentRoutineObj) {
-                            setManageRoutine(currentRoutineObj)
-                            setEditModalName(currentRoutineObj.name)
-                            setEditModalIconTag(currentRoutineObj.icon)
-                          }
-                        }}
-                        className="h-8 cursor-pointer gap-1.5 rounded-lg border-border px-2.5 text-xs font-bold text-foreground hover:bg-muted"
-                        title="Destination Settings"
-                      >
-                        <Settings className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="inline">Settings</span>
-                      </Button>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h2 className="truncate text-lg font-black text-foreground sm:text-2xl">
+                          {effectiveRoutine}
+                        </h2>
+                        <Badge
+                          variant="secondary"
+                          className="shrink-0 text-xs font-black"
+                        >
+                          {items.length} items
+                        </Badge>
+                      </div>
+                      <p className="text-xs font-bold text-muted-foreground">
+                        {packedItems} packed &bull; {missingItems} remaining
+                      </p>
                     </div>
                   </div>
 
