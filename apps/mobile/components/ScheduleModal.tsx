@@ -99,7 +99,7 @@ export function ScheduleModal({
             <View style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.header}>
                 <View style={styles.headerLeft}>
-                  <Ionicons name="time-outline" size={20} color="#10b981" />
+                  <Ionicons name="time-outline" size={20} color={colors.foreground} />
                   <Text style={[styles.title, { color: colors.foreground }]}>Auto-Reset Schedule</Text>
                 </View>
                 <TouchableOpacity onPress={onClose}>
@@ -111,13 +111,12 @@ export function ScheduleModal({
                 Automatically uncheck all packed items for &quot;{routineName}&quot; so you start fresh each day.
               </Text>
 
-              {/* Toggle Enable */}
               <TouchableOpacity
                 style={[
                   styles.toggleContainer,
                   {
                     backgroundColor: colors.background,
-                    borderColor: enabled ? "#10b98150" : colors.border,
+                    borderColor: enabled ? colors.primary : colors.border,
                   },
                 ]}
                 onPress={() => setEnabled(!enabled)}
@@ -128,19 +127,19 @@ export function ScheduleModal({
                     style={[
                       styles.checkbox,
                       {
-                        borderColor: enabled ? "#10b981" : colors.border,
-                        backgroundColor: enabled ? "#10b981" : "transparent",
+                        borderColor: enabled ? colors.primary : colors.border,
+                        backgroundColor: enabled ? colors.primary : "transparent",
                       },
                     ]}
                   >
-                    {enabled && <Ionicons name="checkmark-sharp" size={14} color="#ffffff" />}
+                    {enabled && <Ionicons name="checkmark-sharp" size={14} color={colors.primaryForeground} />}
                   </View>
                   <View>
                     <Text style={[styles.toggleLabel, { color: colors.foreground }]}>
                       Daily Auto-Reset
                     </Text>
                     <Text style={[styles.toggleSubtext, { color: colors.mutedForeground }]}>
-                      {enabled ? "Active on scheduled days" : "Disabled"}
+                      {enabled ? "Enabled" : "Disabled"}
                     </Text>
                   </View>
                 </View>
@@ -185,8 +184,8 @@ export function ScheduleModal({
                             style={[
                               styles.dayButton,
                               {
-                                backgroundColor: isActive ? "#10b981" : colors.background,
-                                borderColor: isActive ? "#10b981" : colors.border,
+                                backgroundColor: isActive ? colors.primary : colors.background,
+                                borderColor: isActive ? colors.primary : colors.border,
                               },
                             ]}
                             onPress={() => toggleDay(day.value)}
@@ -194,7 +193,7 @@ export function ScheduleModal({
                             <Text
                               style={[
                                 styles.dayText,
-                                { color: isActive ? "#ffffff" : colors.foreground },
+                                { color: isActive ? colors.primaryForeground : colors.foreground },
                               ]}
                             >
                               {day.label}
@@ -217,14 +216,14 @@ export function ScheduleModal({
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.saveBtn, { backgroundColor: "#10b981" }]}
+                  style={[styles.saveBtn, { backgroundColor: colors.primary }]}
                   onPress={handleSave}
                   disabled={isSaving}
                 >
                   {isSaving ? (
-                    <ActivityIndicator size="small" color="#ffffff" />
+                    <ActivityIndicator size="small" color={colors.primaryForeground} />
                   ) : (
-                    <Text style={styles.saveBtnText}>Save Schedule</Text>
+                    <Text style={[styles.saveBtnText, { color: colors.primaryForeground }]}>Save Schedule</Text>
                   )}
                 </TouchableOpacity>
               </View>

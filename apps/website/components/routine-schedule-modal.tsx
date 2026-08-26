@@ -79,23 +79,23 @@ function RoutineScheduleForm({
   return (
     <>
       <DialogHeader>
-        <DialogTitle className="text-base font-bold text-white flex items-center gap-2">
-          <Clock className="h-4 w-4 text-emerald-400" />
+        <DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
+          <Clock className="h-4 w-4 text-foreground" />
           Auto-Reset Schedule for {routineName}
         </DialogTitle>
-        <DialogDescription className="text-xs text-zinc-400">
+        <DialogDescription className="text-xs text-muted-foreground">
           Automatically uncheck all packed items at your chosen time so you wake up with a fresh checklist.
         </DialogDescription>
       </DialogHeader>
 
       <div className="space-y-4 py-2">
         {/* Toggle Enable */}
-        <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-zinc-800">
+        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/60 border border-border">
           <div className="space-y-0.5">
-            <label className="text-xs font-bold text-zinc-200">
+            <label className="text-xs font-bold text-foreground">
               Enable Daily Auto-Reset
             </label>
-            <p className="text-[11px] text-zinc-400">
+            <p className="text-[11px] text-muted-foreground">
               Reset checklist automatically on scheduled days
             </p>
           </div>
@@ -103,7 +103,7 @@ function RoutineScheduleForm({
             type="checkbox"
             checked={enabled}
             onChange={(e) => setEnabled(e.target.checked)}
-            className="h-4 w-4 rounded accent-emerald-500 cursor-pointer"
+            className="h-4 w-4 rounded accent-primary cursor-pointer"
           />
         </div>
 
@@ -111,22 +111,22 @@ function RoutineScheduleForm({
           <>
             {/* Reset Time */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5 text-zinc-400" />
+              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                 Reset Time (Local Timezone)
               </label>
               <Input
                 type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
-                className="bg-zinc-900 border-zinc-800 text-sm font-mono text-zinc-100 h-9"
+                className="bg-muted/40 border-border text-sm font-mono text-foreground h-9"
               />
             </div>
 
             {/* Active Days */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 text-zinc-400" />
+              <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                 Active Days
               </label>
               <div className="grid grid-cols-7 gap-1.5">
@@ -137,10 +137,10 @@ function RoutineScheduleForm({
                       key={d.value}
                       type="button"
                       onClick={() => toggleDay(d.value)}
-                      className={`h-8 rounded text-xs font-bold transition-all border ${
+                      className={`h-8 rounded text-xs font-bold transition-all border cursor-pointer ${
                         isSelected
-                          ? "bg-emerald-950/80 text-emerald-300 border-emerald-700/80"
-                          : "bg-zinc-900 text-zinc-500 border-zinc-800 hover:text-zinc-300 hover:bg-zinc-850"
+                          ? "bg-primary text-primary-foreground border-primary font-black shadow-xs"
+                          : "bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted"
                       }`}
                     >
                       {d.label}
@@ -158,7 +158,7 @@ function RoutineScheduleForm({
           type="button"
           variant="ghost"
           size="sm"
-          className="text-xs h-8 text-zinc-400 hover:text-zinc-200"
+          className="text-xs h-8 text-muted-foreground hover:text-foreground cursor-pointer"
           onClick={onCancel}
         >
           Cancel
@@ -168,7 +168,7 @@ function RoutineScheduleForm({
           type="button"
           size="sm"
           disabled={saving}
-          className="text-xs h-8 bg-emerald-500 hover:bg-emerald-600 text-black font-bold flex items-center gap-1.5"
+          className="text-xs h-8 bg-primary hover:bg-primary/90 text-primary-foreground font-bold flex items-center gap-1.5 cursor-pointer"
           onClick={handleSave}
         >
           {saving ? (
@@ -193,7 +193,7 @@ export function RoutineScheduleModal({
 }: RoutineScheduleModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-zinc-950 border-zinc-800 text-zinc-100">
+      <DialogContent className="sm:max-w-md bg-card border-border text-card-foreground">
         {open && (
           <RoutineScheduleForm
             key={`${routineName}-${initialTime}-${initialDays?.join(",")}`}

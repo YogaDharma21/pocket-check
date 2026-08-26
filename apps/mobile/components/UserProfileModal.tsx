@@ -141,17 +141,17 @@ export function UserProfileModal({
                     style={[
                       styles.statusBadge,
                       {
-                        backgroundColor: "rgba(16, 185, 129, 0.1)",
-                        borderColor: "rgba(16, 185, 129, 0.3)",
+                        backgroundColor: colors.muted,
+                        borderColor: colors.border,
                       },
                     ]}
                   >
                     <Ionicons
                       name="shield-checkmark"
                       size={12}
-                      color="#10b981"
+                      color={colors.foreground}
                     />
-                    <Text style={styles.statusBadgeText}>Signed In</Text>
+                    <Text style={[styles.statusBadgeText, { color: colors.foreground }]}>Signed In</Text>
                   </View>
                 </View>
               </View>
@@ -268,7 +268,6 @@ const styles = StyleSheet.create({
   statusBadgeText: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#10b981",
   },
   actionSection: {
     marginTop: 4,

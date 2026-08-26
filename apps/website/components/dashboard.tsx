@@ -30,6 +30,7 @@ import {
   Undo2,
   Compass,
   MapPin,
+  Menu,
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
@@ -104,10 +105,13 @@ export function Dashboard() {
 
   const [editModalName, setEditModalName] = useState("")
   const [editModalIconTag, setEditModalIconTag] = useState("")
-  const [editModalQuantity, setEditModalQuantity] = useState<number | undefined>(undefined)
+  const [editModalQuantity, setEditModalQuantity] = useState<
+    number | undefined
+  >(undefined)
   const [editModalLocationNote, setEditModalLocationNote] = useState("")
 
   const [showAboutDialog, setShowAboutDialog] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [showPresetsModal, setShowPresetsModal] = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
@@ -173,7 +177,9 @@ export function Dashboard() {
   const resetItems = useMutation(api.pocketcheck.resetItems)
   const deleteAllItems = useMutation(api.pocketcheck.deleteAllItems)
   const restoreItems = useMutation(api.pocketcheck.restoreItems)
-  const checkAndExecuteAutoReset = useMutation(api.pocketcheck.checkAndExecuteAutoReset)
+  const checkAndExecuteAutoReset = useMutation(
+    api.pocketcheck.checkAndExecuteAutoReset
+  )
   const reorderItems = useMutation(api.pocketcheck.reorderItems)
   const reorderRoutines = useMutation(api.pocketcheck.reorderRoutines)
 
@@ -218,12 +224,17 @@ export function Dashboard() {
 
       if (!activeDays.includes(currentDay)) return
 
-      const [hours, minutes] = currentRoutineObj.autoResetTime!.split(":").map(Number)
+      const [hours, minutes] = currentRoutineObj
+        .autoResetTime!.split(":")
+        .map(Number)
       const scheduledTime = new Date()
       scheduledTime.setHours(hours, minutes, 0, 0)
 
       const todayStr = now.toISOString().split("T")[0]
-      if (now >= scheduledTime && currentRoutineObj.lastResetDate !== todayStr) {
+      if (
+        now >= scheduledTime &&
+        currentRoutineObj.lastResetDate !== todayStr
+      ) {
         try {
           await checkAndExecuteAutoReset({
             routineId: currentRoutineObj._id,
@@ -293,10 +304,7 @@ export function Dashboard() {
       // Space: Toggle active highlighted item or first missing
       if (e.code === "Space") {
         e.preventDefault()
-        if (
-          focusedItemIndex >= 0 &&
-          focusedItemIndex < filteredItems.length
-        ) {
+        if (focusedItemIndex >= 0 && focusedItemIndex < filteredItems.length) {
           const item = filteredItems[focusedItemIndex]
           void handleToggle(item._id, item.isPacked)
         } else if (filteredItems.length > 0) {
@@ -576,10 +584,7 @@ export function Dashboard() {
       const itemsToInsert = parsed.map((item) => ({
         name: item.name,
         emoji:
-          selectedTag ||
-          item.emoji ||
-          detectIconForItem(item.name) ||
-          "Tag",
+          selectedTag || item.emoji || detectIconForItem(item.name) || "Tag",
       }))
 
       try {
@@ -618,23 +623,26 @@ export function Dashboard() {
 
   // Auto-detected icon while user is typing in input (UX-04)
   const liveDetectedIcon =
-    newItemTag || (newCustomItemName.trim() ? detectIconForItem(newCustomItemName.trim()) : null)
+    newItemTag ||
+    (newCustomItemName.trim()
+      ? detectIconForItem(newCustomItemName.trim())
+      : null)
 
   return (
     <>
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-card shadow-xs">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
-          <div className="flex shrink-0 items-center gap-2.5 select-none sm:gap-3.5">
-            <div className="overflow-hidden rounded-xl shadow-xs border border-border">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-2.5 sm:gap-4 sm:px-6 sm:py-3.5 lg:px-8">
+          <div className="flex shrink-0 items-center gap-2 select-none sm:gap-3">
+            <div className="overflow-hidden rounded-xl border border-border shadow-xs">
               <img
                 src="/icon-192.png"
                 alt="PocketChecker"
-                className="h-8 w-8 sm:h-9 sm:w-9 object-contain"
+                className="h-7 w-7 object-contain sm:h-9 sm:w-9"
               />
             </div>
             <div>
-              <h1 className="text-lg leading-none font-black tracking-wide text-foreground sm:text-2xl">
+              <h1 className="text-base leading-none font-black tracking-tight text-foreground sm:text-xl md:text-2xl">
                 POCKET<span className="text-primary">CHECKER</span>
               </h1>
             </div>
@@ -643,7 +651,7 @@ export function Dashboard() {
           {/* Active Routine Pill on Desktop */}
           {effectiveRoutine ? (
             <div className="hidden items-center gap-2 rounded-full border border-border bg-muted/60 px-3.5 py-1.5 text-xs font-extrabold select-none md:flex">
-              <span className="text-muted-foreground">Active Routine:</span>
+              <span className="text-muted-foreground">Active:</span>
               <span className="flex items-center gap-1.5 font-black text-foreground">
                 {renderRoutineIcon(currentRoutineObj?.icon || effectiveRoutine)}
                 <span>{effectiveRoutine}</span>
@@ -655,43 +663,68 @@ export function Dashboard() {
             </div>
           ) : null}
 
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!effectiveRoutine}
-              onClick={() => setShowExportModal(true)}
-              className="h-8 text-xs font-bold border-border text-foreground hover:bg-muted hidden sm:flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
-              title="Export or Print Checklist"
-            >
-              <Download className="h-3.5 w-3.5" />
-              <span>Export</span>
-            </Button>
+          {/* Action and Utility Buttons */}
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+            {/* Desktop Routine Actions */}
+            {effectiveRoutine ? (
+              <div className="hidden items-center gap-1.5 sm:flex">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowExportModal(true)}
+                  className="h-8 cursor-pointer items-center gap-1.5 border-border text-xs font-bold text-foreground hover:bg-muted"
+                  title="Export or Print Checklist"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span>Export</span>
+                </Button>
 
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!effectiveRoutine}
-              onClick={() => setShowShareModal(true)}
-              className="h-8 text-xs font-bold border-border text-foreground hover:bg-muted hidden sm:flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
-              title="Share Checklist Link"
-            >
-              <Share2 className="h-3.5 w-3.5" />
-              <span>Share</span>
-            </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowShareModal(true)}
+                  className="h-8 cursor-pointer items-center gap-1.5 border-border text-xs font-bold text-foreground hover:bg-muted"
+                  title="Share Checklist Link"
+                >
+                  <Share2 className="h-3.5 w-3.5" />
+                  <span>Share</span>
+                </Button>
 
+                <div className="mx-0.5 h-4 w-px bg-border" />
+              </div>
+            ) : null}
+
+            {/* Desktop About Button */}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setShowAboutDialog(true)}
               title="About PocketChecker"
-              className="h-9 w-9 cursor-pointer rounded-lg text-foreground hover:bg-muted"
+              className="hidden h-8 w-8 cursor-pointer rounded-lg text-foreground hover:bg-muted sm:inline-flex sm:h-9 sm:w-9"
             >
               <Info className="h-4 w-4 sm:h-5 sm:w-5" />
               <span className="sr-only">About</span>
             </Button>
+
+            {/* Mobile Actions Menu Trigger */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowMobileMenu(true)}
+              title="More Options"
+              className="h-8 w-8 cursor-pointer rounded-lg text-foreground hover:bg-muted sm:hidden"
+            >
+              <Menu className="h-4 w-4" />
+              <span className="sr-only">Open Menu</span>
+            </Button>
+
+            {/* Theme Toggle */}
             <ThemeToggle />
-            <UserButton />
+
+            {/* User Account Avatar with safe padding and shrink-0 */}
+            <div className="flex shrink-0 items-center justify-center pl-0.5">
+              <UserButton />
+            </div>
           </div>
         </div>
       </header>
@@ -706,8 +739,8 @@ export function Dashboard() {
                 {isRoutinesLoading ? (
                   <div className="space-y-3.5">
                     <div className="flex items-center gap-3">
-                      <Skeleton className="h-11 w-11 rounded-lg shrink-0" />
-                      <div className="space-y-1.5 flex-1">
+                      <Skeleton className="h-11 w-11 shrink-0 rounded-lg" />
+                      <div className="flex-1 space-y-1.5">
                         <Skeleton className="h-3.5 w-20" />
                         <Skeleton className="h-5 w-40" />
                       </div>
@@ -736,7 +769,9 @@ export function Dashboard() {
                             Pocket Status
                           </span>
                           <Badge
-                            variant={percentage === 100 ? "default" : "secondary"}
+                            variant={
+                              percentage === 100 ? "default" : "secondary"
+                            }
                             className="px-2 py-0.5 text-[10px] font-black"
                           >
                             {Math.round(percentage)}% Packed
@@ -771,7 +806,7 @@ export function Dashboard() {
                         size="sm"
                         disabled={!effectiveRoutine || totalItems === 0}
                         onClick={() => void handleReset()}
-                        className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-primary uppercase hover:text-primary/80 disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-primary uppercase hover:text-primary/80 disabled:cursor-not-allowed disabled:opacity-40"
                         title="Reset items in this routine to Missing position (Shift+U)"
                       >
                         <RotateCcw className="h-3.5 w-3.5" /> Uncheck All
@@ -781,7 +816,7 @@ export function Dashboard() {
                         size="sm"
                         disabled={!effectiveRoutine || totalItems === 0}
                         onClick={() => setShowDeleteAllConfirm(true)}
-                        className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-destructive uppercase hover:text-destructive/80 disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-destructive uppercase hover:text-destructive/80 disabled:cursor-not-allowed disabled:opacity-40"
                         title="Delete all created items in this routine"
                       >
                         <Trash2 className="h-3.5 w-3.5" /> Clear List
@@ -820,9 +855,11 @@ export function Dashboard() {
                   </div>
                 ) : routinesList.length === 0 ? (
                   <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-4 text-center">
-                    <Compass className="h-6 w-6 text-muted-foreground mb-1.5 opacity-60" />
-                    <p className="text-xs font-bold text-foreground">No destinations yet</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                    <Compass className="mb-1.5 h-6 w-6 text-muted-foreground opacity-60" />
+                    <p className="text-xs font-bold text-foreground">
+                      No destinations yet
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
                       Add a destination or choose a preset below.
                     </p>
                   </div>
@@ -852,14 +889,16 @@ export function Dashboard() {
                                     : "bg-muted text-foreground"
                                 }`}
                               >
-                                {renderRoutineIcon(routine.icon || routine.name)}
+                                {renderRoutineIcon(
+                                  routine.icon || routine.name
+                                )}
                               </div>
-                              <div className="truncate min-w-0">
-                                <span className="truncate text-sm select-none block">
+                              <div className="min-w-0 truncate">
+                                <span className="block truncate text-sm select-none">
                                   {routine.name}
                                 </span>
                                 {routine.autoResetTime && (
-                                  <span className="text-[10px] font-mono opacity-70 flex items-center gap-1">
+                                  <span className="flex items-center gap-1 font-mono text-[10px] opacity-70">
                                     <Clock className="h-2.5 w-2.5" />
                                     {routine.autoResetTime}
                                   </span>
@@ -924,7 +963,9 @@ export function Dashboard() {
                               className="flex h-auto w-full flex-col items-center gap-1.5 rounded-lg p-3 pt-4 text-xs font-black"
                             >
                               <span className="block select-none">
-                                {renderRoutineIcon(routine.icon || routine.name)}
+                                {renderRoutineIcon(
+                                  routine.icon || routine.name
+                                )}
                               </span>
                               <span className="max-w-full truncate select-none">
                                 {routine.name}
@@ -988,7 +1029,7 @@ export function Dashboard() {
                 {/* Header Skeleton */}
                 <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:p-5">
                   <div className="flex items-center gap-3">
-                    <Skeleton className="h-12 w-12 rounded-lg shrink-0" />
+                    <Skeleton className="h-12 w-12 shrink-0 rounded-lg" />
                     <div className="space-y-2">
                       <Skeleton className="h-6 w-36 rounded-md" />
                       <Skeleton className="h-4 w-28 rounded-md" />
@@ -1027,22 +1068,24 @@ export function Dashboard() {
               </div>
             ) : !effectiveRoutine ? (
               <Card className="border-border shadow-xs">
-                <CardContent className="flex flex-col items-center justify-center py-16 px-6 text-center">
-                  <div className="rounded-full bg-primary/10 p-4 text-primary mb-4">
+                <CardContent className="flex flex-col items-center justify-center px-6 py-16 text-center">
+                  <div className="mb-4 rounded-full bg-primary/10 p-4 text-primary">
                     <MapPin className="h-8 w-8" />
                   </div>
-                  <h2 className="text-xl font-black text-foreground sm:text-2xl mb-1">
+                  <h2 className="mb-1 text-xl font-black text-foreground sm:text-2xl">
                     Ready to Start Packing?
                   </h2>
-                  <p className="text-sm font-medium text-muted-foreground max-w-md mb-6">
-                    Create your first destination or choose from smart presets like Work, Gym, Campus, or Travel to organize your essential gear.
+                  <p className="mb-6 max-w-md text-sm font-medium text-muted-foreground">
+                    Create your first destination or choose from smart presets
+                    like Work, Gym, Campus, or Travel to organize your essential
+                    gear.
                   </p>
                   <div className="flex flex-wrap items-center justify-center gap-3">
                     <Button
                       onClick={() => setShowPresetsModal(true)}
-                      className="font-black text-xs uppercase tracking-wider h-10 px-5 bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                      className="h-10 cursor-pointer bg-primary px-5 text-xs font-black tracking-wider text-primary-foreground uppercase hover:bg-primary/90"
                     >
-                      <Sparkles className="h-4 w-4 mr-1.5" />
+                      <Sparkles className="mr-1.5 h-4 w-4" />
                       Browse Smart Presets
                     </Button>
                     <Button
@@ -1052,9 +1095,9 @@ export function Dashboard() {
                         setCustomRoutineIcon("tag")
                         setShowNewRoutineModal(true)
                       }}
-                      className="font-black text-xs uppercase tracking-wider h-10 px-5 cursor-pointer"
+                      className="h-10 cursor-pointer px-5 text-xs font-black tracking-wider uppercase"
                     >
-                      <Plus className="h-4 w-4 mr-1.5" />
+                      <Plus className="mr-1.5 h-4 w-4" />
                       Create Custom Destination
                     </Button>
                   </div>
@@ -1064,436 +1107,453 @@ export function Dashboard() {
               <>
                 {/* Active Destination Workspace Card Header */}
                 <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-card p-4 shadow-xs sm:flex-row sm:items-center sm:p-5">
-              <div className="flex items-center gap-3">
-                <div className="shrink-0 rounded-lg bg-primary/10 p-3 text-primary">
-                  {renderRoutineIcon(
-                    currentRoutineObj?.icon || effectiveRoutine
-                  )}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-black text-foreground sm:text-2xl">
-                      {effectiveRoutine}
-                    </h2>
-                    <Badge variant="secondary" className="text-xs font-black">
-                      {items.length} items
-                    </Badge>
-                  </div>
-                  <p className="text-xs font-bold text-muted-foreground">
-                    {packedItems} packed &bull; {missingItems} remaining
-                  </p>
-                </div>
-              </div>
-
-              {/* Filter Segmented Control */}
-              <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted/60 p-1 select-none sm:w-72">
-                <button
-                  type="button"
-                  onClick={() => setFilter("all")}
-                  className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
-                    filter === "all"
-                      ? "bg-card text-foreground shadow-xs ring-1 ring-border"
-                      : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-                  }`}
-                >
-                  <span>All</span>
-                  <Badge
-                    variant="secondary"
-                    className="rounded-md px-1.5 py-0 text-[10px] font-extrabold"
-                  >
-                    {items.length}
-                  </Badge>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFilter("missing")}
-                  className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
-                    filter === "missing"
-                      ? "bg-card text-destructive shadow-xs ring-1 ring-destructive/30"
-                      : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-                  }`}
-                >
-                  <span>Missing</span>
-                  <Badge
-                    variant="destructive"
-                    className="rounded-md px-1.5 py-0 text-[10px] font-extrabold"
-                  >
-                    {missingItems}
-                  </Badge>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setFilter("packed")}
-                  className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
-                    filter === "packed"
-                      ? "bg-card text-primary shadow-xs ring-1 ring-primary/30"
-                      : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-                  }`}
-                >
-                  <span>Packed</span>
-                  <Badge
-                    variant="default"
-                    className="rounded-md px-1.5 py-0 text-[10px] font-extrabold"
-                  >
-                    {packedItems}
-                  </Badge>
-                </button>
-              </div>
-            </div>
-
-            {/* Free Weather-Aware Packing Suggestions Banner (FEAT-01) */}
-            <WeatherAlertBanner
-              currentRoutineItems={items}
-              onQuickAddItem={async (name, emoji) => {
-                await addItem({
-                  routine: effectiveRoutine,
-                  name,
-                  emoji: emoji || "Umbrella",
-                })
-              }}
-            />
-
-            {/* Smart Departure Intelligence Banner (UX-05) */}
-            <SmartIntelligenceBanner
-              routineName={effectiveRoutine}
-              items={items}
-              onQuickPack={async (id) => {
-                await handleToggle(id, false)
-              }}
-            />
-
-            {/* Quick Add Item Bar with Live Auto-Icon Detection (UX-03, UX-04) */}
-            <Card className="border-border shadow-xs">
-              <CardContent className="space-y-2 p-3.5 sm:p-4">
-                <form
-                  onSubmit={(e) => {
-                    void handleAddItem(e)
-                  }}
-                  className="flex flex-col items-center gap-2.5 sm:flex-row"
-                >
-                  <div className="flex w-full gap-2 sm:flex-1">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setIconPickerTarget("newItem")
-                        setShowIconPicker(true)
-                      }}
-                      className="flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-lg px-0"
-                      title="Select Icon for item"
-                    >
-                      {liveDetectedIcon ? (
-                        renderItemIcon(liveDetectedIcon)
-                      ) : (
-                        <Tag className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center gap-3">
+                    <div className="shrink-0 rounded-lg bg-primary/10 p-2.5 text-primary sm:p-3">
+                      {renderRoutineIcon(
+                        currentRoutineObj?.icon || effectiveRoutine
                       )}
-                    </Button>
-                    <Input
-                      ref={itemInputRef}
-                      type="text"
-                      value={newCustomItemName}
-                      onChange={(e) => setNewCustomItemName(e.target.value)}
-                      placeholder={`Add item(s) to ${effectiveRoutine} (e.g. Keys, Wallet or USB Cable, Notebook, ID Card)...`}
-                      className="h-11 flex-1 text-sm font-bold"
-                    />
-                  </div>
-                  <div className="flex w-full gap-2 sm:w-auto">
-                    <Button
-                      type="submit"
-                      disabled={!newCustomItemName.trim()}
-                      className="h-11 w-full cursor-pointer rounded-lg px-5 font-black tracking-wider uppercase sm:w-auto"
-                    >
-                      <Plus className="mr-1 h-4 w-4" />
-                      {(() => {
-                        const parsed = parseMultiItemInput(
-                          newCustomItemName,
-                          newItemTag
-                        )
-                        if (parsed.length > 1) {
-                          return `Add ${parsed.length} Items`
-                        }
-                        return "Add Item"
-                      })()}
-                    </Button>
-                  </div>
-                </form>
-
-                {/* Live preview for multi-item comma entry */}
-                {(() => {
-                  const parsed = parseMultiItemInput(
-                    newCustomItemName,
-                    newItemTag
-                  )
-                  if (parsed.length > 1) {
-                    return (
-                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                        <span className="text-[11px] font-bold text-muted-foreground">
-                          Adding {parsed.length} items:
-                        </span>
-                        {parsed.map((item, idx) => (
-                          <span
-                            key={idx}
-                            className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-0.5 text-xs font-bold text-foreground"
-                          >
-                            {renderItemIcon(item.emoji || newItemTag || "Tag")}
-                            <span>{item.name}</span>
-                          </span>
-                        ))}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h2 className="truncate text-lg font-black text-foreground sm:text-2xl">
+                          {effectiveRoutine}
+                        </h2>
+                        <Badge
+                          variant="secondary"
+                          className="shrink-0 text-xs font-black"
+                        >
+                          {items.length} items
+                        </Badge>
                       </div>
-                    )
-                  }
+                      <p className="text-xs font-bold text-muted-foreground">
+                        {packedItems} packed &bull; {missingItems} remaining
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Filter Segmented Control */}
+                  <div className="grid w-full grid-cols-3 gap-1 rounded-lg bg-muted/60 p-1 select-none sm:w-80">
+                    <button
+                      type="button"
+                      onClick={() => setFilter("all")}
+                      className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
+                        filter === "all"
+                          ? "bg-card text-foreground shadow-xs ring-1 ring-border"
+                          : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                      }`}
+                    >
+                      <span>All</span>
+                      <Badge
+                        variant="secondary"
+                        className="rounded-md px-1.5 py-0 text-[10px] font-extrabold"
+                      >
+                        {items.length}
+                      </Badge>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setFilter("missing")}
+                      className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
+                        filter === "missing"
+                          ? "bg-card text-destructive shadow-xs ring-1 ring-destructive/30"
+                          : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                      }`}
+                    >
+                      <span>Missing</span>
+                      <Badge
+                        variant="destructive"
+                        className="rounded-md px-1.5 py-0 text-[10px] font-extrabold"
+                      >
+                        {missingItems}
+                      </Badge>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setFilter("packed")}
+                      className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
+                        filter === "packed"
+                          ? "bg-card text-primary shadow-xs ring-1 ring-primary/30"
+                          : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                      }`}
+                    >
+                      <span>Packed</span>
+                      <Badge
+                        variant="default"
+                        className="rounded-md px-1.5 py-0 text-[10px] font-extrabold"
+                      >
+                        {packedItems}
+                      </Badge>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Free Weather-Aware Packing Suggestions Banner (FEAT-01) */}
+                <WeatherAlertBanner
+                  currentRoutineItems={items}
+                  onQuickAddItem={async (name, emoji) => {
+                    await addItem({
+                      routine: effectiveRoutine,
+                      name,
+                      emoji: emoji || "Umbrella",
+                    })
+                  }}
+                />
+
+                {/* Smart Departure Intelligence Banner (UX-05) */}
+                <SmartIntelligenceBanner
+                  routineName={effectiveRoutine}
+                  items={items}
+                  onQuickPack={async (id) => {
+                    await handleToggle(id, false)
+                  }}
+                />
+
+                {/* Quick Add Item Bar with Live Auto-Icon Detection (UX-03, UX-04) */}
+                <Card className="border-border shadow-xs">
+                  <CardContent className="space-y-2 p-3.5 sm:p-4">
+                    <form
+                      onSubmit={(e) => {
+                        void handleAddItem(e)
+                      }}
+                      className="flex flex-col items-center gap-2.5 sm:flex-row"
+                    >
+                      <div className="flex w-full gap-2 sm:flex-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setIconPickerTarget("newItem")
+                            setShowIconPicker(true)
+                          }}
+                          className="flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-lg px-0"
+                          title="Select Icon for item"
+                        >
+                          {liveDetectedIcon ? (
+                            renderItemIcon(liveDetectedIcon)
+                          ) : (
+                            <Tag className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
+                        <Input
+                          ref={itemInputRef}
+                          type="text"
+                          value={newCustomItemName}
+                          onChange={(e) => setNewCustomItemName(e.target.value)}
+                          placeholder={`Add item(s) to ${effectiveRoutine} (e.g. Keys, Wallet or USB Cable, Notebook, ID Card)...`}
+                          className="h-11 flex-1 text-sm font-bold"
+                        />
+                      </div>
+                      <div className="flex w-full gap-2 sm:w-auto">
+                        <Button
+                          type="submit"
+                          disabled={!newCustomItemName.trim()}
+                          className="h-11 w-full cursor-pointer rounded-lg px-5 font-black tracking-wider uppercase sm:w-auto"
+                        >
+                          <Plus className="mr-1 h-4 w-4" />
+                          {(() => {
+                            const parsed = parseMultiItemInput(
+                              newCustomItemName,
+                              newItemTag
+                            )
+                            if (parsed.length > 1) {
+                              return `Add ${parsed.length} Items`
+                            }
+                            return "Add Item"
+                          })()}
+                        </Button>
+                      </div>
+                    </form>
+
+                    {/* Live preview for multi-item comma entry */}
+                    {(() => {
+                      const parsed = parseMultiItemInput(
+                        newCustomItemName,
+                        newItemTag
+                      )
+                      if (parsed.length > 1) {
+                        return (
+                          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                            <span className="text-[11px] font-bold text-muted-foreground">
+                              Adding {parsed.length} items:
+                            </span>
+                            {parsed.map((item, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-0.5 text-xs font-bold text-foreground"
+                              >
+                                {renderItemIcon(
+                                  item.emoji || newItemTag || "Tag"
+                                )}
+                                <span>{item.name}</span>
+                              </span>
+                            ))}
+                          </div>
+                        )
+                      }
+                      return (
+                        <div className="flex items-center justify-between px-1 text-[11px] font-bold text-muted-foreground">
+                          <span>
+                            Tip: Type comma-separated items to bulk-add &bull;
+                            Space to toggle &bull; J/K to move
+                          </span>
+                          <kbd className="hidden rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
+                            Ctrl+K to focus
+                          </kbd>
+                        </div>
+                      )
+                    })()}
+                  </CardContent>
+                </Card>
+
+                {/* Items List */}
+                {(() => {
                   return (
-                    <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground px-1">
-                      <span>Tip: Type comma-separated items to bulk-add &bull; Space to toggle &bull; J/K to move</span>
-                      <kbd className="hidden rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground sm:inline">
-                        Ctrl+K to focus
-                      </kbd>
+                    <div className="space-y-3" id="checklist-container">
+                      {isItemsLoading ? (
+                        [1, 2, 3].map((i) => (
+                          <Card key={i}>
+                            <CardContent className="flex flex-row items-center justify-between gap-3 p-3.5">
+                              <div className="flex min-w-0 flex-1 items-center gap-3 select-none">
+                                <Skeleton className="h-4 w-4 shrink-0 rounded-sm" />
+                                <Skeleton className="h-7 w-7 shrink-0 rounded-lg" />
+                                <div className="min-w-0 flex-1 space-y-1.5">
+                                  <Skeleton className="h-5 w-28 rounded-md sm:w-36" />
+                                  <Skeleton className="h-3.5 w-14 rounded-full" />
+                                </div>
+                              </div>
+                              <Skeleton className="h-8 w-8 shrink-0 rounded-lg" />
+                            </CardContent>
+                          </Card>
+                        ))
+                      ) : filteredItems.length === 0 ? (
+                        <Card className="border-dashed">
+                          <CardContent className="flex flex-col items-center justify-center gap-4 p-8 text-center text-sm font-bold text-muted-foreground">
+                            <PackageCheck className="h-10 w-10 text-muted-foreground opacity-40" />
+                            <div className="space-y-1">
+                              <p className="text-base font-extrabold text-foreground">
+                                {filter === "all"
+                                  ? "No items added to this destination yet"
+                                  : filter === "packed"
+                                    ? "No items are packed yet"
+                                    : "All items are packed!"}
+                              </p>
+                              <p className="max-w-md text-xs text-muted-foreground">
+                                {filter === "all"
+                                  ? "Add items above or quick-start with one of our smart presets below:"
+                                  : filter === "packed"
+                                    ? "Click items to mark them as packed!"
+                                    : "Great job, you are 100% set to go!"}
+                              </p>
+                            </div>
+                            {filter === "all" && (
+                              <div className="space-y-2 pt-1">
+                                <p className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                                  Start with a Smart Preset:
+                                </p>
+                                <div className="flex flex-wrap justify-center gap-2">
+                                  {SMART_PRESETS.map((preset) => (
+                                    <Button
+                                      key={preset.id}
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        void handleSelectPreset(
+                                          preset,
+                                          effectiveRoutine
+                                        )
+                                      }
+                                      className="h-8 cursor-pointer gap-1.5 rounded-lg border-border font-extrabold hover:border-primary hover:bg-primary/5 hover:text-primary"
+                                    >
+                                      {renderRoutineIcon(preset.icon)}
+                                      <span>{preset.name}</span>
+                                      <Badge
+                                        variant="secondary"
+                                        className="ml-0.5 px-1 py-0 text-[9px] font-black"
+                                      >
+                                        {preset.items.length}
+                                      </Badge>
+                                    </Button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        filteredItems.map((item, itemIdx) => {
+                          const isDragging = draggedItemId === item._id
+                          const isDragOver = dragOverItemId === item._id
+                          const isFocused = focusedItemIndex === itemIdx
+
+                          return (
+                            <Card
+                              key={item._id}
+                              draggable
+                              onDragStart={(e) => {
+                                setDraggedItemId(item._id)
+                                e.dataTransfer.effectAllowed = "move"
+                                e.dataTransfer.setData("text/plain", item._id)
+                              }}
+                              onDragOver={(e) => {
+                                e.preventDefault()
+                                if (
+                                  draggedItemId &&
+                                  draggedItemId !== item._id
+                                ) {
+                                  setDragOverItemId(item._id)
+                                }
+                              }}
+                              onDragLeave={() => {
+                                if (dragOverItemId === item._id) {
+                                  setDragOverItemId(null)
+                                }
+                              }}
+                              onDrop={(e) => {
+                                e.preventDefault()
+                                void handleDropItem(item._id)
+                              }}
+                              onDragEnd={() => {
+                                setDraggedItemId(null)
+                                setDragOverItemId(null)
+                              }}
+                              onClick={() => {
+                                setFocusedItemIndex(itemIdx)
+                                void handleToggle(item._id, item.isPacked)
+                              }}
+                              className={`relative cursor-pointer transition-all ${
+                                item.isPacked
+                                  ? "bg-muted/40"
+                                  : "hover:bg-accent/40"
+                              } ${
+                                isFocused
+                                  ? "ring-2 ring-primary ring-offset-1"
+                                  : ""
+                              } ${
+                                isDragging
+                                  ? "scale-[0.98] border-dashed border-primary opacity-40"
+                                  : ""
+                              } ${
+                                isDragOver
+                                  ? "scale-[1.01] ring-2 ring-primary ring-offset-2"
+                                  : ""
+                              }`}
+                            >
+                              <CardContent className="flex flex-row items-center justify-between gap-3 p-3.5">
+                                <div className="flex min-w-0 flex-1 items-center gap-3 select-none">
+                                  {/* Drag Handle */}
+                                  <div
+                                    className="shrink-0 cursor-grab rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground active:cursor-grabbing"
+                                    title="Drag to reorder"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <GripVertical className="h-4 w-4" />
+                                  </div>
+
+                                  {/* Checkbox */}
+                                  <div
+                                    className={`checkbox-ui flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-all select-none ${
+                                      item.isPacked
+                                        ? "border-primary bg-primary text-primary-foreground shadow-xs"
+                                        : "border-border bg-card hover:border-primary/60"
+                                    }`}
+                                  >
+                                    {item.isPacked && (
+                                      <Check className="h-4 w-4 stroke-[3]" />
+                                    )}
+                                  </div>
+
+                                  {/* Details (Item Name, Quantities FEAT-03, Placement Notes) */}
+                                  <div className="min-w-0 flex-1 space-y-0.5 select-none">
+                                    <div className="flex items-center gap-2">
+                                      <p
+                                        className={`item-name flex items-center truncate text-base font-extrabold select-none sm:text-lg ${
+                                          item.isPacked
+                                            ? "text-muted-foreground line-through decoration-muted-foreground decoration-2"
+                                            : "text-foreground"
+                                        }`}
+                                      >
+                                        {renderItemIcon(item.emoji)}
+                                        <span className="truncate select-none">
+                                          {item.name}
+                                        </span>
+                                      </p>
+
+                                      {item.quantity && item.quantity > 1 && (
+                                        <span className="py-0.2 shrink-0 rounded border border-border bg-muted/60 px-1.5 font-mono text-[11px] font-bold text-foreground">
+                                          {item.quantity}x
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <Badge
+                                        variant={
+                                          item.isPacked ? "default" : "outline"
+                                        }
+                                        className="px-2 py-0 text-[10px] font-black"
+                                      >
+                                        {item.isPacked ? "Packed" : "Missing"}
+                                      </Badge>
+
+                                      {item.locationNote && (
+                                        <span className="text-[11px] font-medium text-muted-foreground italic">
+                                          📍 {item.locationNote}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Control settings */}
+                                <div
+                                  className="flex shrink-0 items-center gap-1 select-none"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setManageItem(item)
+                                      setEditModalName(item.name)
+                                      setEditModalIconTag(item.emoji ?? "")
+                                      setEditModalQuantity(item.quantity)
+                                      setEditModalLocationNote(
+                                        item.locationNote ?? ""
+                                      )
+                                    }}
+                                    className="h-8 w-8 cursor-pointer rounded-lg text-muted-foreground hover:text-primary"
+                                    title="Control Item"
+                                  >
+                                    <Settings className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )
+                        })
+                      )}
                     </div>
                   )
                 })()}
-              </CardContent>
-            </Card>
-
-            {/* Items List */}
-            {(() => {
-              return (
-                <div className="space-y-3" id="checklist-container">
-                  {isItemsLoading ? (
-                    [1, 2, 3].map((i) => (
-                      <Card key={i}>
-                        <CardContent className="flex flex-row items-center justify-between gap-3 p-3.5">
-                          <div className="flex min-w-0 flex-1 items-center gap-3 select-none">
-                            <Skeleton className="h-4 w-4 shrink-0 rounded-sm" />
-                            <Skeleton className="h-7 w-7 shrink-0 rounded-lg" />
-                            <div className="min-w-0 flex-1 space-y-1.5">
-                              <Skeleton className="h-5 w-28 rounded-md sm:w-36" />
-                              <Skeleton className="h-3.5 w-14 rounded-full" />
-                            </div>
-                          </div>
-                          <Skeleton className="h-8 w-8 shrink-0 rounded-lg" />
-                        </CardContent>
-                      </Card>
-                    ))
-                  ) : filteredItems.length === 0 ? (
-                    <Card className="border-dashed">
-                      <CardContent className="flex flex-col items-center justify-center gap-4 p-8 text-center text-sm font-bold text-muted-foreground">
-                        <PackageCheck className="h-10 w-10 text-muted-foreground opacity-40" />
-                        <div className="space-y-1">
-                          <p className="text-base font-extrabold text-foreground">
-                            {filter === "all"
-                              ? "No items added to this destination yet"
-                              : filter === "packed"
-                                ? "No items are packed yet"
-                                : "All items are packed!"}
-                          </p>
-                          <p className="text-xs text-muted-foreground max-w-md">
-                            {filter === "all"
-                              ? "Add items above or quick-start with one of our smart presets below:"
-                              : filter === "packed"
-                                ? "Click items to mark them as packed!"
-                                : "Great job, you are 100% set to go!"}
-                          </p>
-                        </div>
-                        {filter === "all" && (
-                          <div className="space-y-2 pt-1">
-                            <p className="text-xs font-black tracking-wider text-muted-foreground uppercase">
-                              Start with a Smart Preset:
-                            </p>
-                            <div className="flex flex-wrap justify-center gap-2">
-                              {SMART_PRESETS.map((preset) => (
-                                <Button
-                                  key={preset.id}
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    void handleSelectPreset(
-                                      preset,
-                                      effectiveRoutine
-                                    )
-                                  }
-                                  className="h-8 cursor-pointer gap-1.5 rounded-lg border-border font-extrabold hover:border-primary hover:bg-primary/5 hover:text-primary"
-                                >
-                                  {renderRoutineIcon(preset.icon)}
-                                  <span>{preset.name}</span>
-                                  <Badge
-                                    variant="secondary"
-                                    className="ml-0.5 px-1 py-0 text-[9px] font-black"
-                                  >
-                                    {preset.items.length}
-                                  </Badge>
-                                </Button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    filteredItems.map((item, itemIdx) => {
-                      const isDragging = draggedItemId === item._id
-                      const isDragOver = dragOverItemId === item._id
-                      const isFocused = focusedItemIndex === itemIdx
-
-                      return (
-                        <Card
-                          key={item._id}
-                          draggable
-                          onDragStart={(e) => {
-                            setDraggedItemId(item._id)
-                            e.dataTransfer.effectAllowed = "move"
-                            e.dataTransfer.setData("text/plain", item._id)
-                          }}
-                          onDragOver={(e) => {
-                            e.preventDefault()
-                            if (draggedItemId && draggedItemId !== item._id) {
-                              setDragOverItemId(item._id)
-                            }
-                          }}
-                          onDragLeave={() => {
-                            if (dragOverItemId === item._id) {
-                              setDragOverItemId(null)
-                            }
-                          }}
-                          onDrop={(e) => {
-                            e.preventDefault()
-                            void handleDropItem(item._id)
-                          }}
-                          onDragEnd={() => {
-                            setDraggedItemId(null)
-                            setDragOverItemId(null)
-                          }}
-                          onClick={() => {
-                            setFocusedItemIndex(itemIdx)
-                            void handleToggle(item._id, item.isPacked)
-                          }}
-                          className={`relative cursor-pointer transition-all ${
-                            item.isPacked ? "bg-muted/40" : "hover:bg-accent/40"
-                          } ${
-                            isFocused ? "ring-2 ring-primary ring-offset-1" : ""
-                          } ${
-                            isDragging
-                              ? "scale-[0.98] border-dashed border-primary opacity-40"
-                              : ""
-                          } ${
-                            isDragOver
-                              ? "scale-[1.01] ring-2 ring-primary ring-offset-2"
-                              : ""
-                          }`}
-                        >
-                          <CardContent className="flex flex-row items-center justify-between gap-3 p-3.5">
-                            <div className="flex min-w-0 flex-1 items-center gap-3 select-none">
-                              {/* Drag Handle */}
-                              <div
-                                className="shrink-0 cursor-grab rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground active:cursor-grabbing"
-                                title="Drag to reorder"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <GripVertical className="h-4 w-4" />
-                              </div>
-
-                              {/* Checkbox */}
-                              <div
-                                className={`checkbox-ui flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-all select-none ${
-                                  item.isPacked
-                                    ? "border-primary bg-primary text-primary-foreground shadow-xs"
-                                    : "border-border bg-card hover:border-primary/60"
-                                }`}
-                              >
-                                {item.isPacked && (
-                                  <Check className="h-4 w-4 stroke-[3]" />
-                                )}
-                              </div>
-
-                              {/* Details (Item Name, Quantities FEAT-03, Placement Notes) */}
-                              <div className="min-w-0 flex-1 select-none space-y-0.5">
-                                <div className="flex items-center gap-2">
-                                  <p
-                                    className={`item-name flex items-center truncate text-base font-extrabold select-none sm:text-lg ${
-                                      item.isPacked
-                                        ? "text-muted-foreground line-through decoration-muted-foreground decoration-2"
-                                        : "text-foreground"
-                                    }`}
-                                  >
-                                    {renderItemIcon(item.emoji)}
-                                    <span className="truncate select-none">
-                                      {item.name}
-                                    </span>
-                                  </p>
-
-                                  {item.quantity && item.quantity > 1 && (
-                                    <span className="px-1.5 py-0.2 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-[11px] font-bold shrink-0">
-                                      {item.quantity}x
-                                    </span>
-                                  )}
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <Badge
-                                    variant={
-                                      item.isPacked ? "default" : "outline"
-                                    }
-                                    className="px-2 py-0 text-[10px] font-black"
-                                  >
-                                    {item.isPacked ? "Packed" : "Missing"}
-                                  </Badge>
-
-                                  {item.locationNote && (
-                                    <span className="text-[11px] text-muted-foreground italic font-medium">
-                                      📍 {item.locationNote}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Control settings */}
-                            <div
-                              className="flex shrink-0 items-center gap-1 select-none"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setManageItem(item)
-                                  setEditModalName(item.name)
-                                  setEditModalIconTag(item.emoji ?? "")
-                                  setEditModalQuantity(item.quantity)
-                                  setEditModalLocationNote(item.locationNote ?? "")
-                                }}
-                                className="h-8 w-8 cursor-pointer rounded-lg text-muted-foreground hover:text-primary"
-                                title="Control Item"
-                              >
-                                <Settings className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )
-                    })
-                  )}
-                </div>
-              )
-            })()}
-          </>
-        )}
-      </div>
+              </>
+            )}
+          </div>
         </div>
       </main>
 
       {/* Floating Undo Toast Notification (UX-01) */}
       {undoToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-700 text-zinc-100 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <span className="text-xs font-bold text-zinc-200">
+        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 animate-in items-center gap-3 rounded-xl border border-border bg-foreground px-4 py-3 text-background shadow-2xl duration-200 fade-in slide-in-from-bottom-4">
+          <span className="text-xs font-bold text-background">
             {undoToast.message}
           </span>
           <Button
             size="sm"
             onClick={() => void handleExecuteUndo()}
-            className="h-7 px-3 text-xs bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold flex items-center gap-1"
+            className="flex h-7 cursor-pointer items-center gap-1 bg-background px-3 text-xs font-black text-foreground hover:bg-background/90"
           >
             <Undo2 className="h-3.5 w-3.5" />
             Undo
@@ -1618,9 +1678,16 @@ export function Dashboard() {
                         const routineToDeleteName = manageRoutine.name
                         const routineToDeleteId = manageRoutine._id
                         await deleteRoutine({ id: routineToDeleteId })
-                        const remaining = routinesList.filter((r) => r._id !== routineToDeleteId)
-                        if (selectedRoutine === routineToDeleteName || effectiveRoutine === routineToDeleteName) {
-                          setSelectedRoutine(remaining.length > 0 ? remaining[0].name : "")
+                        const remaining = routinesList.filter(
+                          (r) => r._id !== routineToDeleteId
+                        )
+                        if (
+                          selectedRoutine === routineToDeleteName ||
+                          effectiveRoutine === routineToDeleteName
+                        ) {
+                          setSelectedRoutine(
+                            remaining.length > 0 ? remaining[0].name : ""
+                          )
                         }
                         setManageRoutine(null)
                       } catch (err) {
@@ -1691,7 +1758,7 @@ export function Dashboard() {
               {/* Quantity & Location Note Inputs (FEAT-03) */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                     Quantity (Optional)
                   </label>
                   <Input
@@ -1709,7 +1776,7 @@ export function Dashboard() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <label className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                     Location Note
                   </label>
                   <Input
@@ -1857,10 +1924,139 @@ export function Dashboard() {
           })
           setSelectedRoutine(sharedImportData.name)
           if (typeof window !== "undefined") {
-            window.history.replaceState({}, document.title, window.location.pathname)
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname
+            )
           }
         }}
       />
+
+      {/* Mobile Actions Drawer / Modal */}
+      <Dialog open={showMobileMenu} onOpenChange={setShowMobileMenu}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base font-black">
+              <img
+                src="/icon-192.png"
+                alt="PocketChecker"
+                className="h-5 w-5 rounded-md border border-border object-contain"
+              />
+              <span>PocketChecker Menu</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {effectiveRoutine && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[11px] font-black tracking-wider text-muted-foreground uppercase">
+                    Active Destination
+                  </span>
+                  <Badge variant="outline" className="text-[10px] font-black">
+                    {effectiveRoutine}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 gap-1.5">
+                  <Button
+                    variant="outline"
+                    className="h-auto w-full cursor-pointer justify-start gap-3 p-3 text-left font-bold hover:bg-muted"
+                    onClick={() => {
+                      setShowMobileMenu(false)
+                      setShowExportModal(true)
+                    }}
+                  >
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
+                      <Download className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-black text-foreground">
+                        Export Checklist
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        Download Markdown, JSON, or print PDF
+                      </div>
+                    </div>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="h-auto w-full cursor-pointer justify-start gap-3 p-3 text-left font-bold hover:bg-muted"
+                    onClick={() => {
+                      setShowMobileMenu(false)
+                      setShowShareModal(true)
+                    }}
+                  >
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
+                      <Share2 className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-black text-foreground">
+                        Share Routine
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        Create a 1-click shareable link
+                      </div>
+                    </div>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="h-auto w-full cursor-pointer justify-start gap-3 p-3 text-left font-bold hover:bg-muted"
+                    onClick={() => {
+                      setShowMobileMenu(false)
+                      if (currentRoutineObj) {
+                        setManageRoutine(currentRoutineObj)
+                        setShowScheduleModal(true)
+                      }
+                    }}
+                  >
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
+                      <Clock className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-black text-foreground">
+                        Schedule Auto-Reset
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        Set automatic daily unchecking
+                      </div>
+                    </div>
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-1.5 border-t border-border pt-3">
+              <span className="block px-1 text-[11px] font-black tracking-wider text-muted-foreground uppercase">
+                General
+              </span>
+              <Button
+                variant="outline"
+                className="h-auto w-full cursor-pointer justify-start gap-3 p-3 text-left font-bold hover:bg-muted"
+                onClick={() => {
+                  setShowMobileMenu(false)
+                  setShowAboutDialog(true)
+                }}
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Info className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-black text-foreground">
+                    About PocketChecker
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">
+                    Version info and repository
+                  </div>
+                </div>
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* About Project Modal */}
       <Dialog open={showAboutDialog} onOpenChange={setShowAboutDialog}>
@@ -1870,7 +2066,7 @@ export function Dashboard() {
               <img
                 src="/icon-192.png"
                 alt="PocketChecker"
-                className="h-6 w-6 rounded-md object-contain border border-border"
+                className="h-6 w-6 rounded-md border border-border object-contain"
               />
               <span>About PocketChecker</span>
             </DialogTitle>
@@ -1878,9 +2074,9 @@ export function Dashboard() {
 
           <div className="space-y-4 py-2 select-none">
             <p className="text-sm leading-relaxed font-bold text-foreground">
-              PocketChecker is an everyday carry checklist platform designed to ensure
-              you never leave essential gear behind before stepping out for work, gym,
-              or custom routines.
+              PocketChecker is an everyday carry checklist platform designed to
+              ensure you never leave essential gear behind before stepping out
+              for work, gym, or custom routines.
             </p>
 
             <a
@@ -2007,14 +2203,14 @@ export function Dashboard() {
                 type="button"
                 variant="outline"
                 onClick={() => setShowNewRoutineModal(false)}
-                className="cursor-pointer font-bold text-xs"
+                className="cursor-pointer text-xs font-bold"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={!customRoutineName.trim()}
-                className="cursor-pointer font-black text-xs uppercase"
+                className="cursor-pointer text-xs font-black uppercase"
               >
                 Create Destination
               </Button>
