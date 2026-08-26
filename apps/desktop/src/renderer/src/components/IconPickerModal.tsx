@@ -340,6 +340,17 @@ export function renderRoutineIcon(iconStr?: string) {
     const Compass = allIcons["Compass"];
     return Compass ? <Compass className="w-5 h-5" /> : null;
   }
+  if (
+    lower.includes("campus") ||
+    lower.includes("school") ||
+    lower.includes("college") ||
+    lower.includes("university") ||
+    lower.includes("study") ||
+    lower.includes("graduat")
+  ) {
+    const GraduationCap = allIcons["GraduationCap"];
+    return GraduationCap ? <GraduationCap className="w-5 h-5" /> : null;
+  }
   const MapPin = allIcons["MapPin"];
   return MapPin ? <MapPin className="w-5 h-5" /> : null;
 }

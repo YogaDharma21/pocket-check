@@ -48,7 +48,7 @@ export function useOfflineData() {
       isOfflineMode: true,
       routines: [],
       items: [],
-      activeRoutine: "Kampus",
+      activeRoutine: "Campus",
       setActiveRoutine: () => {},
       refresh: () => {},
     };
@@ -61,7 +61,7 @@ export function OfflineDataProvider({ children }: { children: ReactNode }) {
   const userId = "local_desktop_user";
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [items, setItems] = useState<Item[]>([]);
-  const [activeRoutine, setActiveRoutine] = useState<string>("Kampus");
+  const [activeRoutine, setActiveRoutine] = useState<string>("Campus");
 
   const reloadData = () => {
     db.listRoutines(userId).then((rList) => {
