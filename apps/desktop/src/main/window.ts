@@ -41,6 +41,27 @@ export function toggleWindowVisibility(): void {
   }
 }
 
+function isAuthUrl(urlStr: string): boolean {
+  try {
+    const parsed = new URL(urlStr);
+    const host = parsed.hostname.toLowerCase();
+    return (
+      host === 'accounts.google.com' ||
+      host.endsWith('.google.com') ||
+      host === 'google.com' ||
+      host.endsWith('.googleusercontent.com') ||
+      host.endsWith('.clerk.accounts.dev') ||
+      host.endsWith('.clerk.com') ||
+      host.includes('clerk') ||
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      parsed.protocol === 'file:'
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function createWindow(): BrowserWindow {
   const iconPath = path.join(__dirname, '../../build/icon.png');
   const appIconPath = path.join(app.getAppPath(), 'build/icon.png');
@@ -80,6 +101,13 @@ export function createWindow(): BrowserWindow {
     },
   });
 
+  // Sanitize userAgent to remove Electron identifiers so Google OAuth works seamlessly in Electron
+  const cleanUserAgent = mainWindow.webContents.userAgent
+    .replace(/Electron\/\S+\s?/g, '')
+    .replace(/pocket-check\/\S+\s?/gi, '')
+    .replace(/desktop\/\S+\s?/gi, '');
+  mainWindow.webContents.setUserAgent(cleanUserAgent);
+
   // Ready-to-show visual smoothing
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show();
@@ -103,16 +131,51 @@ export function createWindow(): BrowserWindow {
     }
   });
 
-  // Strict link opening security
+  // Window Open Handler - Allow Google and Clerk OAuth windows in-app with sanitized userAgent
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (isAuthUrl(url)) {
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          width: 520,
+          height: 680,
+          autoHideMenuBar: true,
+          title: 'Sign In with Google',
+          backgroundColor: '#09090b',
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            sandbox: true,
+            webSecurity: true,
+          },
+        },
+      };
+    }
     if (url.startsWith('https://') || url.startsWith('http://') || url.startsWith('mailto:')) {
       shell.openExternal(url);
     }
     return { action: 'deny' };
   });
 
+  mainWindow.webContents.on('did-create-window', (childWindow) => {
+    childWindow.webContents.setUserAgent(cleanUserAgent);
+    childWindow.webContents.on('will-navigate', (_e, url) => {
+      if (url.includes('localhost') || url.includes('127.0.0.1') || url.startsWith('file://')) {
+        setTimeout(() => {
+          if (!childWindow.isDestroyed()) {
+            childWindow.close();
+          }
+        }, 1000);
+      }
+    });
+  });
+
   mainWindow.webContents.on('will-navigate', (event, url) => {
     if (url !== mainWindow?.webContents.getURL()) {
+      if (isAuthUrl(url)) {
+        // Allow in-app navigation for authentication
+        return;
+      }
       event.preventDefault();
       if (url.startsWith('https://') || url.startsWith('http://') || url.startsWith('mailto:')) {
         shell.openExternal(url);

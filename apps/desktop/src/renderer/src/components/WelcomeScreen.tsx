@@ -1,4 +1,5 @@
-import { SignInButton } from "@clerk/clerk-react";
+import { useState } from "react";
+import { useSignIn } from "@clerk/clerk-react";
 import { isOnlineBackendConfigured } from "@/components/ConvexClientProvider";
 
 function CubeLogo() {
@@ -37,6 +38,27 @@ function GoogleIcon() {
 }
 
 export function WelcomeScreen() {
+  const { signIn, isLoaded } = useSignIn();
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const handleGoogleAuth = async () => {
+    if (!isLoaded || !signIn) return;
+    try {
+      setLoading(true);
+      setErrorMsg("");
+      await signIn.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: "/sso-callback",
+        redirectUrlComplete: "/",
+      });
+    } catch (err: any) {
+      console.error("Google OAuth error", err);
+      setErrorMsg(err?.errors?.[0]?.message || "Failed to start Google sign in");
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="animate-fadeIn flex min-h-[calc(100vh-2.5rem)] w-full flex-col items-center justify-center bg-black px-6 py-12 text-white selection:bg-white selection:text-black">
       <div className="flex w-full max-w-sm flex-col items-center text-center">
@@ -57,18 +79,31 @@ export function WelcomeScreen() {
           Never forget your keys, wallet, or phone again.
         </p>
 
+        {/* Error Notification */}
+        {errorMsg && (
+          <div className="mb-4 w-full rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs font-bold text-red-400">
+            {errorMsg}
+          </div>
+        )}
+
         {/* Auth / Action Button Section */}
         <div className="flex w-full flex-col gap-3">
           {isOnlineBackendConfigured ? (
-            <SignInButton mode="modal">
-              <button
-                type="button"
-                className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-white font-black text-sm tracking-wider text-black uppercase shadow-lg transition-all hover:bg-zinc-100 active:scale-[0.98]"
-              >
-                <GoogleIcon />
-                <span>CONTINUE WITH GOOGLE</span>
-              </button>
-            </SignInButton>
+            <button
+              type="button"
+              onClick={handleGoogleAuth}
+              disabled={loading || !isLoaded}
+              className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-white font-black text-sm tracking-wider text-black uppercase shadow-lg transition-all hover:bg-zinc-100 active:scale-[0.98] disabled:opacity-60"
+            >
+              {loading ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-black border-t-transparent" />
+              ) : (
+                <>
+                  <GoogleIcon />
+                  <span>CONTINUE WITH GOOGLE</span>
+                </>
+              )}
+            </button>
           ) : (
             <button
               type="button"
