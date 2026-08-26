@@ -626,8 +626,12 @@ export function Dashboard() {
       <header className="sticky top-0 z-50 border-b border-border bg-card shadow-xs">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
           <div className="flex shrink-0 items-center gap-2.5 select-none sm:gap-3.5">
-            <div className="rounded-lg bg-primary p-2 text-primary-foreground shadow-xs">
-              <PackageCheck className="h-5 w-5 sm:h-6 sm:w-6" />
+            <div className="overflow-hidden rounded-xl shadow-xs border border-border">
+              <img
+                src="/icon-192.png"
+                alt="PocketChecker"
+                className="h-8 w-8 sm:h-9 sm:w-9 object-contain"
+              />
             </div>
             <div>
               <h1 className="text-lg leading-none font-black tracking-wide text-foreground sm:text-2xl">
@@ -1862,8 +1866,13 @@ export function Dashboard() {
       <Dialog open={showAboutDialog} onOpenChange={setShowAboutDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Info className="h-5 w-5 text-primary" /> About PocketChecker
+            <DialogTitle className="flex items-center gap-2.5">
+              <img
+                src="/icon-192.png"
+                alt="PocketChecker"
+                className="h-6 w-6 rounded-md object-contain border border-border"
+              />
+              <span>About PocketChecker</span>
             </DialogTitle>
           </DialogHeader>
 

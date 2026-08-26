@@ -133,20 +133,13 @@ export function WelcomeScreen() {
   return (
     <div className="flex min-h-[calc(100vh-2.25rem)] w-full flex-col items-center justify-center bg-black text-white px-6 selection:bg-zinc-800">
       <div className="flex w-full max-w-sm flex-col items-center text-center space-y-8">
-        {/* White Rounded Container with 3D Isometric Cube */}
-        <div className="flex h-28 w-28 items-center justify-center rounded-lg bg-white shadow-2xl">
-          <svg
-            className="h-16 w-16 text-black"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-          >
-            {/* Top Rhombus Face */}
-            <path d="M12 2.8L19.4 6.8L12 10.8L4.6 6.8L12 2.8Z" />
-            {/* Left Rhombus Face */}
-            <path d="M3.8 8.4L11.2 12.4V20.8L3.8 16.8V8.4Z" />
-            {/* Right Rhombus Face */}
-            <path d="M20.2 8.4V16.8L12.8 20.8V12.4L20.2 8.4Z" />
-          </svg>
+        {/* Rounded Container with Official App Icon */}
+        <div className="flex h-28 w-28 items-center justify-center rounded-2xl overflow-hidden shadow-2xl border border-zinc-800 bg-zinc-900">
+          <img
+            src="/icon.png"
+            alt="PocketCheck"
+            className="h-full w-full object-contain"
+          />
         </div>
 
         {/* Title & Subtitle Matching Image */}

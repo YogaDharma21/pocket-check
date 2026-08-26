@@ -513,13 +513,13 @@ export default function DashboardScreen() {
             <View
               style={[
                 styles.headerIconBox,
-                { backgroundColor: colors.primary },
+                { borderColor: colors.border, borderWidth: 1, overflow: "hidden" },
               ]}
             >
-              <Ionicons
-                name="cube"
-                size={20}
-                color={colors.primaryForeground}
+              <Image
+                source={require("../../assets/images/icon.png")}
+                style={{ width: "100%", height: "100%" }}
+                resizeMode="contain"
               />
             </View>
             <Text style={[styles.headerTitle, { color: colors.foreground }]}>

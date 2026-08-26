@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { SignInButton, SignUpButton } from "@clerk/nextjs"
 import {
   PackageCheck,
@@ -19,8 +20,15 @@ export function WelcomeScreen() {
         {/* Left / Hero Column */}
         <div className="space-y-6 text-center lg:col-span-7 lg:text-left">
           <div className="flex items-center justify-center gap-3 lg:justify-start">
-            <div className="shrink-0 rounded-lg bg-primary p-2.5 text-primary-foreground shadow-md sm:p-3">
-              <PackageCheck className="h-8 w-8 sm:h-10 sm:w-10" />
+            <div className="shrink-0 overflow-hidden rounded-2xl shadow-md border border-border">
+              <Image
+                src="/icon-192.png"
+                alt="PocketCheck"
+                width={48}
+                height={48}
+                className="h-10 w-10 sm:h-12 sm:w-12 object-contain"
+                priority
+              />
             </div>
             <h1 className="text-3xl font-black tracking-tight text-foreground sm:text-5xl">
               POCKET<span className="text-primary">CHECK</span>

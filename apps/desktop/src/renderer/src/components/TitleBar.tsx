@@ -74,14 +74,12 @@ export function TitleBar({ currentRoutine, packedRatio }: TitleBarProps) {
     >
       {/* Left: App Brand & Breadcrumb */}
       <div className="flex items-center gap-2 app-no-drag">
-        <div
-          className={`flex h-5 w-5 items-center justify-center rounded-lg font-black text-xs shadow-xs ${
-            isLoggedOut
-              ? "bg-white text-black"
-              : "bg-primary text-primary-foreground"
-          }`}
-        >
-          P
+        <div className="flex h-5 w-5 items-center justify-center rounded-md overflow-hidden border border-border/50 shadow-xs shrink-0">
+          <img
+            src="/icon.png"
+            alt="PocketCheck"
+            className="h-full w-full object-contain"
+          />
         </div>
         <span
           className={`text-xs font-black tracking-tight ${

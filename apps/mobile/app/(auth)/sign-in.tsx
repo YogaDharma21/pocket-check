@@ -2,6 +2,7 @@ import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   StyleSheet,
   useColorScheme,
@@ -61,13 +62,13 @@ export default function SignInScreen() {
           <View
             style={[
               styles.iconBox,
-              { backgroundColor: colors.primary, borderColor: colors.border },
+              { backgroundColor: colors.card, borderColor: colors.border },
             ]}
           >
-            <Ionicons
-              name="cube"
-              size={48}
-              color={colors.primaryForeground}
+            <Image
+              source={require("../../assets/images/icon.png")}
+              style={styles.logoImage}
+              resizeMode="contain"
             />
           </View>
           <Text style={[styles.title, { color: colors.foreground }]}>
@@ -152,13 +153,23 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   iconBox: {
-    width: 86,
-    height: 86,
-    borderRadius: 26,
+    width: 96,
+    height: 96,
+    borderRadius: 24,
     borderWidth: 1,
+    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  logoImage: {
+    width: "100%",
+    height: "100%",
   },
   title: {
     fontSize: 32,
