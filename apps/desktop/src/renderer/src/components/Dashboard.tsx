@@ -594,7 +594,7 @@ function OfflineDashboard({
                     Ready to Start Packing?
                   </h2>
                   <p className="text-sm font-medium text-muted-foreground max-w-md mb-6">
-                    Create your first destination or choose from smart presets like Work, Gym, Kampus, or Travel.
+                    Create your first destination or choose from smart presets like Work, Gym, Campus, or Travel.
                   </p>
                   <div className="flex flex-wrap items-center justify-center gap-3">
                     <Button

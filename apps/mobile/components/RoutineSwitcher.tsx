@@ -57,6 +57,16 @@ export function renderRoutineIconHelper(
   ) {
     return <Ionicons name="compass-outline" size={size} color={color} />;
   }
+  if (
+    normalized.includes("campus") ||
+    normalized.includes("school") ||
+    normalized.includes("college") ||
+    normalized.includes("university") ||
+    normalized.includes("graduat") ||
+    normalized.includes("study")
+  ) {
+    return <Ionicons name="school-outline" size={size} color={color} />;
+  }
   return <Ionicons name="location-outline" size={size} color={color} />;
 }
 

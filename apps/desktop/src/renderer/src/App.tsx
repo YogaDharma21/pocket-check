@@ -7,7 +7,7 @@ import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { isOnlineBackendConfigured } from "@/components/ConvexClientProvider";
 
 export default function App() {
-  const [activeRoutine, setActiveRoutine] = useState<string>("Kampus");
+  const [activeRoutine, setActiveRoutine] = useState<string>("Campus");
   const [packedRatio, setPackedRatio] = useState<string>("0/0");
 
   const handleStatusChange = (routine: string, ratio: string) => {

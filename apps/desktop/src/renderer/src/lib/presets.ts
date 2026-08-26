@@ -15,8 +15,8 @@ export interface PresetRoutine {
 
 export const SMART_PRESETS: PresetRoutine[] = [
   {
-    id: "kampus",
-    name: "Kampus",
+    id: "campus",
+    name: "Campus",
     icon: "GraduationCap",
     description: "Essential gear for classes, campus studying, and student life.",
     items: [

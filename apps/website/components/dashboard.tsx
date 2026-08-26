@@ -958,7 +958,7 @@ export function Dashboard() {
                     variant="outline"
                     onClick={() => setShowPresetsModal(true)}
                     className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider text-primary uppercase hover:bg-primary/10"
-                    title="Choose from smart presets (Kampus, Work, Travel)"
+                    title="Choose from smart presets (Campus, Work, Travel)"
                   >
                     <Sparkles className="h-4 w-4" />
                     <span>Smart Presets</span>
@@ -1995,7 +1995,7 @@ export function Dashboard() {
                   type="text"
                   value={customRoutineName}
                   onChange={(e) => setCustomRoutineName(e.target.value)}
-                  placeholder="e.g. Kampus, Work, Gym, Weekend Trip..."
+                  placeholder="e.g. Campus, Work, Gym, Weekend Trip..."
                   className="h-11 flex-1 text-sm font-bold"
                   autoFocus
                 />
