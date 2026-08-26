@@ -752,7 +752,7 @@ function OfflineDashboard({
                           type="text"
                           value={newCustomItemName}
                           onChange={(e) => setNewCustomItemName(e.target.value)}
-                          placeholder={`Add item(s) to ${effectiveRoutine} (e.g. Keys, Wallet or USB Cable, Notebook)...`}
+                          placeholder="Add item..."
                           className="h-11 flex-1 text-sm font-bold"
                         />
                       </div>

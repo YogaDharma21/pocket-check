@@ -100,7 +100,7 @@ export function AddItemForm({
               color: colors.foreground,
             },
           ]}
-          placeholder="e.g., Umbrella, Wallet, Keys..."
+          placeholder="Add item..."
           placeholderTextColor={colors.mutedForeground}
           value={name}
           onChangeText={setName}
@@ -111,8 +111,9 @@ export function AddItemForm({
           style={[
             styles.addBtn,
             {
-              backgroundColor: colors.primary,
-              opacity: name.trim() ? 1 : 0.5,
+              backgroundColor: name.trim() ? colors.primary : colors.muted,
+              borderColor: colors.border,
+              borderWidth: name.trim() ? 0 : 1,
             },
           ]}
           onPress={handleSubmit}
@@ -121,7 +122,11 @@ export function AddItemForm({
           <Text
             style={[
               styles.addBtnText,
-              { color: colors.primaryForeground },
+              {
+                color: name.trim()
+                  ? colors.primaryForeground
+                  : colors.mutedForeground,
+              },
             ]}
           >
             {isMultiItem ? `ADD ${parsedItems.length}` : "ADD"}
