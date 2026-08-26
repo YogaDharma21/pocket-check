@@ -34,8 +34,13 @@ Thumbs.db
 coverage/
 .nyc_output/
 
-# Debug
-*.map
-
 # Local Analysis Reports
 pocketcheck-improvements.html
+
+# Electron & Desktop outputs
+dist-electron/
+release/
+.agents/
+PROJECT.md
+TEST_INFRA.md
+ORIGINAL_REQUEST.md

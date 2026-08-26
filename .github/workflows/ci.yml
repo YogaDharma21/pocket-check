@@ -83,10 +83,23 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.desktop == 'true'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/desktop
     steps:
       - uses: actions/checkout@v4
-      - name: Build Desktop App
-        run: echo "Desktop app placeholder"
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: apps/desktop/package-lock.json
+      - name: Install Dependencies
+        run: npm install
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build
+        run: npm run build
 
   build-backend:
     needs: detect-changes
