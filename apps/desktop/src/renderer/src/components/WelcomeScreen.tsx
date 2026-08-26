@@ -1,4 +1,4 @@
-import { SignInButton, SignUpButton } from "@clerk/clerk-react";
+import { SignInButton } from "@clerk/clerk-react";
 import { isOnlineBackendConfigured } from "@/components/ConvexClientProvider";
 
 function CubeLogo() {
@@ -36,11 +36,7 @@ function GoogleIcon() {
   );
 }
 
-export function WelcomeScreen({
-  onContinueAsGuest,
-}: {
-  onContinueAsGuest?: () => void;
-}) {
+export function WelcomeScreen() {
   return (
     <div className="animate-fadeIn flex min-h-[calc(100vh-2.5rem)] w-full flex-col items-center justify-center bg-black px-6 py-12 text-white selection:bg-white selection:text-black">
       <div className="flex w-full max-w-sm flex-col items-center text-center">
@@ -64,45 +60,18 @@ export function WelcomeScreen({
         {/* Auth / Action Button Section */}
         <div className="flex w-full flex-col gap-3">
           {isOnlineBackendConfigured ? (
-            <>
-              <SignInButton mode="modal">
-                <button
-                  type="button"
-                  className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-white font-black text-sm tracking-wider text-black uppercase shadow-lg transition-all hover:bg-zinc-100 active:scale-[0.98]"
-                >
-                  <GoogleIcon />
-                  <span>CONTINUE WITH GOOGLE</span>
-                </button>
-              </SignInButton>
-
-              <div className="flex items-center justify-center gap-4 pt-2">
-                <SignUpButton mode="modal">
-                  <button
-                    type="button"
-                    className="text-xs font-bold text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                  >
-                    Create an account
-                  </button>
-                </SignUpButton>
-
-                {onContinueAsGuest && (
-                  <>
-                    <span className="text-zinc-700">&bull;</span>
-                    <button
-                      type="button"
-                      onClick={onContinueAsGuest}
-                      className="text-xs font-bold text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                    >
-                      Continue as Guest
-                    </button>
-                  </>
-                )}
-              </div>
-            </>
+            <SignInButton mode="modal">
+              <button
+                type="button"
+                className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-white font-black text-sm tracking-wider text-black uppercase shadow-lg transition-all hover:bg-zinc-100 active:scale-[0.98]"
+              >
+                <GoogleIcon />
+                <span>CONTINUE WITH GOOGLE</span>
+              </button>
+            </SignInButton>
           ) : (
             <button
               type="button"
-              onClick={onContinueAsGuest}
               className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-white font-black text-sm tracking-wider text-black uppercase shadow-lg transition-all hover:bg-zinc-100 active:scale-[0.98]"
             >
               <span>OPEN POCKETCHECK</span>

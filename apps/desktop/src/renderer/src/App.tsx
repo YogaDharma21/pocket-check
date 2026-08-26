@@ -8,7 +8,6 @@ import { isOnlineBackendConfigured } from "@/components/ConvexClientProvider";
 export default function App() {
   const [activeRoutine, setActiveRoutine] = useState<string>("Kampus");
   const [packedRatio, setPackedRatio] = useState<string>("0/0");
-  const [guestMode, setGuestMode] = useState<boolean>(false);
 
   const handleStatusChange = (routine: string, ratio: string) => {
     setActiveRoutine(routine);
@@ -22,7 +21,7 @@ export default function App() {
 
       {/* Main Content Viewport */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
-        {isOnlineBackendConfigured && !guestMode ? (
+        {isOnlineBackendConfigured ? (
           <>
             <AuthLoading>
               <div className="flex h-full w-full items-center justify-center p-12">
@@ -30,7 +29,7 @@ export default function App() {
               </div>
             </AuthLoading>
             <Unauthenticated>
-              <WelcomeScreen onContinueAsGuest={() => setGuestMode(true)} />
+              <WelcomeScreen />
             </Unauthenticated>
             <Authenticated>
               <Dashboard onStatusChange={handleStatusChange} />
