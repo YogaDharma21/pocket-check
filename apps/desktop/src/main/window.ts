@@ -91,6 +91,7 @@ export function createWindow(): BrowserWindow {
       sandbox: true,
       webSecurity: true,
       spellcheck: false,
+      backgroundThrottling: false,
     },
   });
 
