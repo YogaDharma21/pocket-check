@@ -992,7 +992,7 @@ export function OnlineDashboard({
                       ref={itemInputRef}
                       value={newCustomItemName}
                       onChange={(e) => setNewCustomItemName(e.target.value)}
-                      placeholder={`Add item(s) to ${effectiveRoutine} (e.g. Keys, Wallet or USB Cable, Notebook, IC)...`}
+                      placeholder="Add item..."
                       className="h-12 bg-card pl-10 pr-24 font-bold text-sm text-foreground shadow-xs"
                     />
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">

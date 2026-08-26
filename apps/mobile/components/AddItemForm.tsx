@@ -100,7 +100,7 @@ export function AddItemForm({
               color: colors.foreground,
             },
           ]}
-          placeholder="e.g., Umbrella, Wallet, Keys..."
+          placeholder="Add item..."
           placeholderTextColor={colors.mutedForeground}
           value={name}
           onChangeText={setName}
