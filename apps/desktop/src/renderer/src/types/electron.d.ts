@@ -23,6 +23,10 @@ export interface ElectronAPI {
 
   // Tray events
   onTrayAction: (callback: (action: "new-routine" | "reset-today") => void) => () => void;
+
+  // Auth loopback server
+  getAuthPort: () => Promise<number>;
+  onAuthCallback: (callback: (url: string) => void) => () => void;
 }
 
 declare global {

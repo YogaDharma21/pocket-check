@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useSignIn } from "@clerk/clerk-react";
+import { useState, useEffect, useRef } from "react";
+import { useSignIn, useClerk } from "@clerk/clerk-react";
 import { isOnlineBackendConfigured } from "@/components/ConvexClientProvider";
 
 function CubeLogo() {
@@ -39,19 +39,98 @@ function GoogleIcon() {
 
 export function WelcomeScreen() {
   const { signIn, isLoaded } = useSignIn();
+  const { setActive, handleRedirectCallback } = useClerk();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const completeAuth = async (fullUrl?: string) => {
+    if (!isLoaded || !signIn) return;
+    try {
+      if (fullUrl && handleRedirectCallback) {
+        await handleRedirectCallback({
+          redirectUrl: fullUrl,
+        });
+      }
+
+      const reloaded = await signIn.reload();
+      if (reloaded.status === "complete" && reloaded.createdSessionId) {
+        await setActive({ session: reloaded.createdSessionId });
+        return true;
+      }
+    } catch (err) {
+      console.error("Redirect completion error", err);
+    }
+    return false;
+  };
+
+  useEffect(() => {
+    if (!window.electronAPI?.onAuthCallback) return;
+
+    const unsubscribe = window.electronAPI.onAuthCallback(async (fullUrl) => {
+      setLoading(true);
+      await completeAuth(fullUrl);
+      setLoading(false);
+    });
+
+    return () => {
+      unsubscribe?.();
+    };
+  }, [isLoaded, signIn, setActive, handleRedirectCallback]);
+
+  // Polling fallback while waiting for browser auth
+  useEffect(() => {
+    if (loading) {
+      pollIntervalRef.current = setInterval(async () => {
+        if (!signIn) return;
+        try {
+          const res = await signIn.reload();
+          if (res.status === "complete" && res.createdSessionId) {
+            await setActive({ session: res.createdSessionId });
+            setLoading(false);
+          }
+        } catch {
+          // keep polling
+        }
+      }, 1500);
+    } else {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    }
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+  }, [loading, signIn, setActive]);
 
   const handleGoogleAuth = async () => {
     if (!isLoaded || !signIn) return;
     try {
       setLoading(true);
       setErrorMsg("");
-      await signIn.authenticateWithRedirect({
+
+      const port = (await window.electronAPI?.getAuthPort?.()) || 49152;
+      const redirectUrl = `http://127.0.0.1:${port}/sso-callback`;
+
+      const res = await signIn.create({
         strategy: "oauth_google",
-        redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/",
+        redirectUrl,
+        actionCompleteRedirectUrl: redirectUrl,
       });
+
+      const googleUrl = res.firstFactorVerification?.externalVerificationRedirectURL?.toString();
+      if (googleUrl) {
+        // Open user's real default browser (Chrome / Edge / Firefox)
+        await window.electronAPI?.openExternal?.(googleUrl);
+      } else {
+        setErrorMsg("Unable to generate Google sign-in link");
+        setLoading(false);
+      }
     } catch (err: any) {
       console.error("Google OAuth error", err);
       setErrorMsg(err?.errors?.[0]?.message || "Failed to start Google sign in");
@@ -89,21 +168,32 @@ export function WelcomeScreen() {
         {/* Auth / Action Button Section */}
         <div className="flex w-full flex-col gap-3">
           {isOnlineBackendConfigured ? (
-            <button
-              type="button"
-              onClick={handleGoogleAuth}
-              disabled={loading || !isLoaded}
-              className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-white font-black text-sm tracking-wider text-black uppercase shadow-lg transition-all hover:bg-zinc-100 active:scale-[0.98] disabled:opacity-60"
-            >
-              {loading ? (
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-black border-t-transparent" />
-              ) : (
-                <>
-                  <GoogleIcon />
-                  <span>CONTINUE WITH GOOGLE</span>
-                </>
+            <div className="space-y-3 w-full">
+              <button
+                type="button"
+                onClick={handleGoogleAuth}
+                disabled={loading || !isLoaded}
+                className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-white font-black text-sm tracking-wider text-black uppercase shadow-lg transition-all hover:bg-zinc-100 active:scale-[0.98] disabled:opacity-80"
+              >
+                {loading ? (
+                  <>
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-black border-t-transparent" />
+                    <span>WAITING FOR BROWSER...</span>
+                  </>
+                ) : (
+                  <>
+                    <GoogleIcon />
+                    <span>CONTINUE WITH GOOGLE</span>
+                  </>
+                )}
+              </button>
+
+              {loading && (
+                <p className="text-xs font-bold text-zinc-400 animate-pulse">
+                  Complete the sign-in in your browser window...
+                </p>
               )}
-            </button>
+            </div>
           ) : (
             <button
               type="button"

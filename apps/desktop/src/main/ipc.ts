@@ -1,6 +1,7 @@
 import { ipcMain, shell, app, BrowserWindow } from 'electron';
 import { showNotification, NotificationOptions } from './notifications';
 import { getMainWindow } from './window';
+import { getAuthPort } from './authServer';
 
 export function registerIpcHandlers(defaultWindow: BrowserWindow): void {
   const getTargetWindow = (event: Electron.IpcMainInvokeEvent): BrowserWindow | null => {
@@ -45,6 +46,11 @@ export function registerIpcHandlers(defaultWindow: BrowserWindow): void {
     if (typeof url === 'string' && (url.startsWith('https://') || url.startsWith('http://') || url.startsWith('mailto:'))) {
       await shell.openExternal(url);
     }
+  });
+
+  // Auth local port
+  ipcMain.handle('auth:get-port', () => {
+    return getAuthPort();
   });
 
   // App Metadata & Platform

@@ -16,6 +16,8 @@ export interface ElectronAPI {
   getVersion: () => Promise<string>;
   platform: NodeJS.Platform;
   onTrayAction: (callback: (action: 'new-routine' | 'reset-today') => void) => () => void;
+  getAuthPort: () => Promise<number>;
+  onAuthCallback: (callback: (url: string) => void) => () => void;
 }
 
 const electronAPI: ElectronAPI = {
@@ -49,6 +51,18 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.on('tray:action', listener);
     return () => {
       ipcRenderer.removeListener('tray:action', listener);
+    };
+  },
+
+  getAuthPort: () => ipcRenderer.invoke('auth:get-port'),
+
+  onAuthCallback: (callback: (url: string) => void) => {
+    const listener = (_event: IpcRendererEvent, url: string) => {
+      callback(url);
+    };
+    ipcRenderer.on('auth:sso-callback', listener);
+    return () => {
+      ipcRenderer.removeListener('auth:sso-callback', listener);
     };
   },
 };
