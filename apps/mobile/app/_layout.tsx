@@ -6,11 +6,41 @@ import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
+import * as SystemUI from "expo-system-ui";
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from "@react-navigation/native";
 import { tokenCache } from "../lib/clerk-token-cache";
 import { convex } from "../lib/convex";
 import { Colors } from "../constants/theme";
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+
+const NavDarkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: Colors.dark.background,
+    card: Colors.dark.card,
+    text: Colors.dark.foreground,
+    border: Colors.dark.border,
+    primary: Colors.dark.primary,
+  },
+};
+
+const NavLightTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: Colors.light.background,
+    card: Colors.light.card,
+    text: Colors.light.foreground,
+    border: Colors.light.border,
+    primary: Colors.light.primary,
+  },
+};
 
 function InitialLayout() {
   const { isLoaded, isSignedIn } = useAuth();
@@ -29,7 +59,7 @@ function InitialLayout() {
     } else if (!isSignedIn && !inAuthGroup) {
       router.replace("/(auth)/sign-in");
     }
-  }, [isLoaded, isSignedIn, segments]);
+  }, [isLoaded, isSignedIn, segments, router]);
 
   if (!isLoaded) {
     return (
@@ -48,20 +78,38 @@ function InitialLayout() {
     );
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.background },
+        animation: "fade",
+      }}
+    />
+  );
 }
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const colorScheme = useColorScheme() ?? "dark";
+  const colors = Colors[colorScheme];
+
+  useEffect(() => {
+    void SystemUI.setBackgroundColorAsync(colors.background);
+  }, [colors.background]);
 
   return (
-    <SafeAreaProvider>
-      <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-          <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-          <InitialLayout />
-        </ConvexProviderWithClerk>
-      </ClerkProvider>
+    <SafeAreaProvider style={{ backgroundColor: colors.background }}>
+      <ThemeProvider value={colorScheme === "dark" ? NavDarkTheme : NavLightTheme}>
+        <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+          <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+            <StatusBar
+              style={colorScheme === "dark" ? "light" : "dark"}
+              backgroundColor={colors.background}
+            />
+            <InitialLayout />
+          </ConvexProviderWithClerk>
+        </ClerkProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

@@ -56,7 +56,7 @@ export default function SignInScreen() {
       style={[styles.safeArea, { backgroundColor: colors.background }]}
       edges={["top", "bottom", "left", "right"]}
     >
-      <View style={styles.centerContainer}>
+      <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
         {/* Branding Section */}
         <View style={styles.logoSection}>
           <View
