@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useMemo, ReactNode } from "react";
 import { ClerkProvider, useAuth } from "@clerk/clerk-react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { ConvexReactClient } from "convex/react";
+import { dark } from "@clerk/themes";
 import { InMemoryConvexDB, Item, Routine } from "@/lib/db";
 
 const clerkPublishableKey =
@@ -39,11 +40,23 @@ const OfflineDataContext = createContext<OfflineDataContextType | null>(null);
 
 export function useOfflineData() {
   const ctx = useContext(OfflineDataContext);
-  if (!ctx) throw new Error("useOfflineData must be used within ConvexClientProvider");
+  if (!ctx) {
+    const fallbackDb = new InMemoryConvexDB("pocketcheck_desktop");
+    return {
+      db: fallbackDb,
+      userId: "local_desktop_user",
+      isOfflineMode: true,
+      routines: [],
+      items: [],
+      activeRoutine: "Kampus",
+      setActiveRoutine: () => {},
+      refresh: () => {},
+    };
+  }
   return ctx;
 }
 
-function OfflineDataProvider({ children }: { children: ReactNode }) {
+export function OfflineDataProvider({ children }: { children: ReactNode }) {
   const [db] = useState(() => new InMemoryConvexDB("pocketcheck_desktop"));
   const userId = "local_desktop_user";
   const [routines, setRoutines] = useState<Routine[]>([]);
@@ -54,7 +67,6 @@ function OfflineDataProvider({ children }: { children: ReactNode }) {
     db.listRoutines(userId).then((rList) => {
       setRoutines(rList);
       if (rList.length > 0) {
-        // Ensure activeRoutine is valid
         if (!rList.some((r) => r.name.toLowerCase() === activeRoutine.toLowerCase())) {
           setActiveRoutine(rList[0].name);
         }
@@ -97,12 +109,18 @@ function OfflineDataProvider({ children }: { children: ReactNode }) {
 }
 
 export function ConvexClientProvider({ children }: { children: ReactNode }) {
-  if (isOnlineBackendConfigured) {
-    const convexClient = new ConvexReactClient(convexUrl);
+  const convexClient = useMemo(() => {
+    if (isOnlineBackendConfigured) {
+      return new ConvexReactClient(convexUrl);
+    }
+    return null;
+  }, []);
+
+  if (isOnlineBackendConfigured && convexClient) {
     return (
-      <ClerkProvider publishableKey={clerkPublishableKey}>
+      <ClerkProvider publishableKey={clerkPublishableKey} appearance={{ baseTheme: dark }}>
         <ConvexProviderWithClerk client={convexClient} useAuth={useAuth}>
-          {children}
+          <OfflineDataProvider>{children}</OfflineDataProvider>
         </ConvexProviderWithClerk>
       </ClerkProvider>
     );
