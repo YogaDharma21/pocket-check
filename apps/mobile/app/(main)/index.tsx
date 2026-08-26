@@ -27,6 +27,7 @@ import { IconPickerModal } from "../../components/IconPicker";
 import { RoutineSettingsModal } from "../../components/RoutineSettingsModal";
 import { ItemSettingsModal } from "../../components/ItemSettingsModal";
 import { AboutModal } from "../../components/AboutModal";
+import { MenuModal } from "../../components/MenuModal";
 import { SmartPresetsModal } from "../../components/SmartPresetsModal";
 import { SmartIntelligenceBanner } from "../../components/SmartIntelligenceBanner";
 import { WeatherBanner } from "../../components/WeatherBanner";
@@ -68,6 +69,7 @@ export default function DashboardScreen() {
   const [newItemIconKey, setNewItemIconKey] = useState<string>("");
   const [editItemIconKey, setEditItemIconKey] = useState<string>("");
   const [showAboutModal, setShowAboutModal] = useState(false);
+  const [showMenuModal, setShowMenuModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showPresetsModal, setShowPresetsModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -528,42 +530,16 @@ export default function DashboardScreen() {
           </View>
 
           <View style={styles.headerRight}>
-            {effectiveRoutine ? (
-              <>
-                <TouchableOpacity
-                  style={styles.headerBtn}
-                  onPress={() => setShowExportModal(true)}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Ionicons
-                    name="download-outline"
-                    size={20}
-                    color={colors.foreground}
-                  />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.headerBtn}
-                  onPress={() => setShowShareModal(true)}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Ionicons
-                    name="share-social-outline"
-                    size={20}
-                    color={colors.foreground}
-                  />
-                </TouchableOpacity>
-              </>
-            ) : null}
-
+            {/* Menu Trigger Button */}
             <TouchableOpacity
               style={styles.headerBtn}
-              onPress={() => setShowAboutModal(true)}
+              onPress={() => setShowMenuModal(true)}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityLabel="Open Menu"
             >
               <Ionicons
-                name="information-circle-outline"
-                size={22}
+                name="menu-outline"
+                size={24}
                 color={colors.foreground}
               />
             </TouchableOpacity>
@@ -857,6 +833,22 @@ export default function DashboardScreen() {
         <AboutModal
           visible={showAboutModal}
           onClose={() => setShowAboutModal(false)}
+          theme={theme}
+        />
+
+        <MenuModal
+          visible={showMenuModal}
+          onClose={() => setShowMenuModal(false)}
+          activeRoutineName={effectiveRoutine}
+          onOpenExport={() => setShowExportModal(true)}
+          onOpenShare={() => setShowShareModal(true)}
+          onOpenSchedule={() => {
+            if (currentRoutineObj) {
+              setScheduleTargetRoutine(currentRoutineObj);
+              setShowScheduleModal(true);
+            }
+          }}
+          onOpenAbout={() => setShowAboutModal(true)}
           theme={theme}
         />
 
