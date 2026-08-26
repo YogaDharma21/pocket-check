@@ -2025,31 +2025,6 @@ export function Dashboard() {
                       </div>
                     </div>
                   </Button>
-
-                  <Button
-                    variant="outline"
-                    className="h-auto w-full cursor-pointer justify-start gap-3 p-3 text-left font-bold hover:bg-muted"
-                    onClick={() => {
-                      setShowMobileMenu(false)
-                      if (currentRoutineObj) {
-                        setManageRoutine(currentRoutineObj)
-                        setEditModalName(currentRoutineObj.name)
-                        setEditModalIconTag(currentRoutineObj.icon)
-                      }
-                    }}
-                  >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                      <Settings className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-black text-foreground">
-                        Destination Settings
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">
-                        Rename, change icon, or reorder
-                      </div>
-                    </div>
-                  </Button>
                 </div>
               </div>
             )}
