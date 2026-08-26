@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { CloudRain, Sun, Thermometer, Plus, Check } from "lucide-react"
-import { WeatherData, fetchDailyWeather } from "@/lib/weather"
+import { CloudRain, Sun, Thermometer, Plus, Check, MapPin } from "lucide-react"
+import { WeatherData, fetchDailyWeather, reverseGeocode } from "@/lib/weather"
 import { Button } from "@/components/ui/button"
 
 interface WeatherAlertBannerProps {
@@ -22,37 +22,40 @@ export function WeatherAlertBanner({
   React.useEffect(() => {
     let isMounted = true
 
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          if (!isMounted) return
-          const data = await fetchDailyWeather(
-            position.coords.latitude,
-            position.coords.longitude
-          )
-          if (isMounted) {
-            setWeather(data)
-            setLoading(false)
-          }
-        },
-        async () => {
-          if (!isMounted) return
-          const data = await fetchDailyWeather()
-          if (isMounted) {
-            setWeather(data)
-            setLoading(false)
-          }
-        },
-        { timeout: 5000 }
-      )
-    } else {
-      fetchDailyWeather().then((data) => {
+    async function loadWeather() {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            if (!isMounted) return
+            const lat = position.coords.latitude
+            const lon = position.coords.longitude
+            const locName = await reverseGeocode(lat, lon)
+            const data = await fetchDailyWeather(lat, lon, locName)
+            if (isMounted) {
+              setWeather(data)
+              setLoading(false)
+            }
+          },
+          async () => {
+            if (!isMounted) return
+            const data = await fetchDailyWeather(undefined, undefined, "Jakarta")
+            if (isMounted) {
+              setWeather(data)
+              setLoading(false)
+            }
+          },
+          { timeout: 5000 }
+        )
+      } else {
+        const data = await fetchDailyWeather(undefined, undefined, "Jakarta")
         if (isMounted) {
           setWeather(data)
           setLoading(false)
         }
-      })
+      }
     }
+
+    void loadWeather()
 
     return () => {
       isMounted = false
@@ -90,10 +93,16 @@ export function WeatherAlertBanner({
             )}
           </div>
           <div className="space-y-0.5">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[11px] font-bold uppercase tracking-wider text-blue-400">
                 Weather Intelligence
               </span>
+              {weather.locationName && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-300 bg-blue-950/60 px-1.5 py-0.5 rounded border border-blue-800/40">
+                  <MapPin className="h-2.5 w-2.5 text-blue-400" />
+                  {weather.locationName}
+                </span>
+              )}
               <span className="text-[10px] text-zinc-500">
                 {weather.temperatureMax}°C / {weather.precipitationProbability}% Rain
               </span>

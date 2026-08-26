@@ -13,15 +13,39 @@ export interface WeatherData {
   isColdDay: boolean
   description: string
   suggestion: string | null
+  locationName?: string
   suggestedItem: {
     name: string
     emoji: string
   } | null
 }
 
+export async function reverseGeocode(
+  lat: number,
+  lon: number
+): Promise<string | undefined> {
+  try {
+    const res = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
+    )
+    if (!res.ok) return undefined
+    const data = await res.json()
+    const name =
+      data.city ||
+      data.locality ||
+      data.principalSubdivision ||
+      data.countryName ||
+      undefined
+    return name
+  } catch {
+    return undefined
+  }
+}
+
 export async function fetchDailyWeather(
   lat?: number,
-  lon?: number
+  lon?: number,
+  locationName?: string
 ): Promise<WeatherData | null> {
   try {
     // Default fallback coordinates (approx. Jakarta / Central)
@@ -74,6 +98,9 @@ export async function fetchDailyWeather(
       isColdDay,
       description,
       suggestion,
+      locationName:
+        locationName ||
+        (lat === undefined && lon === undefined ? "Jakarta" : undefined),
       suggestedItem,
     }
   } catch {
