@@ -73,15 +73,15 @@ export function SmartIntelligenceBanner({
             style={[
               styles.badge,
               {
-                backgroundColor: isAllPacked ? "#10b98120" : colors.muted,
-                borderColor: isAllPacked ? "#10b98150" : colors.border,
+                backgroundColor: colors.muted,
+                borderColor: colors.border,
               },
             ]}
           >
             <Text
               style={[
                 styles.badgeText,
-                { color: isAllPacked ? "#10b981" : colors.foreground },
+                { color: colors.foreground },
               ]}
             >
               {isAllPacked ? "All Packed" : `${missingCount} Missing`}
@@ -143,9 +143,9 @@ export function SmartIntelligenceBanner({
 
           {/* Missing items quick pack buttons or all packed message */}
           {isAllPacked ? (
-            <View style={styles.allPacked}>
-              <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-              <Text style={styles.allPackedText}>
+            <View style={[styles.allPacked, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+              <Ionicons name="checkmark-circle" size={20} color={colors.foreground} />
+              <Text style={[styles.allPackedText, { color: colors.foreground }]}>
                 Everything is packed and ready to go!
               </Text>
             </View>
@@ -275,15 +275,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     padding: 10,
-    backgroundColor: "rgba(16, 185, 129, 0.1)",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.2)",
   },
   allPackedText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#10b981",
   },
   missingSection: {
     gap: 6,

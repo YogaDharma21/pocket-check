@@ -69,7 +69,7 @@ export function ShareRoutineModal({
       <DialogContent className="border-border bg-card text-card-foreground sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-            <Share2 className="h-4 w-4 text-purple-500" />
+            <Share2 className="h-4 w-4" />
             Share {routineName} Routine
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">

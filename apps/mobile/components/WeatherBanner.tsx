@@ -106,18 +106,18 @@ export function WeatherBanner({
         styles.banner,
         {
           backgroundColor: colors.card,
-          borderColor: "rgba(59, 130, 246, 0.35)",
+          borderColor: colors.border,
         },
       ]}
     >
       {/* Top Header Row with Icon, Title, and Close Button */}
       <View style={styles.headerRow}>
-        <View style={styles.iconBox}>
-          <Ionicons name={iconName} size={20} color="#3b82f6" />
+        <View style={[styles.iconBox, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+          <Ionicons name={iconName} size={20} color={colors.foreground} />
         </View>
 
         <View style={styles.headerInfoCol}>
-          <Text style={styles.headerLabel}>WEATHER INTELLIGENCE</Text>
+          <Text style={[styles.headerLabel, { color: colors.mutedForeground }]}>WEATHER INTELLIGENCE</Text>
           <Text
             style={[styles.weatherStats, { color: colors.mutedForeground }]}
             numberOfLines={1}
@@ -146,7 +146,7 @@ export function WeatherBanner({
       <View style={styles.actionRow}>
         {weather.suggestedItem && !isItemInList && (
           <TouchableOpacity
-            style={styles.addBtn}
+            style={[styles.addBtn, { backgroundColor: colors.muted, borderColor: colors.border }]}
             onPress={() => {
               if (weather.suggestedItem) {
                 onQuickAddItem(
@@ -157,23 +157,23 @@ export function WeatherBanner({
             }}
             activeOpacity={0.7}
           >
-            <Ionicons name="add" size={15} color="#3b82f6" />
-            <Text style={styles.addBtnText}>
+            <Ionicons name="add" size={15} color={colors.foreground} />
+            <Text style={[styles.addBtnText, { color: colors.foreground }]}>
               Add {weather.suggestedItem.name}
             </Text>
           </TouchableOpacity>
         )}
 
         {isItemInList && !isItemPacked && (
-          <View style={styles.notPackedBadge}>
-            <Text style={styles.notPackedText}>Not yet packed</Text>
+          <View style={[styles.notPackedBadge, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+            <Text style={[styles.notPackedText, { color: colors.mutedForeground }]}>Not yet packed</Text>
           </View>
         )}
 
         {isItemInList && isItemPacked && (
-          <View style={styles.packedBadge}>
-            <Ionicons name="checkmark-sharp" size={12} color="#10b981" />
-            <Text style={styles.packedText}>Packed</Text>
+          <View style={[styles.packedBadge, { backgroundColor: colors.muted, borderColor: colors.border }]}>
+            <Ionicons name="checkmark-sharp" size={12} color={colors.primary} />
+            <Text style={[styles.packedText, { color: colors.foreground }]}>Packed</Text>
           </View>
         )}
       </View>
@@ -200,9 +200,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: "rgba(59, 130, 246, 0.12)",
     borderWidth: 1,
-    borderColor: "rgba(59, 130, 246, 0.25)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -215,7 +213,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "900",
     letterSpacing: 0.6,
-    color: "#3b82f6",
   },
   weatherStats: {
     fontSize: 11,
@@ -245,26 +242,20 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(59, 130, 246, 0.4)",
-    backgroundColor: "rgba(59, 130, 246, 0.12)",
   },
   addBtnText: {
     fontSize: 12,
     fontWeight: "800",
-    color: "#3b82f6",
   },
   notPackedBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(245, 158, 11, 0.4)",
-    backgroundColor: "rgba(245, 158, 11, 0.1)",
   },
   notPackedText: {
     fontSize: 11,
     fontWeight: "800",
-    color: "#f59e0b",
   },
   packedBadge: {
     flexDirection: "row",
@@ -274,12 +265,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.4)",
-    backgroundColor: "rgba(16, 185, 129, 0.1)",
   },
   packedText: {
     fontSize: 11,
     fontWeight: "800",
-    color: "#10b981",
   },
 });

@@ -1141,7 +1141,7 @@ export function Dashboard() {
                         className="h-8 cursor-pointer gap-1.5 rounded-lg border-border px-2.5 text-xs font-bold text-foreground hover:bg-muted"
                         title="Export or Print Checklist"
                       >
-                        <Download className="h-3.5 w-3.5 text-emerald-500" />
+                        <Download className="h-3.5 w-3.5" />
                         <span>Export</span>
                       </Button>
 
@@ -1152,7 +1152,7 @@ export function Dashboard() {
                         className="h-8 cursor-pointer gap-1.5 rounded-lg border-border px-2.5 text-xs font-bold text-foreground hover:bg-muted"
                         title="Share Checklist Link"
                       >
-                        <Share2 className="h-3.5 w-3.5 text-purple-500" />
+                        <Share2 className="h-3.5 w-3.5" />
                         <span>Share</span>
                       </Button>
 
@@ -1168,7 +1168,7 @@ export function Dashboard() {
                         className="h-8 cursor-pointer gap-1.5 rounded-lg border-border px-2.5 text-xs font-bold text-foreground hover:bg-muted"
                         title="Schedule Auto-Reset"
                       >
-                        <Clock className="h-3.5 w-3.5 text-blue-500" />
+                        <Clock className="h-3.5 w-3.5" />
                         <span className="inline">Schedule</span>
                       </Button>
 
@@ -1541,7 +1541,7 @@ export function Dashboard() {
                                       </p>
 
                                       {item.quantity && item.quantity > 1 && (
-                                        <span className="py-0.2 shrink-0 rounded border border-zinc-700 bg-zinc-800 px-1.5 font-mono text-[11px] font-bold text-zinc-300">
+                                        <span className="py-0.2 shrink-0 rounded border border-border bg-muted/60 px-1.5 font-mono text-[11px] font-bold text-foreground">
                                           {item.quantity}x
                                         </span>
                                       )}
@@ -1606,14 +1606,14 @@ export function Dashboard() {
 
       {/* Floating Undo Toast Notification (UX-01) */}
       {undoToast && (
-        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 animate-in items-center gap-3 rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-zinc-100 shadow-2xl duration-200 fade-in slide-in-from-bottom-4">
-          <span className="text-xs font-bold text-zinc-200">
+        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 animate-in items-center gap-3 rounded-xl border border-border bg-foreground px-4 py-3 text-background shadow-2xl duration-200 fade-in slide-in-from-bottom-4">
+          <span className="text-xs font-bold text-background">
             {undoToast.message}
           </span>
           <Button
             size="sm"
             onClick={() => void handleExecuteUndo()}
-            className="flex h-7 items-center gap-1 bg-emerald-500 px-3 text-xs font-extrabold text-black hover:bg-emerald-400"
+            className="flex h-7 cursor-pointer items-center gap-1 bg-background px-3 text-xs font-black text-foreground hover:bg-background/90"
           >
             <Undo2 className="h-3.5 w-3.5" />
             Undo
@@ -2028,7 +2028,7 @@ export function Dashboard() {
                       setShowExportModal(true)
                     }}
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
                       <Download className="h-4 w-4" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -2049,7 +2049,7 @@ export function Dashboard() {
                       setShowShareModal(true)
                     }}
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
                       <Share2 className="h-4 w-4" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -2073,7 +2073,7 @@ export function Dashboard() {
                       }
                     }}
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
                       <Clock className="h-4 w-4" />
                     </div>
                     <div className="min-w-0 flex-1">

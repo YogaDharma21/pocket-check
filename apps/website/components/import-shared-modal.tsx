@@ -50,41 +50,41 @@ export function ImportSharedModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-zinc-950 border-zinc-800 text-zinc-100">
+      <DialogContent className="sm:max-w-md bg-card border-border text-card-foreground">
         <DialogHeader>
-          <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
-            <Sparkles className="h-4 w-4" />
+          <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold uppercase tracking-wider">
+            <Sparkles className="h-4 w-4 text-foreground" />
             <span>Shared Routine Received</span>
           </div>
-          <DialogTitle className="text-lg font-bold text-white">
+          <DialogTitle className="text-lg font-bold text-foreground">
             Import &ldquo;{data.name}&rdquo; Checklist
           </DialogTitle>
-          <DialogDescription className="text-xs text-zinc-400">
+          <DialogDescription className="text-xs text-muted-foreground">
             Someone shared this packing routine with you. Import it into your account to use and customize it anytime.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3 py-2">
-          <div className="p-3 rounded-lg bg-zinc-900 border border-zinc-800 space-y-2">
+          <div className="p-3 rounded-lg bg-muted/60 border border-border space-y-2">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-zinc-200">{data.name}</span>
-              <span className="text-zinc-500">{data.items.length} items</span>
+              <span className="font-bold text-foreground">{data.name}</span>
+              <span className="text-muted-foreground">{data.items.length} items</span>
             </div>
             <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto">
               {data.items.map((item, idx) => (
                 <span
                   key={idx}
-                  className="text-xs px-2.5 py-1 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-200 flex items-center gap-1.5"
+                  className="text-xs px-2.5 py-1 rounded-md bg-card border border-border text-foreground flex items-center gap-1.5"
                 >
-                  <Sparkles className="h-3 w-3 text-emerald-400" />
+                  <Sparkles className="h-3 w-3 text-muted-foreground" />
                   {item.name}
                   {item.quantity && item.quantity > 1 ? (
-                    <span className="text-zinc-400 text-[10px]">
+                    <span className="text-muted-foreground text-[10px]">
                       ({item.quantity}x)
                     </span>
                   ) : null}
                   {item.locationNote ? (
-                    <span className="text-zinc-500 text-[10px] italic">
+                    <span className="text-muted-foreground text-[10px] italic">
                       &bull; {item.locationNote}
                     </span>
                   ) : null}
@@ -99,7 +99,7 @@ export function ImportSharedModal({
             type="button"
             variant="ghost"
             size="sm"
-            className="text-xs h-8 text-zinc-400 hover:text-zinc-200"
+            className="text-xs h-8 text-muted-foreground hover:text-foreground cursor-pointer"
             onClick={() => onOpenChange(false)}
           >
             Dismiss
@@ -109,7 +109,7 @@ export function ImportSharedModal({
             type="button"
             size="sm"
             disabled={importing}
-            className="text-xs h-9 bg-emerald-500 hover:bg-emerald-600 text-black font-bold flex items-center gap-1.5 px-4"
+            className="text-xs h-9 bg-primary hover:bg-primary/90 text-primary-foreground font-bold flex items-center gap-1.5 px-4 cursor-pointer"
             onClick={handleImport}
           >
             {importing ? (

@@ -141,7 +141,7 @@ export function ExportModal({
       <DialogContent className="border-border bg-card text-card-foreground sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
-            <Download className="h-4 w-4 text-emerald-500" />
+            <Download className="h-4 w-4" />
             Export &amp; Backup {routineName}
           </DialogTitle>
         </DialogHeader>
@@ -198,7 +198,7 @@ export function ExportModal({
               onClick={handleCopy}
             >
               {copied ? (
-                <Check className="h-3.5 w-3.5 text-emerald-500" />
+                <Check className="h-3.5 w-3.5" />
               ) : (
                 <Copy className="h-3.5 w-3.5" />
               )}

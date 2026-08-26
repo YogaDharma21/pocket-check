@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   undoButton: {
-    backgroundColor: "#10b981",
+    backgroundColor: "#ffffff",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
