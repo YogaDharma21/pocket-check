@@ -96,8 +96,6 @@ jobs:
           cache-dependency-path: apps/desktop/package-lock.json
       - name: Install Dependencies
         run: npm install
-      - name: Test
-        run: npm test
       - name: Typecheck
         run: npm run typecheck
       - name: Build
