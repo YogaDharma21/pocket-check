@@ -1,36 +1,25 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSignIn, useClerk } from "@clerk/clerk-react";
-import { isOnlineBackendConfigured } from "@/components/ConvexClientProvider";
-
-function CubeLogo() {
-  return (
-    <svg
-      className="h-12 w-12 text-black"
-      viewBox="0 0 32 32"
-      fill="currentColor"
-    >
-      <path d="M16 2.5L3.5 9.7V22.3L16 29.5L28.5 22.3V9.7L16 2.5ZM16 5.6L25.3 11L16 16.4L6.7 11L16 5.6ZM5.5 12.8L14.5 18V26.8L5.5 21.6V12.8ZM17.5 26.8V18L26.5 12.8V21.6L17.5 26.8Z" />
-    </svg>
-  );
-}
+import { Sparkles, Loader2, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 function GoogleIcon() {
   return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24">
+    <svg className="h-5 w-5 mr-3 shrink-0" viewBox="0 0 24 24">
       <path
-        fill="currentColor"
+        fill="#4285F4"
         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
       />
       <path
-        fill="currentColor"
+        fill="#34A853"
         d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
       />
       <path
-        fill="currentColor"
+        fill="#FBBC05"
         d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
       />
       <path
-        fill="currentColor"
+        fill="#EA4335"
         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
       />
     </svg>
@@ -39,60 +28,88 @@ function GoogleIcon() {
 
 export function WelcomeScreen() {
   const { signIn, isLoaded } = useSignIn();
-  const { setActive, handleRedirectCallback } = useClerk();
+  const { client, setActive, handleRedirectCallback } = useClerk();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const completeAuth = async (fullUrl?: string) => {
-    if (!isLoaded || !signIn) return;
-    try {
-      if (fullUrl && handleRedirectCallback) {
-        await handleRedirectCallback({
-          redirectUrl: fullUrl,
-        });
-      }
+  const completeAuth = useCallback(
+    async (fullUrl?: string) => {
+      if (!isLoaded) return false;
+      try {
+        if (fullUrl && handleRedirectCallback) {
+          try {
+            await handleRedirectCallback({
+              redirectUrl: fullUrl,
+            });
+          } catch (err) {
+            console.debug("handleRedirectCallback caught", err);
+          }
+        }
 
-      const reloaded = await signIn.reload();
-      if (reloaded.status === "complete" && reloaded.createdSessionId) {
-        await setActive({ session: reloaded.createdSessionId });
-        return true;
-      }
-    } catch (err) {
-      console.error("Redirect completion error", err);
-    }
-    return false;
-  };
+        if (signIn) {
+          try {
+            const reloaded = await signIn.reload();
+            if (reloaded.status === "complete" && reloaded.createdSessionId) {
+              await setActive({ session: reloaded.createdSessionId });
+              setLoading(false);
+              return true;
+            }
+          } catch (e) {
+            console.debug("signIn.reload caught", e);
+          }
+        }
 
+        if (client?.sessions && client.sessions.length > 0) {
+          const activeSession = client.sessions[0];
+          if (activeSession?.id) {
+            await setActive({ session: activeSession.id });
+            setLoading(false);
+            return true;
+          }
+        }
+      } catch (err) {
+        console.error("Redirect completion error", err);
+      }
+      return false;
+    },
+    [isLoaded, signIn, client, setActive, handleRedirectCallback]
+  );
+
+  // Listen to IPC redirect broadcast from local loopback server
   useEffect(() => {
     if (!window.electronAPI?.onAuthCallback) return;
 
     const unsubscribe = window.electronAPI.onAuthCallback(async (fullUrl) => {
       setLoading(true);
       await completeAuth(fullUrl);
-      setLoading(false);
     });
 
     return () => {
       unsubscribe?.();
     };
-  }, [isLoaded, signIn, setActive, handleRedirectCallback]);
+  }, [completeAuth]);
 
-  // Polling fallback while waiting for browser auth
+  // Window focus listener to immediately check authentication when returning to app
+  useEffect(() => {
+    const onFocus = () => {
+      if (loading || !signIn) {
+        void completeAuth();
+      }
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [loading, signIn, completeAuth]);
+
+  // Rapid polling loop while waiting for browser auth
   useEffect(() => {
     if (loading) {
       pollIntervalRef.current = setInterval(async () => {
-        if (!signIn) return;
-        try {
-          const res = await signIn.reload();
-          if (res.status === "complete" && res.createdSessionId) {
-            await setActive({ session: res.createdSessionId });
-            setLoading(false);
-          }
-        } catch {
-          // keep polling
+        const success = await completeAuth();
+        if (success) {
+          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
         }
-      }, 1500);
+      }, 500);
     } else {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
@@ -106,7 +123,7 @@ export function WelcomeScreen() {
         pollIntervalRef.current = null;
       }
     };
-  }, [loading, signIn, setActive]);
+  }, [loading, completeAuth]);
 
   const handleGoogleAuth = async () => {
     if (!isLoaded || !signIn) return;
@@ -120,89 +137,107 @@ export function WelcomeScreen() {
       const res = await signIn.create({
         strategy: "oauth_google",
         redirectUrl,
-        actionCompleteRedirectUrl: redirectUrl,
       });
 
-      const googleUrl = res.firstFactorVerification?.externalVerificationRedirectURL?.toString();
-      if (googleUrl) {
-        // Open user's real default browser (Chrome / Edge / Firefox)
-        await window.electronAPI?.openExternal?.(googleUrl);
+      const externalUrl = res.firstFactorVerification?.externalVerificationRedirectURL;
+      if (externalUrl) {
+        await window.electronAPI?.openExternal?.(externalUrl.toString());
       } else {
-        setErrorMsg("Unable to generate Google sign-in link");
-        setLoading(false);
+        throw new Error("Unable to generate Google sign-in URL.");
       }
-    } catch (err: any) {
-      console.error("Google OAuth error", err);
-      setErrorMsg(err?.errors?.[0]?.message || "Failed to start Google sign in");
+    } catch (err: unknown) {
+      console.error("Google Auth failed", err);
+      const msg = err instanceof Error ? err.message : "Authentication error occurred.";
+      setErrorMsg(msg);
       setLoading(false);
     }
   };
 
   return (
-    <div className="animate-fadeIn flex min-h-[calc(100vh-2.5rem)] w-full flex-col items-center justify-center bg-black px-6 py-12 text-white selection:bg-white selection:text-black">
-      <div className="flex w-full max-w-sm flex-col items-center text-center">
-        {/* Branding Icon Squircle */}
-        <div className="mb-8 flex h-24 w-24 items-center justify-center rounded-3xl bg-white shadow-2xl transition-transform hover:scale-105 sm:h-28 sm:w-28 sm:rounded-[28px]">
-          <CubeLogo />
+    <div className="flex min-h-[calc(100vh-2.25rem)] w-full flex-col items-center justify-between bg-black text-white px-6 py-10 selection:bg-zinc-800">
+      {/* Top Branding */}
+      <div className="flex flex-col items-center text-center space-y-4 max-w-sm mt-4">
+        {/* Modern 3D/Isometric Cube Icon */}
+        <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-linear-to-b from-zinc-800 to-zinc-950 border border-zinc-700/60 shadow-2xl shadow-black/80">
+          <div className="absolute inset-0 rounded-3xl bg-radial from-zinc-700/20 to-transparent pointer-events-none" />
+          <svg
+            className="h-12 w-12 text-white drop-shadow-[0_4px_12px_rgba(255,255,255,0.2)]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m21.12 6.4-8.62-5a2 2 0 0 0-2 0l-8.62 5A2 2 0 0 0 1 8.13v7.74a2 2 0 0 0 1 1.73l8.62 5a2 2 0 0 0 2 0l8.62-5a2 2 0 0 0 1-1.73V8.13a2 2 0 0 0-1-1.73Z" />
+            <path d="M12 22.5V12" />
+            <path d="m21.4 7.6-9.4 5.4-9.4-5.4" />
+            <path d="m3.3 7 8.7 5 8.7-5" />
+            <path d="M12 12 3.3 7" />
+            <path d="m12 12 8.7-5" />
+          </svg>
         </div>
 
-        {/* Title */}
-        <h1 className="mb-3 text-3xl font-black tracking-wider uppercase sm:text-4xl">
-          POCKET<span className="text-zinc-500">CHECKER</span>
-        </h1>
+        <div className="space-y-1.5">
+          <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
+            PocketCheck
+          </h1>
+          <p className="text-sm font-semibold text-zinc-400">
+            Never forget your daily essentials again.
+          </p>
+        </div>
 
-        {/* Subtitle */}
-        <p className="mb-10 text-sm leading-relaxed font-semibold text-zinc-400 sm:text-base">
-          Double-check your pockets before you step out!
-          <br />
-          Never forget your keys, wallet, or phone again.
-        </p>
+        {/* Feature Pill Tags */}
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900/90 px-3 py-1 text-xs font-bold text-zinc-300">
+            <Sparkles className="h-3.5 w-3.5 text-zinc-400" /> Smart Presets
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900/90 px-3 py-1 text-xs font-bold text-zinc-300">
+            <CheckCircle2 className="h-3.5 w-3.5 text-zinc-400" /> Departure Check
+          </span>
+        </div>
+      </div>
 
-        {/* Error Notification */}
+      {/* Auth Action Card */}
+      <div className="w-full max-w-sm space-y-4 my-auto">
         {errorMsg && (
-          <div className="mb-4 w-full rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs font-bold text-red-400">
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-center text-xs font-bold text-red-400">
             {errorMsg}
           </div>
         )}
 
-        {/* Auth / Action Button Section */}
-        <div className="flex w-full flex-col gap-3">
-          {isOnlineBackendConfigured ? (
-            <div className="space-y-3 w-full">
-              <button
-                type="button"
-                onClick={handleGoogleAuth}
-                disabled={loading || !isLoaded}
-                className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-white font-black text-sm tracking-wider text-black uppercase shadow-lg transition-all hover:bg-zinc-100 active:scale-[0.98] disabled:opacity-80"
-              >
-                {loading ? (
-                  <>
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-black border-t-transparent" />
-                    <span>WAITING FOR BROWSER...</span>
-                  </>
-                ) : (
-                  <>
-                    <GoogleIcon />
-                    <span>CONTINUE WITH GOOGLE</span>
-                  </>
-                )}
-              </button>
+        <div className="space-y-3">
+          <Button
+            type="button"
+            disabled={loading || !isLoaded}
+            onClick={handleGoogleAuth}
+            className="relative flex h-13 w-full items-center justify-center rounded-xl bg-white px-4 text-sm font-black text-black transition-all hover:bg-zinc-200 active:scale-[0.98] disabled:opacity-50 cursor-pointer shadow-lg shadow-white/5"
+          >
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin text-black" />
+                <span>Authenticating in browser...</span>
+              </div>
+            ) : (
+              <>
+                <GoogleIcon />
+                <span>Continue with Google</span>
+              </>
+            )}
+          </Button>
 
-              {loading && (
-                <p className="text-xs font-bold text-zinc-400 animate-pulse">
-                  Complete the sign-in in your browser window...
-                </p>
-              )}
-            </div>
-          ) : (
-            <button
-              type="button"
-              className="flex h-14 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-white font-black text-sm tracking-wider text-black uppercase shadow-lg transition-all hover:bg-zinc-100 active:scale-[0.98]"
-            >
-              <span>OPEN POCKETCHECK</span>
-            </button>
+          {loading && (
+            <p className="text-center text-xs font-semibold text-zinc-500 animate-pulse">
+              Complete sign in on your browser window. PocketCheck will resume automatically.
+            </p>
           )}
         </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center gap-2 text-center text-xs font-semibold text-zinc-600">
+        <ShieldCheck className="h-4 w-4" />
+        <span>Secure authentication powered by Clerk</span>
       </div>
     </div>
   );

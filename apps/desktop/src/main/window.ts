@@ -32,7 +32,11 @@ export function showAndFocusWindow(): void {
   if (!mainWindow.isVisible()) {
     mainWindow.show();
   }
+  mainWindow.setAlwaysOnTop(true);
+  mainWindow.show();
   mainWindow.focus();
+  mainWindow.flashFrame(true);
+  mainWindow.setAlwaysOnTop(false);
 }
 
 export function toggleWindowVisibility(): void {

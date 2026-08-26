@@ -79,12 +79,9 @@ const SUCCESS_HTML = `<!DOCTYPE html>
     <div class="badge">PocketCheck Desktop</div>
   </div>
   <script>
-    try {
-      window.location.href = 'pocketcheck://auth-callback' + window.location.search;
-    } catch (e) {}
     setTimeout(() => {
       try { window.close(); } catch (e) {}
-    }, 2000);
+    }, 1500);
   </script>
 </body>
 </html>`;
