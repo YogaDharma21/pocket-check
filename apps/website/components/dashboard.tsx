@@ -1943,7 +1943,7 @@ export function Dashboard() {
                 alt="PocketChecker"
                 className="h-5 w-5 rounded-md border border-border object-contain"
               />
-              <span>PocketChecker Menu</span>
+              <span>Menu</span>
             </DialogTitle>
           </DialogHeader>
 
