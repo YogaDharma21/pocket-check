@@ -13,7 +13,7 @@ export function UserAuthMenu() {
         <UserButton
           appearance={{
             elements: {
-              userButtonAvatarBox: "h-6 w-6 rounded-md",
+              userButtonAvatarBox: "h-6 w-6 rounded-lg",
               userButtonTrigger: "focus:shadow-none focus:outline-none cursor-pointer",
             },
           }}
@@ -75,7 +75,7 @@ export function TitleBar({ currentRoutine, packedRatio }: TitleBarProps) {
       {/* Left: App Brand & Breadcrumb */}
       <div className="flex items-center gap-2 app-no-drag">
         <div
-          className={`flex h-5 w-5 items-center justify-center rounded-md font-black text-xs shadow-xs ${
+          className={`flex h-5 w-5 items-center justify-center rounded-lg font-black text-xs shadow-xs ${
             isLoggedOut
               ? "bg-white text-black"
               : "bg-primary text-primary-foreground"
@@ -95,7 +95,7 @@ export function TitleBar({ currentRoutine, packedRatio }: TitleBarProps) {
             <span className="text-border">/</span>
             <span className="text-foreground/90">{currentRoutine}</span>
             {packedRatio && (
-              <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-extrabold text-foreground border border-border/50">
+              <span className="rounded-lg bg-muted px-1.5 py-0.5 text-[10px] font-extrabold text-foreground border border-border/50">
                 {packedRatio}
               </span>
             )}
@@ -116,7 +116,7 @@ export function TitleBar({ currentRoutine, packedRatio }: TitleBarProps) {
             <button
               type="button"
               onClick={handleMinimize}
-              className={`flex h-7 w-8 items-center justify-center rounded-md transition-colors cursor-pointer ${
+              className={`flex h-7 w-8 items-center justify-center rounded-lg transition-colors cursor-pointer ${
                 isLoggedOut
                   ? "text-zinc-400 hover:bg-zinc-800 hover:text-white"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -128,7 +128,7 @@ export function TitleBar({ currentRoutine, packedRatio }: TitleBarProps) {
             <button
               type="button"
               onClick={handleMaximize}
-              className={`flex h-7 w-8 items-center justify-center rounded-md transition-colors cursor-pointer ${
+              className={`flex h-7 w-8 items-center justify-center rounded-lg transition-colors cursor-pointer ${
                 isLoggedOut
                   ? "text-zinc-400 hover:bg-zinc-800 hover:text-white"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -144,7 +144,7 @@ export function TitleBar({ currentRoutine, packedRatio }: TitleBarProps) {
             <button
               type="button"
               onClick={handleClose}
-              className="flex h-7 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-destructive hover:text-white transition-colors cursor-pointer"
+              className="flex h-7 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-destructive hover:text-white transition-colors cursor-pointer"
               title="Close"
             >
               <X className="h-3.5 w-3.5" />

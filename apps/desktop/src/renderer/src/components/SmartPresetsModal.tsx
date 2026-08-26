@@ -100,7 +100,7 @@ export function SmartPresetsModal({
                         {preset.items.map((item, idx) => (
                           <span
                             key={idx}
-                            className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-0.5 text-xs font-medium text-foreground"
+                            className="inline-flex items-center gap-1 rounded-lg border border-border bg-muted/40 px-2 py-0.5 text-xs font-medium text-foreground"
                           >
                             {renderItemIcon(item.emoji)}
                             <span>{item.name}</span>

@@ -73,7 +73,7 @@ export function DialogContent({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-card p-6 text-card-foreground shadow-2xl relative select-none",
+        "rounded-lg border border-border bg-card p-6 text-card-foreground shadow-2xl relative select-none",
         className
       )}
     >

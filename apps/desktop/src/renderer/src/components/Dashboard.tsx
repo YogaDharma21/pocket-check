@@ -587,7 +587,7 @@ function OfflineDashboard({
             {!effectiveRoutine ? (
               <Card className="border-border shadow-xs">
                 <CardContent className="flex flex-col items-center justify-center py-16 px-6 text-center">
-                  <div className="rounded-full bg-primary/10 p-4 text-primary mb-4">
+                  <div className="rounded-lg bg-primary/10 p-4 text-primary mb-4">
                     <MapPin className="h-8 w-8" />
                   </div>
                   <h2 className="text-xl font-black text-foreground sm:text-2xl mb-1">
@@ -939,7 +939,7 @@ function OfflineDashboard({
 
       {/* Floating Undo Toast (UX-01) */}
       {undoToast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-2xl text-foreground animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-2xl text-foreground animate-in slide-in-from-bottom-5">
           <p className="text-xs font-bold">{undoToast.message}</p>
           <Button
             size="sm"

@@ -16,7 +16,7 @@ function Progress({ className, value = 0, max = 100, ...props }: ProgressProps) 
       aria-valuemax={max}
       aria-valuenow={value}
       className={cn(
-        "relative h-2 w-full overflow-hidden rounded-full bg-muted",
+        "relative h-2 w-full overflow-hidden rounded-lg bg-muted",
         className
       )}
       {...props}

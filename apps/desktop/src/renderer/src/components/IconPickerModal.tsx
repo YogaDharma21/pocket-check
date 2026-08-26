@@ -292,7 +292,7 @@ export function renderItemIcon(iconKey?: string) {
     return <span className="mr-1.5">{iconKey}</span>;
   }
   return (
-    <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-sm mr-1.5 font-mono">
+    <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-lg mr-1.5 font-mono">
       {iconKey}
     </span>
   );
@@ -490,8 +490,8 @@ function IconPickerModalInner({
                   key={idx}
                   className="flex flex-col items-center justify-center p-2 rounded-lg border border-border/50 gap-1.5 h-16"
                 >
-                  <Skeleton className="w-5 h-5 rounded-md" />
-                  <Skeleton className="w-10 h-2.5 rounded-sm" />
+                  <Skeleton className="w-5 h-5 rounded-lg" />
+                  <Skeleton className="w-10 h-2.5 rounded-lg" />
                 </div>
               ))}
             </div>

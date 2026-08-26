@@ -646,7 +646,7 @@ export function OnlineDashboard({
                         <Skeleton className="h-5 w-40" />
                       </div>
                     </div>
-                    <Skeleton className="h-2.5 w-full rounded-full" />
+                    <Skeleton className="h-2.5 w-full rounded-lg" />
                     <div className="flex justify-between">
                       <Skeleton className="h-3.5 w-28" />
                       <Skeleton className="h-3.5 w-16" />
@@ -738,7 +738,7 @@ export function OnlineDashboard({
                   </p>
                 </div>
                 {isRoutinesLoading ? (
-                  <Skeleton className="h-5 w-12 rounded-full" />
+                  <Skeleton className="h-5 w-12 rounded-lg" />
                 ) : (
                   <Badge variant="outline" className="text-xs font-black">
                     {routinesList.length} lists
@@ -880,9 +880,9 @@ export function OnlineDashboard({
           <div className="space-y-6 lg:col-span-8">
             {/* Header of Active Routine */}
             {effectiveRoutine && (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4 shadow-xs">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-4 shadow-xs">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-foreground text-xl">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-foreground text-xl">
                     {renderRoutineIcon(currentRoutineObj?.icon || effectiveRoutine)}
                   </div>
                   <div>
@@ -920,7 +920,7 @@ export function OnlineDashboard({
                     <button
                       type="button"
                       onClick={() => setFilter("all")}
-                      className={`rounded-md px-2.5 py-1 text-xs font-extrabold transition-colors ${
+                      className={`rounded-lg px-2.5 py-1 text-xs font-extrabold transition-colors ${
                         filter === "all"
                           ? "bg-card text-foreground shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
@@ -931,7 +931,7 @@ export function OnlineDashboard({
                     <button
                       type="button"
                       onClick={() => setFilter("missing")}
-                      className={`rounded-md px-2.5 py-1 text-xs font-extrabold transition-colors ${
+                      className={`rounded-lg px-2.5 py-1 text-xs font-extrabold transition-colors ${
                         filter === "missing"
                           ? "bg-card text-foreground shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
@@ -942,7 +942,7 @@ export function OnlineDashboard({
                     <button
                       type="button"
                       onClick={() => setFilter("packed")}
-                      className={`rounded-md px-2.5 py-1 text-xs font-extrabold transition-colors ${
+                      className={`rounded-lg px-2.5 py-1 text-xs font-extrabold transition-colors ${
                         filter === "packed"
                           ? "bg-card text-foreground shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
@@ -1026,12 +1026,12 @@ export function OnlineDashboard({
             {/* Items Checklist List */}
             {isItemsLoading ? (
               <div className="space-y-2.5">
-                <Skeleton className="h-16 w-full rounded-xl" />
-                <Skeleton className="h-16 w-full rounded-xl" />
-                <Skeleton className="h-16 w-full rounded-xl" />
+                <Skeleton className="h-16 w-full rounded-lg" />
+                <Skeleton className="h-16 w-full rounded-lg" />
+                <Skeleton className="h-16 w-full rounded-lg" />
               </div>
             ) : filteredItems.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 p-12 text-center">
+              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 p-12 text-center">
                 <PackageCheck className="h-12 w-12 text-muted-foreground mb-3 opacity-50" />
                 <h3 className="text-base font-black text-foreground">
                   {filter === "all"
@@ -1073,7 +1073,7 @@ export function OnlineDashboard({
                         setDragOverItemId(null);
                       }}
                       onClick={() => void handleToggle(item._id, item.isPacked)}
-                      className={`group relative flex cursor-pointer items-center justify-between gap-3 rounded-xl border p-3.5 transition-all select-none ${
+                      className={`group relative flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3.5 transition-all select-none ${
                         item.isPacked
                           ? "border-border/60 bg-muted/40 text-muted-foreground"
                           : "border-border bg-card text-foreground hover:border-primary/50 shadow-xs"
@@ -1092,7 +1092,7 @@ export function OnlineDashboard({
                         </button>
 
                         <div
-                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-all ${
+                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-all ${
                             item.isPacked
                               ? "border-primary bg-primary text-primary-foreground"
                               : "border-muted-foreground/40 bg-card hover:border-primary"
@@ -1154,7 +1154,7 @@ export function OnlineDashboard({
 
       {/* Floating Undo Toast */}
       {undoToast && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-3 rounded-2xl border border-border bg-card px-5 py-3 shadow-2xl animate-in fade-in slide-in-from-bottom-4">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-3 rounded-lg border border-border bg-card px-5 py-3 shadow-2xl animate-in fade-in slide-in-from-bottom-4">
           <span className="text-xs font-bold text-foreground">{undoToast.message}</span>
           <Button
             size="sm"

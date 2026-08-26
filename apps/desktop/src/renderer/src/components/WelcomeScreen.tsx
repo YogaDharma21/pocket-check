@@ -133,8 +133,8 @@ export function WelcomeScreen() {
   return (
     <div className="flex min-h-[calc(100vh-2.25rem)] w-full flex-col items-center justify-center bg-black text-white px-6 selection:bg-zinc-800">
       <div className="flex w-full max-w-sm flex-col items-center text-center space-y-8">
-        {/* White Rounded Squircle with 3D Isometric Cube */}
-        <div className="flex h-28 w-28 items-center justify-center rounded-[32px] bg-white shadow-2xl">
+        {/* White Rounded Container with 3D Isometric Cube */}
+        <div className="flex h-28 w-28 items-center justify-center rounded-lg bg-white shadow-2xl">
           <svg
             className="h-16 w-16 text-black"
             viewBox="0 0 24 24"
@@ -164,7 +164,7 @@ export function WelcomeScreen() {
         {/* Auth Button */}
         <div className="w-full space-y-3 pt-2">
           {errorMsg && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-center text-xs font-bold text-red-400">
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-center text-xs font-bold text-red-400">
               {errorMsg}
             </div>
           )}
@@ -173,7 +173,7 @@ export function WelcomeScreen() {
             type="button"
             disabled={loading || !isLoaded}
             onClick={handleGoogleAuth}
-            className="flex h-14 w-full items-center justify-center rounded-full bg-white px-6 font-black text-xs sm:text-sm tracking-wider text-black uppercase transition-all hover:bg-zinc-200 active:scale-[0.98] disabled:opacity-50 cursor-pointer shadow-lg"
+            className="flex h-14 w-full items-center justify-center rounded-lg bg-white px-6 font-black text-xs sm:text-sm tracking-wider text-black uppercase transition-all hover:bg-zinc-200 active:scale-[0.98] disabled:opacity-50 cursor-pointer shadow-lg"
           >
             {loading ? (
               <div className="flex items-center gap-2">

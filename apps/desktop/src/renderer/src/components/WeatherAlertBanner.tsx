@@ -86,7 +86,7 @@ export function WeatherAlertBanner({
   );
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-blue-900/40 bg-gradient-to-r from-blue-950/30 via-card to-card p-3.5 shadow-xs backdrop-blur-xs">
+    <div className="relative overflow-hidden rounded-lg border border-blue-900/40 bg-gradient-to-r from-blue-950/30 via-card to-card p-3.5 shadow-xs backdrop-blur-xs">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-start gap-3">
           <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
