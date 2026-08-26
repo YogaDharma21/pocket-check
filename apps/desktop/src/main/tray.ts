@@ -2,16 +2,19 @@ import { Tray, Menu, nativeImage, BrowserWindow, app } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { setIsQuitting, showAndFocusWindow, toggleWindowVisibility } from './window';
+import { setIsQuitting, showAndFocusWindow, toggleWindowVisibility, getMainWindow } from './window';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let tray: Tray | null = null;
 
-export function sendTrayAction(window: BrowserWindow, action: 'new-routine' | 'reset-today'): void {
+export function sendTrayAction(window: BrowserWindow | null, action: 'new-routine' | 'reset-today'): void {
   showAndFocusWindow();
-  window.webContents.send('tray:action', action);
+  const win = window && !window.isDestroyed() ? window : getMainWindow();
+  if (win && !win.isDestroyed()) {
+    win.webContents.send('tray:action', action);
+  }
 }
 
 export function createTray(window: BrowserWindow): Tray {
@@ -66,7 +69,8 @@ export function createTray(window: BrowserWindow): Tray {
       label: 'Quit PocketCheck',
       click: () => {
         setIsQuitting(true);
-        window.close();
+        destroyTray();
+        app.quit();
       },
     },
   ]);

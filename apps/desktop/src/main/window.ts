@@ -22,7 +22,10 @@ export function getMainWindow(): BrowserWindow | null {
 }
 
 export function showAndFocusWindow(): void {
-  if (!mainWindow) return;
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    mainWindow = createWindow();
+    return;
+  }
   if (mainWindow.isMinimized()) {
     mainWindow.restore();
   }
@@ -33,7 +36,10 @@ export function showAndFocusWindow(): void {
 }
 
 export function toggleWindowVisibility(): void {
-  if (!mainWindow) return;
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    showAndFocusWindow();
+    return;
+  }
   if (mainWindow.isVisible() && !mainWindow.isMinimized()) {
     mainWindow.hide();
   } else {
@@ -42,6 +48,10 @@ export function toggleWindowVisibility(): void {
 }
 
 export function createWindow(): BrowserWindow {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    return mainWindow;
+  }
+
   const iconPath = path.join(__dirname, '../../build/icon.png');
   const appIconPath = path.join(app.getAppPath(), 'build/icon.png');
   const resolvedIconPath = fs.existsSync(iconPath)
@@ -108,6 +118,10 @@ export function createWindow(): BrowserWindow {
       event.preventDefault();
       mainWindow?.hide();
     }
+  });
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
   });
 
   // Strict link opening security - Always open external web links in user's default browser

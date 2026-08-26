@@ -81,9 +81,8 @@ if (!gotTheLock) {
   });
 
   app.on('window-all-closed', () => {
-    // If not quitting and tray is active, keep running in background
-    if (getIsQuitting() || process.platform === 'darwin') {
-      // Allow standard lifecycle
+    if (getIsQuitting()) {
+      app.quit();
     }
   });
 }
