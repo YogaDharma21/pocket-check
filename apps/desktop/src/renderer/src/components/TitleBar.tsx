@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Minus, Square, Copy, X } from "lucide-react";
-import { UserButton, SignedIn } from "@clerk/clerk-react";
+import { UserButton, SignedIn, useAuth } from "@clerk/clerk-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { isOnlineBackendConfigured } from "@/components/ConvexClientProvider";
 
@@ -32,6 +32,19 @@ export function TitleBar({ currentRoutine, packedRatio }: TitleBarProps) {
   const [isMaximized, setIsMaximized] = useState(false);
   const isMac = typeof window !== "undefined" && window.electronAPI?.platform === "darwin";
 
+  let isSignedIn = true;
+  if (isOnlineBackendConfigured) {
+    try {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const auth = useAuth();
+      isSignedIn = Boolean(auth.isSignedIn);
+    } catch {
+      isSignedIn = true;
+    }
+  }
+
+  const isLoggedOut = isOnlineBackendConfigured && !isSignedIn;
+
   useEffect(() => {
     if (!window.electronAPI) return;
 
@@ -53,17 +66,31 @@ export function TitleBar({ currentRoutine, packedRatio }: TitleBarProps) {
 
   return (
     <header
-      className={`sticky top-0 z-50 flex h-10 w-full select-none items-center justify-between border-b border-border bg-card/85 backdrop-blur-md app-drag-region ${
-        isMac ? "pl-20 pr-3" : "px-3"
-      }`}
+      className={`sticky top-0 z-50 flex h-10 w-full select-none items-center justify-between border-b transition-colors ${
+        isLoggedOut
+          ? "border-zinc-900 bg-black text-white"
+          : "border-border bg-card/85 backdrop-blur-md text-foreground"
+      } app-drag-region ${isMac ? "pl-20 pr-3" : "px-3"}`}
     >
       {/* Left: App Brand & Breadcrumb */}
       <div className="flex items-center gap-2 app-no-drag">
-        <div className="flex h-5 w-5 items-center justify-center rounded-md bg-primary text-primary-foreground font-black text-xs shadow-xs">
+        <div
+          className={`flex h-5 w-5 items-center justify-center rounded-md font-black text-xs shadow-xs ${
+            isLoggedOut
+              ? "bg-white text-black"
+              : "bg-primary text-primary-foreground"
+          }`}
+        >
           P
         </div>
-        <span className="text-xs font-black tracking-tight text-foreground">PocketCheck</span>
-        {currentRoutine && (
+        <span
+          className={`text-xs font-black tracking-tight ${
+            isLoggedOut ? "text-white" : "text-foreground"
+          }`}
+        >
+          PocketCheck
+        </span>
+        {!isLoggedOut && currentRoutine && (
           <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
             <span className="text-border">/</span>
             <span className="text-foreground/90">{currentRoutine}</span>
@@ -81,15 +108,19 @@ export function TitleBar({ currentRoutine, packedRatio }: TitleBarProps) {
 
       {/* Right: Actions & Window Controls */}
       <div className="flex items-center gap-1.5 app-no-drag">
-        <UserAuthMenu />
-        <ThemeToggle />
+        {!isLoggedOut && <UserAuthMenu />}
+        {!isLoggedOut && <ThemeToggle />}
 
         {!isMac && (
           <div className="flex items-center ml-1 gap-0.5">
             <button
               type="button"
               onClick={handleMinimize}
-              className="flex h-7 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+              className={`flex h-7 w-8 items-center justify-center rounded-md transition-colors cursor-pointer ${
+                isLoggedOut
+                  ? "text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
               title="Minimize"
             >
               <Minus className="h-3.5 w-3.5" />
@@ -97,7 +128,11 @@ export function TitleBar({ currentRoutine, packedRatio }: TitleBarProps) {
             <button
               type="button"
               onClick={handleMaximize}
-              className="flex h-7 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+              className={`flex h-7 w-8 items-center justify-center rounded-md transition-colors cursor-pointer ${
+                isLoggedOut
+                  ? "text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
               title={isMaximized ? "Restore" : "Maximize"}
             >
               {isMaximized ? (
@@ -109,7 +144,7 @@ export function TitleBar({ currentRoutine, packedRatio }: TitleBarProps) {
             <button
               type="button"
               onClick={handleClose}
-              className="flex h-7 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive hover:text-white transition-colors cursor-pointer"
+              className="flex h-7 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-destructive hover:text-white transition-colors cursor-pointer"
               title="Close"
             >
               <X className="h-3.5 w-3.5" />
