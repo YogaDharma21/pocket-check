@@ -145,9 +145,7 @@ export function createWindow(): BrowserWindow {
 
     if (!isLocalApp) {
       event.preventDefault();
-      if (url.startsWith('https://') || url.startsWith('http://') || url.startsWith('mailto:')) {
-        shell.openExternal(url);
-      }
+      // Prevent internal webview redirects (e.g. from Clerk auth) from opening unwanted browser tabs.
     }
   });
 

@@ -1,6 +1,5 @@
 import http from 'http';
 import { BrowserWindow } from 'electron';
-import { showAndFocusWindow } from './window';
 
 let authServer: http.Server | null = null;
 let currentPort = 49152;
@@ -107,12 +106,9 @@ export function startAuthServer(mainWindow: BrowserWindow): Promise<number> {
           });
           res.end(SUCCESS_HTML);
 
-          // Broadcast callback url to renderer
+          // Broadcast callback url to renderer so UI updates in background
           const fullUrl = `http://127.0.0.1:${port}${reqUrl}`;
           mainWindow.webContents.send('auth:sso-callback', fullUrl);
-
-          // Restore and focus the Electron main window
-          showAndFocusWindow();
         } else {
           res.writeHead(404, { 'Content-Type': 'text/plain' });
           res.end('Not Found');
