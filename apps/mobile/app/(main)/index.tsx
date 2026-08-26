@@ -503,7 +503,7 @@ export default function DashboardScreen() {
       style={[styles.safeArea, { backgroundColor: colors.background }]}
       edges={["top", "bottom", "left", "right"]}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
         <View
           style={[
