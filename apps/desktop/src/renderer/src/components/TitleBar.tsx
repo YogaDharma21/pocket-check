@@ -28,7 +28,7 @@ interface TitleBarProps {
   packedRatio?: string;
 }
 
-export function TitleBar({ currentRoutine, packedRatio }: TitleBarProps) {
+export function TitleBar(_props?: TitleBarProps) {
   const [isMaximized, setIsMaximized] = useState(false);
   const isMac = typeof window !== "undefined" && window.electronAPI?.platform === "darwin";
 
@@ -88,17 +88,6 @@ export function TitleBar({ currentRoutine, packedRatio }: TitleBarProps) {
         >
           PocketCheck
         </span>
-        {!isLoggedOut && currentRoutine && (
-          <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
-            <span className="text-border">/</span>
-            <span className="text-foreground/90">{currentRoutine}</span>
-            {packedRatio && (
-              <span className="rounded-lg bg-muted px-1.5 py-0.5 text-[10px] font-extrabold text-foreground border border-border/50">
-                {packedRatio}
-              </span>
-            )}
-          </span>
-        )}
       </div>
 
       {/* Center: Draggable Window Spacer */}
