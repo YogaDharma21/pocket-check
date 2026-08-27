@@ -117,7 +117,7 @@ function RoutineScheduleForm({
                 type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
-                className="bg-muted/30 border-border text-sm font-bold text-foreground h-11 rounded-lg px-3"
+                className="bg-muted/30 border-border text-sm font-bold text-foreground h-11 rounded-lg px-3 [color-scheme:light] dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-80 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
               />
             </div>
 
