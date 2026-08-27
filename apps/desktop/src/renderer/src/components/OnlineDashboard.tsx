@@ -907,8 +907,23 @@ export function OnlineDashboard({
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={() => {
+                      if (currentRoutineObj) {
+                        setManageRoutine(currentRoutineObj);
+                      }
+                      setShowScheduleModal(true);
+                    }}
+                    className="h-8 gap-1.5 text-xs font-bold cursor-pointer"
+                    title="Schedule Auto-Reset for this Destination"
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>Schedule</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => setShowShareModal(true)}
-                    className="h-8 gap-1.5 text-xs font-bold"
+                    className="h-8 gap-1.5 text-xs font-bold cursor-pointer"
                   >
                     <Share2 className="h-3.5 w-3.5" />
                     <span>Share</span>
@@ -917,7 +932,7 @@ export function OnlineDashboard({
                     variant="outline"
                     size="sm"
                     onClick={() => setShowExportModal(true)}
-                    className="h-8 gap-1.5 text-xs font-bold"
+                    className="h-8 gap-1.5 text-xs font-bold cursor-pointer"
                   >
                     <Download className="h-3.5 w-3.5" />
                     <span>Export</span>
@@ -1536,28 +1551,30 @@ export function OnlineDashboard({
       />
 
       {/* Routine Schedule Modal */}
-      {manageRoutine && (
-        <RoutineScheduleModal
-          open={showScheduleModal}
-          onOpenChange={setShowScheduleModal}
-          routineName={manageRoutine.name}
-          initialTime={manageRoutine.autoResetTime}
-          initialDays={manageRoutine.autoResetDays}
-          onSaveSchedule={async (time, days) => {
+      <RoutineScheduleModal
+        open={showScheduleModal}
+        onOpenChange={(open) => {
+          setShowScheduleModal(open);
+          if (!open) setManageRoutine(null);
+        }}
+        routineName={manageRoutine?.name || effectiveRoutine}
+        initialTime={manageRoutine?.autoResetTime || (manageRoutine ? undefined : currentRoutineObj?.autoResetTime)}
+        initialDays={manageRoutine?.autoResetDays || (manageRoutine ? undefined : currentRoutineObj?.autoResetDays)}
+        onSaveSchedule={async (time, days) => {
+          const target = manageRoutine || currentRoutineObj;
+          if (target) {
             await updateRoutine({
-              id: manageRoutine._id,
-              name: manageRoutine.name,
-              icon: manageRoutine.icon,
+              id: target._id,
+              name: target.name,
+              icon: target.icon,
               autoResetTime: time,
               autoResetDays: days,
             });
-            setManageRoutine((prev) =>
-              prev ? { ...prev, autoResetTime: time, autoResetDays: days } : null
-            );
             setShowScheduleModal(false);
-          }}
-        />
-      )}
+            setManageRoutine(null);
+          }
+        }}
+      />
 
       {/* Import Shared Modal */}
       <ImportSharedModal

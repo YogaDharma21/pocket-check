@@ -78,19 +78,19 @@ function RoutineScheduleForm({
     <>
       <DialogHeader>
         <DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
-          <Clock className="h-4 w-4 text-primary" />
+          <Clock className="h-4 w-4 text-foreground" />
           Auto-Reset Schedule for {routineName}
         </DialogTitle>
         <DialogDescription className="text-xs text-muted-foreground">
-          Automatically uncheck all packed items at your chosen time so you start with a fresh checklist.
+          Automatically uncheck all packed items at your chosen time so you wake up with a fresh checklist.
         </DialogDescription>
       </DialogHeader>
 
       <div className="space-y-4 py-2">
         {/* Toggle Enable */}
-        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/40 border border-border">
+        <div className="flex items-center justify-between p-3.5 rounded-xl bg-muted/40 border border-border">
           <div className="space-y-0.5">
-            <label className="text-xs font-bold text-foreground">
+            <label className="text-xs font-bold text-foreground block">
               Enable Daily Auto-Reset
             </label>
             <p className="text-[11px] text-muted-foreground">
@@ -117,7 +117,7 @@ function RoutineScheduleForm({
                 type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
-                className="bg-card border-border text-sm font-mono text-foreground h-9"
+                className="bg-muted/30 border-border text-sm font-bold text-foreground h-11 rounded-lg px-3"
               />
             </div>
 
@@ -135,10 +135,10 @@ function RoutineScheduleForm({
                       key={d.value}
                       type="button"
                       onClick={() => toggleDay(d.value)}
-                      className={`h-8 rounded text-xs font-bold transition-all border cursor-pointer ${
+                      className={`h-9 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
                         isSelected
-                          ? "bg-primary/20 text-primary border-primary"
-                          : "bg-muted/40 text-muted-foreground border-border hover:text-foreground hover:bg-muted"
+                          ? "bg-foreground text-background font-black border-transparent shadow-xs"
+                          : "bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted"
                       }`}
                     >
                       {d.label}
@@ -151,12 +151,12 @@ function RoutineScheduleForm({
         )}
       </div>
 
-      <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between">
+      <DialogFooter className="flex flex-row items-center justify-between pt-3 border-t border-border mt-2">
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className="text-xs h-8 text-muted-foreground hover:text-foreground cursor-pointer"
+          className="text-xs h-9 px-3 text-muted-foreground hover:text-foreground cursor-pointer font-bold"
           onClick={onCancel}
         >
           Cancel
@@ -166,13 +166,13 @@ function RoutineScheduleForm({
           type="button"
           size="sm"
           disabled={saving}
-          className="text-xs h-8 font-bold flex items-center gap-1.5 cursor-pointer"
+          className="text-xs h-9 px-4 bg-foreground text-background hover:bg-foreground/90 font-bold flex items-center gap-1.5 cursor-pointer rounded-lg"
           onClick={handleSave}
         >
           {saving ? (
             <RotateCcw className="h-3.5 w-3.5 animate-spin" />
           ) : (
-            <Check className="h-3.5 w-3.5" />
+            <Check className="h-3.5 w-3.5 stroke-[2.5]" />
           )}
           Save Schedule
         </Button>
@@ -185,8 +185,8 @@ export function RoutineScheduleModal({
   open,
   onOpenChange,
   routineName,
-  initialTime = "06:00",
-  initialDays = [1, 2, 3, 4, 5],
+  initialTime,
+  initialDays,
   onSaveSchedule,
 }: RoutineScheduleModalProps) {
   return (
@@ -194,7 +194,7 @@ export function RoutineScheduleModal({
       <DialogContent className="sm:max-w-md">
         {open && (
           <RoutineScheduleForm
-            key={`${routineName}-${initialTime}-${initialDays?.join(",")}`}
+            key={`${routineName}-${initialTime || "none"}-${initialDays?.join(",") || "none"}`}
             routineName={routineName}
             initialTime={initialTime}
             initialDays={initialDays}

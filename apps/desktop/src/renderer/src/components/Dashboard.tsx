@@ -651,8 +651,23 @@ function OfflineDashboard({
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    {/* Share & Export Quick Actions */}
+                    {/* Share, Export & Schedule Quick Actions */}
                     <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (currentRoutineObj) {
+                            setManageRoutine(currentRoutineObj);
+                          }
+                          setShowScheduleModal(true);
+                        }}
+                        className="h-8 text-xs font-bold gap-1 cursor-pointer border-border"
+                        title="Schedule Auto-Reset for this Destination"
+                      >
+                        <Clock className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Schedule</span>
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -1013,19 +1028,24 @@ function OfflineDashboard({
 
       <RoutineScheduleModal
         open={showScheduleModal}
-        onOpenChange={setShowScheduleModal}
+        onOpenChange={(open) => {
+          setShowScheduleModal(open);
+          if (!open) setManageRoutine(null);
+        }}
         routineName={manageRoutine?.name || effectiveRoutine}
-        initialTime={manageRoutine?.autoResetTime || "06:00"}
-        initialDays={manageRoutine?.autoResetDays || [1, 2, 3, 4, 5]}
+        initialTime={manageRoutine?.autoResetTime || (manageRoutine ? undefined : currentRoutineObj?.autoResetTime)}
+        initialDays={manageRoutine?.autoResetDays || (manageRoutine ? undefined : currentRoutineObj?.autoResetDays)}
         onSaveSchedule={async (time, days) => {
-          if (manageRoutine) {
+          const target = manageRoutine || currentRoutineObj;
+          if (target) {
             await db.updateRoutine(userId, {
-              id: manageRoutine._id,
-              name: manageRoutine.name,
-              icon: manageRoutine.icon,
+              id: target._id,
+              name: target.name,
+              icon: target.icon,
               autoResetTime: time,
               autoResetDays: days,
             });
+            setManageRoutine(null);
           }
         }}
       />
