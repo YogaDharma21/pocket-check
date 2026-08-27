@@ -596,7 +596,7 @@ function OfflineDashboard({
                   <Button
                     variant="outline"
                     onClick={() => setShowPresetsModal(true)}
-                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider text-primary uppercase hover:bg-primary/10"
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider text-foreground uppercase hover:bg-muted"
                   >
                     <Sparkles className="h-4 w-4" />
                     <span>Smart Presets</span>
@@ -609,7 +609,7 @@ function OfflineDashboard({
                       setCustomRoutineIcon("tag");
                       setShowNewRoutineModal(true);
                     }}
-                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider uppercase hover:bg-accent hover:text-foreground"
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider text-foreground uppercase hover:bg-muted"
                   >
                     <Plus className="h-4 w-4" />
                     <span>New Destination</span>

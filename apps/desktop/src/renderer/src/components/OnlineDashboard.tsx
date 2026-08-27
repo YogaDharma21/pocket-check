@@ -878,22 +878,26 @@ export function OnlineDashboard({
                 )}
 
                 {/* Create & Smart Presets Button */}
-                <div className="space-y-2 pt-2">
+                <div className="mt-2 flex flex-col gap-1.5">
                   <Button
                     variant="outline"
                     onClick={() => setShowPresetsModal(true)}
-                    className="w-full justify-center gap-2 border-border py-2 text-xs font-black tracking-wider text-foreground uppercase hover:bg-muted"
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider text-foreground uppercase hover:bg-muted"
                   >
-                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    <Sparkles className="h-4 w-4" />
                     <span>Smart Presets</span>
                   </Button>
 
                   <Button
-                    variant="secondary"
-                    onClick={() => setShowNewRoutineModal(true)}
-                    className="w-full justify-center gap-2 py-2 text-xs font-black tracking-wider uppercase"
+                    variant="outline"
+                    onClick={() => {
+                      setCustomRoutineName("");
+                      setCustomRoutineIcon("tag");
+                      setShowNewRoutineModal(true);
+                    }}
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider text-foreground uppercase hover:bg-muted"
                   >
-                    <Plus className="h-3.5 w-3.5" />
+                    <Plus className="h-4 w-4" />
                     <span>New Destination</span>
                   </Button>
                 </div>
