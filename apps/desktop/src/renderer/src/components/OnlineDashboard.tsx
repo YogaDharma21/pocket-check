@@ -1006,44 +1006,103 @@ export function OnlineDashboard({
               />
             )}
 
-            {/* Quick Add Bar */}
+            {/* Quick Add Item Bar with Live Auto-Icon Detection */}
             {effectiveRoutine && (
-              <form onSubmit={handleAddItem} className="space-y-1.5">
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Input
-                      ref={itemInputRef}
-                      value={newCustomItemName}
-                      onChange={(e) => setNewCustomItemName(e.target.value)}
-                      placeholder="Add item..."
-                      className="h-12 bg-card pl-10 pr-24 font-bold text-sm text-foreground shadow-xs"
-                    />
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                      {liveDetectedIcon ? (
-                        <span className="text-primary">{renderItemIcon(liveDetectedIcon)}</span>
-                      ) : (
-                        <Tag className="h-4 w-4" />
-                      )}
-                    </div>
-                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1">
-                      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">
-                        Ctrl+K to focus
-                      </span>
-                    </div>
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={!newCustomItemName.trim()}
-                    className="h-12 px-5 font-black text-xs uppercase shadow-xs cursor-pointer"
+              <Card className="border-border shadow-xs">
+                <CardContent className="space-y-2 p-3.5 sm:p-4">
+                  <form
+                    onSubmit={(e) => {
+                      void handleAddItem(e);
+                    }}
+                    className="flex flex-col items-center gap-2.5 sm:flex-row"
                   >
-                    <Plus className="h-4 w-4 mr-1.5" />
-                    <span>Add Item</span>
-                  </Button>
-                </div>
-                <p className="text-[11px] text-muted-foreground font-semibold px-1">
-                  Tip: Type comma-separated items to bulk-add • Space to toggle • J/K to move
-                </p>
-              </form>
+                    <div className="flex w-full gap-2 sm:flex-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setIconPickerTarget("newItem");
+                          setShowIconPicker(true);
+                        }}
+                        className="flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-lg px-0"
+                        title="Select Icon for item"
+                      >
+                        {liveDetectedIcon ? (
+                          renderItemIcon(liveDetectedIcon)
+                        ) : (
+                          <Tag className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                      <Input
+                        ref={itemInputRef}
+                        type="text"
+                        value={newCustomItemName}
+                        onChange={(e) => setNewCustomItemName(e.target.value)}
+                        placeholder="Add item..."
+                        className="h-11 flex-1 text-sm font-bold"
+                      />
+                    </div>
+                    <div className="flex w-full gap-2 sm:w-auto">
+                      <Button
+                        type="submit"
+                        disabled={!newCustomItemName.trim()}
+                        className="h-11 w-full cursor-pointer rounded-lg px-5 font-black tracking-wider uppercase sm:w-auto"
+                      >
+                        <Plus className="mr-1 h-4 w-4" />
+                        {(() => {
+                          const parsed = parseMultiItemInput(
+                            newCustomItemName,
+                            newItemTag
+                          );
+                          if (parsed.length > 1) {
+                            return `Add ${parsed.length} Items`;
+                          }
+                          return "Add Item";
+                        })()}
+                      </Button>
+                    </div>
+                  </form>
+
+                  {/* Live preview for multi-item comma entry */}
+                  {(() => {
+                    const parsed = parseMultiItemInput(
+                      newCustomItemName,
+                      newItemTag
+                    );
+                    if (parsed.length > 1) {
+                      return (
+                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                          <span className="text-[11px] font-bold text-muted-foreground">
+                            Adding {parsed.length} items:
+                          </span>
+                          {parsed.map((item, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-0.5 text-xs font-bold text-foreground"
+                            >
+                              {renderItemIcon(
+                                item.emoji || newItemTag || "Tag"
+                              )}
+                              <span>{item.name}</span>
+                            </span>
+                          ))}
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="flex items-center justify-between px-1 text-[11px] font-bold text-muted-foreground">
+                        <span>
+                          Tip: Type comma-separated items to bulk-add &bull;
+                          Space to toggle &bull; J/K to move
+                        </span>
+                        <kbd className="hidden rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
+                          Ctrl+K to focus
+                        </kbd>
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
             )}
 
             {/* Items Checklist List */}
@@ -1511,6 +1570,15 @@ export function OnlineDashboard({
       <IconPickerModal
         open={showIconPicker}
         onOpenChange={setShowIconPicker}
+        selectedKey={
+          iconPickerTarget === "newItem"
+            ? newItemTag
+            : iconPickerTarget === "editItem"
+            ? editModalIconTag
+            : iconPickerTarget === "newRoutine"
+            ? customRoutineIcon
+            : editModalIconTag
+        }
         onSelectIcon={(iconKey) => {
           if (iconPickerTarget === "newItem") {
             setNewItemTag(iconKey);
