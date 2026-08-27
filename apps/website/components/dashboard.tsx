@@ -1473,22 +1473,13 @@ export function Dashboard() {
                                       )}
                                     </div>
 
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <Badge
-                                        variant={
-                                          item.isPacked ? "default" : "outline"
-                                        }
-                                        className="px-2 py-0 text-[10px] font-black"
-                                      >
-                                        {item.isPacked ? "Packed" : "Missing"}
-                                      </Badge>
-
-                                      {item.locationNote && (
+                                    {item.locationNote && (
+                                      <div className="flex flex-wrap items-center gap-2">
                                         <span className="text-[11px] font-medium text-muted-foreground italic">
                                           📍 {item.locationNote}
                                         </span>
-                                      )}
-                                    </div>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
 
