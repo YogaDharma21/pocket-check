@@ -499,10 +499,9 @@ function IconPickerModalInner({
               {Array.from({ length: 18 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="flex flex-col items-center justify-center p-2 rounded-xl border border-border/50 gap-1.5 h-[70px]"
+                  className="flex items-center justify-center p-2 rounded-xl border border-border/50 h-12"
                 >
-                  <Skeleton className="w-5 h-5 rounded-lg" />
-                  <Skeleton className="w-10 h-2.5 rounded-md" />
+                  <Skeleton className="w-6 h-6 rounded-lg" />
                 </div>
               ))}
             </div>
@@ -516,14 +515,14 @@ function IconPickerModalInner({
                   onOpenChange(false);
                   handleSearchChange("");
                 }}
-                className={`flex flex-col items-center justify-center p-2 rounded-xl border text-xs gap-1.5 transition-all cursor-pointer h-[70px] ${
+                title="None"
+                className={`flex items-center justify-center p-2 rounded-xl border transition-all cursor-pointer h-12 ${
                   !selectedKey
                     ? "border-foreground ring-2 ring-foreground/20 bg-muted/80 text-foreground font-bold shadow-xs"
                     : "border-border/70 hover:bg-muted/60 text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <X className="w-5 h-5 opacity-70" />
-                <span className="text-[10px] truncate max-w-full font-semibold">None</span>
               </button>
 
               {/* Custom Query / Direct Text Button */}
@@ -535,14 +534,11 @@ function IconPickerModalInner({
                     onOpenChange(false);
                     handleSearchChange("");
                   }}
-                  className="flex flex-col items-center justify-center p-2 rounded-xl border border-dashed border-primary bg-primary/10 hover:bg-primary/20 text-primary text-xs gap-1.5 transition-all cursor-pointer h-[70px]"
+                  className="flex items-center justify-center p-2 rounded-xl border border-dashed border-primary bg-primary/10 hover:bg-primary/20 text-primary transition-all cursor-pointer h-12"
                   title={`Use "${cleanQuery}" directly`}
                 >
-                  <span className="text-lg leading-none font-bold">
-                    {cleanQuery.slice(0, 2)}
-                  </span>
-                  <span className="text-[9px] font-black truncate max-w-full">
-                    Use Text
+                  <span className="text-sm font-black truncate max-w-full">
+                    {cleanQuery.slice(0, 2).toUpperCase()}
                   </span>
                 </button>
               )}
@@ -566,16 +562,13 @@ function IconPickerModalInner({
                       handleSearchChange("");
                     }}
                     title={displayName}
-                    className={`flex flex-col items-center justify-center p-2 rounded-xl border text-xs gap-1.5 transition-all cursor-pointer h-[70px] ${
+                    className={`flex items-center justify-center p-2 rounded-xl border transition-all cursor-pointer h-12 ${
                       isSelected
                         ? "border-foreground ring-2 ring-foreground/20 bg-muted/80 text-foreground font-bold shadow-xs"
                         : "border-border/70 bg-card/40 hover:bg-muted/60 text-foreground hover:text-foreground"
                     }`}
                   >
                     <IconComp className="w-5 h-5" />
-                    <span className="text-[10px] truncate max-w-full text-center px-0.5 font-semibold">
-                      {displayName}
-                    </span>
                   </button>
                 );
               })}
