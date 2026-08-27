@@ -9,8 +9,8 @@ import {
   Plus,
   RotateCcw,
   Trash2,
-  ChevronUp,
-  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Tag,
   GripVertical,
   AlertTriangle,
@@ -794,31 +794,39 @@ export function OnlineDashboard({
                             </div>
 
                             <div className="flex items-center gap-1">
-                              {routine.autoResetTime && (
-                                <span
-                                  className={`rounded-md p-1 ${
-                                    isActive
-                                      ? "text-primary-foreground/80 hover:text-primary-foreground"
-                                      : "text-muted-foreground hover:text-foreground"
-                                  }`}
-                                  title={`Auto-resets at ${routine.autoResetTime}`}
-                                >
-                                  <Clock className="h-3.5 w-3.5" />
-                                </span>
-                              )}
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setManageRoutine(routine);
+                                  setShowScheduleModal(true);
                                 }}
-                                className={`h-7 w-7 rounded-md p-0 ${
+                                className={`h-7 w-7 shrink-0 cursor-pointer rounded-lg opacity-70 transition-opacity group-hover:opacity-100 ${
                                   isActive
-                                    ? "text-primary-foreground/80 hover:bg-primary-foreground/20 hover:text-primary-foreground"
+                                    ? "text-primary-foreground hover:bg-primary-foreground/20"
                                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                 }`}
-                                title="Manage destination settings"
+                                title="Schedule Auto-Reset"
+                              >
+                                <Clock className="h-3.5 w-3.5" />
+                              </Button>
+
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setManageRoutine(routine);
+                                  setEditModalName(routine.name);
+                                  setEditModalIconTag(routine.icon);
+                                }}
+                                className={`h-7 w-7 shrink-0 cursor-pointer rounded-lg opacity-70 transition-opacity group-hover:opacity-100 ${
+                                  isActive
+                                    ? "text-primary-foreground hover:bg-primary-foreground/20"
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                }`}
+                                title="Destination Settings"
                               >
                                 <Settings className="h-3.5 w-3.5" />
                               </Button>
@@ -1213,72 +1221,155 @@ export function OnlineDashboard({
       </Dialog>
 
       {/* Manage Routine Modal */}
-      {manageRoutine && (
-        <Dialog open={!!manageRoutine} onOpenChange={() => setManageRoutine(null)}>
-          <DialogContent className="sm:max-w-md bg-card">
+      <Dialog
+        open={!!manageRoutine && !showScheduleModal}
+        onOpenChange={(open) => !open && setManageRoutine(null)}
+      >
+        {manageRoutine && (
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-base font-black">Manage {manageRoutine.name}</DialogTitle>
+              <DialogTitle className="text-xl font-bold">Destination Settings</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-2">
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <span className="text-xs font-bold text-muted-foreground">Auto-Reset Schedule</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowScheduleModal(true)}
-                  className="h-8 gap-1.5 text-xs font-bold"
-                >
-                  <Clock className="h-3.5 w-3.5" />
-                  <span>{manageRoutine.autoResetTime ? manageRoutine.autoResetTime : "Configure"}</span>
-                </Button>
-              </div>
 
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <span className="text-xs font-bold text-muted-foreground">Reorder Destination</span>
-                <div className="flex items-center gap-1">
+            <div className="space-y-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                  Destination Icon & Name
+                </label>
+                <div className="flex gap-2">
                   <Button
+                    type="button"
                     variant="outline"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => handleMoveRoutineById(manageRoutine._id, -1)}
+                    onClick={() => {
+                      setIconPickerTarget("editRoutine");
+                      setShowIconPicker(true);
+                    }}
+                    className="flex h-10 w-12 shrink-0 items-center justify-center rounded-lg px-0 cursor-pointer"
+                    title="Select Destination Icon"
                   >
-                    <ChevronUp className="h-3.5 w-3.5" />
+                    {renderRoutineIcon(editModalIconTag || editModalName)}
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => handleMoveRoutineById(manageRoutine._id, 1)}
-                  >
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  </Button>
+                  <Input
+                    type="text"
+                    value={editModalName}
+                    onChange={(e) => setEditModalName(e.target.value)}
+                    placeholder="Destination name..."
+                    className="flex-1"
+                  />
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-xs font-bold text-destructive">Delete Destination</span>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={async () => {
-                    await deleteRoutine({ id: manageRoutine._id });
-                    setManageRoutine(null);
-                  }}
-                  className="h-8 text-xs font-bold"
-                >
-                  <Trash2 className="h-3.5 w-3.5 mr-1" />
-                  <span>Delete</span>
-                </Button>
+              {/* Reordering */}
+              <div className="flex flex-col gap-1.5 pt-2">
+                <label className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                  Change Order
+                </label>
+                <div className="flex gap-2">
+                  {(() => {
+                    const rIndex = routinesList.findIndex(
+                      (r) => r._id === manageRoutine._id
+                    );
+                    return (
+                      <>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            void handleMoveRoutineById(manageRoutine._id, -1);
+                          }}
+                          disabled={rIndex <= 0}
+                          className="flex-1 cursor-pointer"
+                        >
+                          <ChevronLeft className="h-4 w-4 mr-1.5" /> Move Left
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            void handleMoveRoutineById(manageRoutine._id, 1);
+                          }}
+                          disabled={
+                            rIndex === -1 || rIndex >= routinesList.length - 1
+                          }
+                          className="flex-1 cursor-pointer"
+                        >
+                          Move Right <ChevronRight className="h-4 w-4 ml-1.5" />
+                        </Button>
+                      </>
+                    );
+                  })()}
+                </div>
               </div>
+
+              <DialogFooter className="flex flex-col gap-2 border-t-0 p-0 pt-2 mt-2">
+                <Button
+                  onClick={async () => {
+                    if (!editModalName.trim()) return;
+                    try {
+                      await updateRoutine({
+                        id: manageRoutine._id,
+                        name: editModalName.trim(),
+                        icon: editModalIconTag || manageRoutine.icon,
+                      });
+                      const oldName = manageRoutine.name;
+                      if (effectiveRoutine === oldName) {
+                        setSelectedRoutine(editModalName.trim());
+                      }
+                      setManageRoutine(null);
+                    } catch (err) {
+                      console.error("Failed to update routine", err);
+                    }
+                  }}
+                  className="w-full font-black tracking-wider uppercase cursor-pointer"
+                >
+                  SAVE CHANGES
+                </Button>
+
+                <div className="flex w-full gap-2">
+                  <Button
+                    variant="destructive"
+                    onClick={async () => {
+                      if (
+                        !confirm(
+                          `Delete "${manageRoutine.name}" and all its items?`
+                        )
+                      )
+                        return;
+                      try {
+                        const routineToDeleteName = manageRoutine.name;
+                        const routineToDeleteId = manageRoutine._id;
+                        await deleteRoutine({ id: routineToDeleteId });
+                        const remaining = routinesList.filter(
+                          (r) => r._id !== routineToDeleteId
+                        );
+                        if (
+                          selectedRoutine === routineToDeleteName ||
+                          effectiveRoutine === routineToDeleteName
+                        ) {
+                          setSelectedRoutine(
+                            remaining.length > 0 ? remaining[0].name : ""
+                          );
+                        }
+                        setManageRoutine(null);
+                      } catch (err) {
+                        console.error("Failed to delete routine", err);
+                      }
+                    }}
+                    className="flex-1 text-xs font-bold tracking-wider uppercase cursor-pointer"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1.5" /> DELETE DESTINATION
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setManageRoutine(null)}
+                    className="flex-1 text-xs font-bold tracking-wider uppercase cursor-pointer"
+                  >
+                    CANCEL
+                  </Button>
+                </div>
+              </DialogFooter>
             </div>
-            <DialogFooter>
-              <Button variant="ghost" size="sm" onClick={() => setManageRoutine(null)}>
-                Done
-              </Button>
-            </DialogFooter>
           </DialogContent>
-        </Dialog>
-      )}
+        )}
+      </Dialog>
 
       {/* Edit Item Modal */}
       {manageItem && (
@@ -1412,6 +1503,8 @@ export function OnlineDashboard({
             setEditModalIconTag(iconKey);
           } else if (iconPickerTarget === "newRoutine") {
             setCustomRoutineIcon(iconKey);
+          } else if (iconPickerTarget === "editRoutine") {
+            setEditModalIconTag(iconKey);
           }
           setShowIconPicker(false);
         }}

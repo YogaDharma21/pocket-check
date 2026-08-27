@@ -8,6 +8,8 @@ import {
   Trash2,
   Tag,
   GripVertical,
+  ChevronLeft,
+  ChevronRight,
   Settings,
   Sparkles,
   Clock,
@@ -362,6 +364,24 @@ function OfflineDashboard({
       name: single.name,
       emoji: detectedEmoji,
     });
+  };
+
+  const handleMoveRoutineById = async (
+    id: string,
+    direction: -1 | 1
+  ) => {
+    const index = routines.findIndex((r) => r._id === id);
+    if (index === -1) return;
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= routines.length) return;
+    try {
+      const ids = routines.map((r) => r._id);
+      const [moved] = ids.splice(index, 1);
+      ids.splice(targetIndex, 0, moved);
+      await db.reorderRoutines(userId, ids);
+    } catch (err) {
+      console.error("Failed to reorder routine", err);
+    }
   };
 
   let headline = "Let's double-check before you pack!";
@@ -1162,65 +1182,155 @@ function OfflineDashboard({
       )}
 
       {/* Edit Routine Modal */}
-      {manageRoutine && (
-        <Dialog open={!!manageRoutine && !showScheduleModal} onOpenChange={(open) => !open && setManageRoutine(null)}>
+      <Dialog
+        open={!!manageRoutine && !showScheduleModal}
+        onOpenChange={(open) => !open && setManageRoutine(null)}
+      >
+        {manageRoutine && (
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-base font-bold">Destination Settings</DialogTitle>
+              <DialogTitle className="text-xl font-bold">Destination Settings</DialogTitle>
             </DialogHeader>
-            <div className="space-y-3 py-2">
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIconPickerTarget("editRoutine");
-                    setShowIconPicker(true);
-                  }}
-                  className="h-10 w-12 shrink-0 p-0"
-                >
-                  {renderRoutineIcon(editModalIconTag || editModalName)}
-                </Button>
-                <Input
-                  type="text"
-                  value={editModalName}
-                  onChange={(e) => setEditModalName(e.target.value)}
-                  className="h-10 text-sm font-bold flex-1"
-                />
+
+            <div className="space-y-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                  Destination Icon & Name
+                </label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIconPickerTarget("editRoutine");
+                      setShowIconPicker(true);
+                    }}
+                    className="flex h-10 w-12 shrink-0 items-center justify-center rounded-lg px-0 cursor-pointer"
+                    title="Select Destination Icon"
+                  >
+                    {renderRoutineIcon(editModalIconTag || editModalName)}
+                  </Button>
+                  <Input
+                    type="text"
+                    value={editModalName}
+                    onChange={(e) => setEditModalName(e.target.value)}
+                    placeholder="Destination name..."
+                    className="flex-1"
+                  />
+                </div>
               </div>
+
+              {/* Reordering */}
+              <div className="flex flex-col gap-1.5 pt-2">
+                <label className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                  Change Order
+                </label>
+                <div className="flex gap-2">
+                  {(() => {
+                    const rIndex = routines.findIndex(
+                      (r) => r._id === manageRoutine._id
+                    );
+                    return (
+                      <>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            void handleMoveRoutineById(manageRoutine._id, -1);
+                          }}
+                          disabled={rIndex <= 0}
+                          className="flex-1 cursor-pointer"
+                        >
+                          <ChevronLeft className="h-4 w-4 mr-1.5" /> Move Left
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            void handleMoveRoutineById(manageRoutine._id, 1);
+                          }}
+                          disabled={
+                            rIndex === -1 || rIndex >= routines.length - 1
+                          }
+                          className="flex-1 cursor-pointer"
+                        >
+                          Move Right <ChevronRight className="h-4 w-4 ml-1.5" />
+                        </Button>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              <DialogFooter className="flex flex-col gap-2 border-t-0 p-0 pt-2 mt-2">
+                <Button
+                  onClick={async () => {
+                    if (!editModalName.trim()) return;
+                    try {
+                      await db.updateRoutine(userId, {
+                        id: manageRoutine._id,
+                        name: editModalName.trim(),
+                        icon: editModalIconTag || manageRoutine.icon,
+                      });
+                      const oldName = manageRoutine.name;
+                      if (activeRoutine === oldName) {
+                        setActiveRoutine(editModalName.trim());
+                      }
+                      setManageRoutine(null);
+                    } catch (err) {
+                      console.error("Failed to update routine", err);
+                    }
+                  }}
+                  className="w-full font-black tracking-wider uppercase cursor-pointer"
+                >
+                  SAVE CHANGES
+                </Button>
+
+                <div className="flex w-full gap-2">
+                  <Button
+                    variant="destructive"
+                    onClick={async () => {
+                      if (
+                        !confirm(
+                          `Delete "${manageRoutine.name}" and all its items?`
+                        )
+                      )
+                        return;
+                      try {
+                        const routineToDeleteName = manageRoutine.name;
+                        const routineToDeleteId = manageRoutine._id;
+                        await db.deleteRoutine(userId, routineToDeleteId);
+                        const remaining = routines.filter(
+                          (r) => r._id !== routineToDeleteId
+                        );
+                        if (
+                          activeRoutine === routineToDeleteName ||
+                          effectiveRoutine === routineToDeleteName
+                        ) {
+                          setActiveRoutine(
+                            remaining.length > 0 ? remaining[0].name : ""
+                          );
+                        }
+                        setManageRoutine(null);
+                      } catch (err) {
+                        console.error("Failed to delete routine", err);
+                      }
+                    }}
+                    className="flex-1 text-xs font-bold tracking-wider uppercase cursor-pointer"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1.5" /> DELETE DESTINATION
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setManageRoutine(null)}
+                    className="flex-1 text-xs font-bold tracking-wider uppercase cursor-pointer"
+                  >
+                    CANCEL
+                  </Button>
+                </div>
+              </DialogFooter>
             </div>
-            <DialogFooter className="flex justify-between">
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={async () => {
-                  await db.deleteRoutine(userId, manageRoutine._id);
-                  setManageRoutine(null);
-                }}
-                className="text-xs"
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete Destination
-              </Button>
-              <Button
-                size="sm"
-                onClick={async () => {
-                  if (!editModalName.trim()) return;
-                  await db.updateRoutine(userId, {
-                    id: manageRoutine._id,
-                    name: editModalName.trim(),
-                    icon: editModalIconTag || manageRoutine.icon,
-                  });
-                  setActiveRoutine(editModalName.trim());
-                  setManageRoutine(null);
-                }}
-                className="text-xs font-bold"
-              >
-                Save
-              </Button>
-            </DialogFooter>
           </DialogContent>
-        </Dialog>
-      )}
+        )}
+      </Dialog>
 
       {/* Delete All Confirmation Dialog */}
       <Dialog open={showDeleteAllConfirm} onOpenChange={setShowDeleteAllConfirm}>
