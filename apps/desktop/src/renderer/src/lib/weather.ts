@@ -13,18 +13,44 @@ export interface WeatherData {
   isColdDay: boolean;
   description: string;
   suggestion: string | null;
+  locationName?: string;
   suggestedItem: {
     name: string;
     emoji: string;
   } | null;
 }
 
-export function evaluateWeatherData(daily: {
-  precipitation_probability_max?: number[];
-  temperature_2m_max?: number[];
-  temperature_2m_min?: number[];
-  weather_code?: number[];
-}): WeatherData | null {
+export async function reverseGeocode(
+  lat: number,
+  lon: number
+): Promise<string | undefined> {
+  try {
+    const res = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
+    );
+    if (!res.ok) return undefined;
+    const data = await res.json();
+    const name =
+      data.city ||
+      data.locality ||
+      data.principalSubdivision ||
+      data.countryName ||
+      undefined;
+    return name;
+  } catch {
+    return undefined;
+  }
+}
+
+export function evaluateWeatherData(
+  daily: {
+    precipitation_probability_max?: number[];
+    temperature_2m_max?: number[];
+    temperature_2m_min?: number[];
+    weather_code?: number[];
+  },
+  locationName?: string
+): WeatherData | null {
   if (!daily || !daily.precipitation_probability_max) return null;
 
   const precipitationProbability = daily.precipitation_probability_max[0] ?? 0;
@@ -52,6 +78,9 @@ export function evaluateWeatherData(daily: {
     description = `Chilly weather (${temperatureMax}°C)`;
     suggestion = `Cold day (${temperatureMax}°C) — pack a warm jacket!`;
     suggestedItem = { name: "Jacket", emoji: "Shirt" };
+  } else {
+    description = "Clear & pleasant";
+    suggestion = `Pleasant conditions today (${temperatureMax}°C) — no weather-specific items needed!`;
   }
 
   return {
@@ -64,26 +93,24 @@ export function evaluateWeatherData(daily: {
     isColdDay,
     description,
     suggestion,
+    locationName,
     suggestedItem,
   };
 }
 
 export async function fetchDailyWeather(
-  lat?: number,
-  lon?: number
+  lat: number,
+  lon: number,
+  locationName?: string
 ): Promise<WeatherData | null> {
   try {
-    // Default fallback coordinates (approx. Jakarta / Central)
-    const latitude = lat ?? -6.2088;
-    const longitude = lon ?? 106.8456;
-
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=precipitation_probability_max,temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=precipitation_probability_max,temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`;
 
     const response = await fetch(url);
     if (!response.ok) return null;
 
     const data = await response.json();
-    return evaluateWeatherData(data.daily);
+    return evaluateWeatherData(data.daily, locationName);
   } catch {
     return null;
   }

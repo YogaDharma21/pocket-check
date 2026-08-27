@@ -185,17 +185,9 @@ export function IconPickerModal({
                 >
                   <Ionicons
                     name="close"
-                    size={20}
+                    size={22}
                     color={colors.mutedForeground}
                   />
-                  <Text
-                    style={[
-                      styles.iconLabel,
-                      { color: colors.mutedForeground },
-                    ]}
-                  >
-                    None
-                  </Text>
                 </TouchableOpacity>
 
                 {filtered.map((item) => {
@@ -221,24 +213,11 @@ export function IconPickerModal({
                     >
                       <Ionicons
                         name={item.ionicon}
-                        size={22}
+                        size={24}
                         color={
                           isSelected ? colors.primary : colors.foreground
                         }
                       />
-                      <Text
-                        style={[
-                          styles.iconLabel,
-                          {
-                            color: isSelected
-                              ? colors.primary
-                              : colors.foreground,
-                          },
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {item.name}
-                      </Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -310,10 +289,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 6,
-  },
-  iconLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    marginTop: 4,
   },
 });

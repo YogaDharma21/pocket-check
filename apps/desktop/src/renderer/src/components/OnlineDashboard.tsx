@@ -9,6 +9,8 @@ import {
   Plus,
   RotateCcw,
   Trash2,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   ChevronDown,
   Tag,
@@ -484,6 +486,21 @@ export function OnlineDashboard({
     }
   };
 
+  const handleMoveItemById = async (id: Id<"items">, direction: -1 | 1) => {
+    const index = items.findIndex((i) => i._id === id);
+    if (index === -1) return;
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= items.length) return;
+    try {
+      const ids = items.map((i) => i._id);
+      const [moved] = ids.splice(index, 1);
+      ids.splice(targetIndex, 0, moved);
+      await reorderItems({ ids });
+    } catch (err) {
+      console.error("Failed to reorder item", err);
+    }
+  };
+
   const handleMoveRoutineById = async (
     id: Id<"routines">,
     direction: -1 | 1
@@ -794,31 +811,39 @@ export function OnlineDashboard({
                             </div>
 
                             <div className="flex items-center gap-1">
-                              {routine.autoResetTime && (
-                                <span
-                                  className={`rounded-md p-1 ${
-                                    isActive
-                                      ? "text-primary-foreground/80 hover:text-primary-foreground"
-                                      : "text-muted-foreground hover:text-foreground"
-                                  }`}
-                                  title={`Auto-resets at ${routine.autoResetTime}`}
-                                >
-                                  <Clock className="h-3.5 w-3.5" />
-                                </span>
-                              )}
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setManageRoutine(routine);
+                                  setShowScheduleModal(true);
                                 }}
-                                className={`h-7 w-7 rounded-md p-0 ${
+                                className={`h-7 w-7 shrink-0 cursor-pointer rounded-lg opacity-70 transition-opacity group-hover:opacity-100 ${
                                   isActive
-                                    ? "text-primary-foreground/80 hover:bg-primary-foreground/20 hover:text-primary-foreground"
+                                    ? "text-primary-foreground hover:bg-primary-foreground/20"
                                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                 }`}
-                                title="Manage destination settings"
+                                title="Schedule Auto-Reset"
+                              >
+                                <Clock className="h-3.5 w-3.5" />
+                              </Button>
+
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setManageRoutine(routine);
+                                  setEditModalName(routine.name);
+                                  setEditModalIconTag(routine.icon);
+                                }}
+                                className={`h-7 w-7 shrink-0 cursor-pointer rounded-lg opacity-70 transition-opacity group-hover:opacity-100 ${
+                                  isActive
+                                    ? "text-primary-foreground hover:bg-primary-foreground/20"
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                }`}
+                                title="Destination Settings"
                               >
                                 <Settings className="h-3.5 w-3.5" />
                               </Button>
@@ -853,22 +878,26 @@ export function OnlineDashboard({
                 )}
 
                 {/* Create & Smart Presets Button */}
-                <div className="space-y-2 pt-2">
+                <div className="mt-2 flex flex-col gap-1.5">
                   <Button
                     variant="outline"
                     onClick={() => setShowPresetsModal(true)}
-                    className="w-full justify-center gap-2 border-border py-2 text-xs font-black tracking-wider text-foreground uppercase hover:bg-muted"
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider text-foreground uppercase hover:bg-muted"
                   >
-                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    <Sparkles className="h-4 w-4" />
                     <span>Smart Presets</span>
                   </Button>
 
                   <Button
-                    variant="secondary"
-                    onClick={() => setShowNewRoutineModal(true)}
-                    className="w-full justify-center gap-2 py-2 text-xs font-black tracking-wider uppercase"
+                    variant="outline"
+                    onClick={() => {
+                      setCustomRoutineName("");
+                      setCustomRoutineIcon("tag");
+                      setShowNewRoutineModal(true);
+                    }}
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider text-foreground uppercase hover:bg-muted"
                   >
-                    <Plus className="h-3.5 w-3.5" />
+                    <Plus className="h-4 w-4" />
                     <span>New Destination</span>
                   </Button>
                 </div>
@@ -899,8 +928,23 @@ export function OnlineDashboard({
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={() => {
+                      if (currentRoutineObj) {
+                        setManageRoutine(currentRoutineObj);
+                      }
+                      setShowScheduleModal(true);
+                    }}
+                    className="h-8 gap-1.5 text-xs font-bold cursor-pointer"
+                    title="Schedule Auto-Reset for this Destination"
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>Schedule</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => setShowShareModal(true)}
-                    className="h-8 gap-1.5 text-xs font-bold"
+                    className="h-8 gap-1.5 text-xs font-bold cursor-pointer"
                   >
                     <Share2 className="h-3.5 w-3.5" />
                     <span>Share</span>
@@ -909,7 +953,7 @@ export function OnlineDashboard({
                     variant="outline"
                     size="sm"
                     onClick={() => setShowExportModal(true)}
-                    className="h-8 gap-1.5 text-xs font-bold"
+                    className="h-8 gap-1.5 text-xs font-bold cursor-pointer"
                   >
                     <Download className="h-3.5 w-3.5" />
                     <span>Export</span>
@@ -983,44 +1027,103 @@ export function OnlineDashboard({
               />
             )}
 
-            {/* Quick Add Bar */}
+            {/* Quick Add Item Bar with Live Auto-Icon Detection */}
             {effectiveRoutine && (
-              <form onSubmit={handleAddItem} className="space-y-1.5">
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Input
-                      ref={itemInputRef}
-                      value={newCustomItemName}
-                      onChange={(e) => setNewCustomItemName(e.target.value)}
-                      placeholder="Add item..."
-                      className="h-12 bg-card pl-10 pr-24 font-bold text-sm text-foreground shadow-xs"
-                    />
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                      {liveDetectedIcon ? (
-                        <span className="text-primary">{renderItemIcon(liveDetectedIcon)}</span>
-                      ) : (
-                        <Tag className="h-4 w-4" />
-                      )}
-                    </div>
-                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1">
-                      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">
-                        Ctrl+K to focus
-                      </span>
-                    </div>
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={!newCustomItemName.trim()}
-                    className="h-12 px-5 font-black text-xs uppercase shadow-xs cursor-pointer"
+              <Card className="border-border shadow-xs">
+                <CardContent className="space-y-2 p-3.5 sm:p-4">
+                  <form
+                    onSubmit={(e) => {
+                      void handleAddItem(e);
+                    }}
+                    className="flex flex-col items-center gap-2.5 sm:flex-row"
                   >
-                    <Plus className="h-4 w-4 mr-1.5" />
-                    <span>Add Item</span>
-                  </Button>
-                </div>
-                <p className="text-[11px] text-muted-foreground font-semibold px-1">
-                  Tip: Type comma-separated items to bulk-add • Space to toggle • J/K to move
-                </p>
-              </form>
+                    <div className="flex w-full gap-2 sm:flex-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setIconPickerTarget("newItem");
+                          setShowIconPicker(true);
+                        }}
+                        className="flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-lg px-0"
+                        title="Select Icon for item"
+                      >
+                        {liveDetectedIcon ? (
+                          renderItemIcon(liveDetectedIcon)
+                        ) : (
+                          <Tag className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                      <Input
+                        ref={itemInputRef}
+                        type="text"
+                        value={newCustomItemName}
+                        onChange={(e) => setNewCustomItemName(e.target.value)}
+                        placeholder="Add item..."
+                        className="h-11 flex-1 text-sm font-bold"
+                      />
+                    </div>
+                    <div className="flex w-full gap-2 sm:w-auto">
+                      <Button
+                        type="submit"
+                        disabled={!newCustomItemName.trim()}
+                        className="h-11 w-full cursor-pointer rounded-lg px-5 font-black tracking-wider uppercase sm:w-auto"
+                      >
+                        <Plus className="mr-1 h-4 w-4" />
+                        {(() => {
+                          const parsed = parseMultiItemInput(
+                            newCustomItemName,
+                            newItemTag
+                          );
+                          if (parsed.length > 1) {
+                            return `Add ${parsed.length} Items`;
+                          }
+                          return "Add Item";
+                        })()}
+                      </Button>
+                    </div>
+                  </form>
+
+                  {/* Live preview for multi-item comma entry */}
+                  {(() => {
+                    const parsed = parseMultiItemInput(
+                      newCustomItemName,
+                      newItemTag
+                    );
+                    if (parsed.length > 1) {
+                      return (
+                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                          <span className="text-[11px] font-bold text-muted-foreground">
+                            Adding {parsed.length} items:
+                          </span>
+                          {parsed.map((item, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-0.5 text-xs font-bold text-foreground"
+                            >
+                              {renderItemIcon(
+                                item.emoji || newItemTag || "Tag"
+                              )}
+                              <span>{item.name}</span>
+                            </span>
+                          ))}
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="flex items-center justify-between px-1 text-[11px] font-bold text-muted-foreground">
+                        <span>
+                          Tip: Type comma-separated items to bulk-add &bull;
+                          Space to toggle &bull; J/K to move
+                        </span>
+                        <kbd className="hidden rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline">
+                          Ctrl+K to focus
+                        </kbd>
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
             )}
 
             {/* Items Checklist List */}
@@ -1169,152 +1272,276 @@ export function OnlineDashboard({
       )}
 
       {/* New Routine Modal */}
-      <Dialog open={showNewRoutineModal} onOpenChange={setShowNewRoutineModal}>
-        <DialogContent className="sm:max-w-md bg-card">
+      <Dialog
+        open={showNewRoutineModal}
+        onOpenChange={(open) => {
+          setShowNewRoutineModal(open);
+          if (!open) {
+            setCustomRoutineName("");
+            setCustomRoutineIcon("tag");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-base font-black">Create New Destination</DialogTitle>
+            <DialogTitle className="flex items-center gap-2 text-base font-black">
+              <Plus className="h-4 w-4 text-primary" /> New Destination
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">Destination Name</label>
-              <Input
-                value={customRoutineName}
-                onChange={(e) => setCustomRoutineName(e.target.value)}
-                placeholder="e.g. Work, Gym, Library, Hiking..."
-                className="font-bold"
-                autoFocus
-              />
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleCreateRoutine();
+            }}
+            className="space-y-4 py-2 select-none"
+          >
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                Destination Icon & Name
+              </label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIconPickerTarget("newRoutine");
+                    setShowIconPicker(true);
+                  }}
+                  className="flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-lg px-0"
+                  title="Select Destination Icon"
+                >
+                  {renderRoutineIcon(customRoutineIcon)}
+                </Button>
+                <Input
+                  type="text"
+                  value={customRoutineName}
+                  onChange={(e) => setCustomRoutineName(e.target.value)}
+                  placeholder="e.g. Campus, Work, Gym, Weekend Trip..."
+                  className="h-11 flex-1 text-sm font-bold"
+                  autoFocus
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">Icon Symbol</label>
+
+            <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button
-                variant="outline"
                 type="button"
-                onClick={() => {
-                  setIconPickerTarget("newRoutine");
-                  setShowIconPicker(true);
-                }}
-                className="w-full justify-start gap-2 font-bold"
+                variant="outline"
+                onClick={() => setShowNewRoutineModal(false)}
+                className="cursor-pointer text-xs font-bold h-10 px-4"
               >
-                <span>{renderRoutineIcon(customRoutineIcon)}</span>
-                <span className="capitalize">{customRoutineIcon}</span>
+                Cancel
               </Button>
-            </div>
-          </div>
-          <DialogFooter className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setShowNewRoutineModal(false)}>
-              Cancel
-            </Button>
-            <Button size="sm" disabled={!customRoutineName.trim()} onClick={handleCreateRoutine}>
-              Create Destination
-            </Button>
-          </DialogFooter>
+              <Button
+                type="submit"
+                disabled={!customRoutineName.trim()}
+                className="cursor-pointer text-xs font-black tracking-wider uppercase h-10 px-4"
+              >
+                CREATE DESTINATION
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
       {/* Manage Routine Modal */}
-      {manageRoutine && (
-        <Dialog open={!!manageRoutine} onOpenChange={() => setManageRoutine(null)}>
-          <DialogContent className="sm:max-w-md bg-card">
+      <Dialog
+        open={!!manageRoutine && !showScheduleModal}
+        onOpenChange={(open) => !open && setManageRoutine(null)}
+      >
+        {manageRoutine && (
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-base font-black">Manage {manageRoutine.name}</DialogTitle>
+              <DialogTitle className="text-xl font-bold">Destination Settings</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-2">
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <span className="text-xs font-bold text-muted-foreground">Auto-Reset Schedule</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowScheduleModal(true)}
-                  className="h-8 gap-1.5 text-xs font-bold"
-                >
-                  <Clock className="h-3.5 w-3.5" />
-                  <span>{manageRoutine.autoResetTime ? manageRoutine.autoResetTime : "Configure"}</span>
-                </Button>
-              </div>
 
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <span className="text-xs font-bold text-muted-foreground">Reorder Destination</span>
-                <div className="flex items-center gap-1">
+            <div className="space-y-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                  Destination Icon & Name
+                </label>
+                <div className="flex gap-2">
                   <Button
+                    type="button"
                     variant="outline"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => handleMoveRoutineById(manageRoutine._id, -1)}
+                    onClick={() => {
+                      setIconPickerTarget("editRoutine");
+                      setShowIconPicker(true);
+                    }}
+                    className="flex h-10 w-12 shrink-0 items-center justify-center rounded-lg px-0 cursor-pointer"
+                    title="Select Destination Icon"
                   >
-                    <ChevronUp className="h-3.5 w-3.5" />
+                    {renderRoutineIcon(editModalIconTag || editModalName)}
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => handleMoveRoutineById(manageRoutine._id, 1)}
-                  >
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  </Button>
+                  <Input
+                    type="text"
+                    value={editModalName}
+                    onChange={(e) => setEditModalName(e.target.value)}
+                    placeholder="Destination name..."
+                    className="flex-1"
+                  />
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-xs font-bold text-destructive">Delete Destination</span>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={async () => {
-                    await deleteRoutine({ id: manageRoutine._id });
-                    setManageRoutine(null);
-                  }}
-                  className="h-8 text-xs font-bold"
-                >
-                  <Trash2 className="h-3.5 w-3.5 mr-1" />
-                  <span>Delete</span>
-                </Button>
+              {/* Reordering */}
+              <div className="flex flex-col gap-1.5 pt-2">
+                <label className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                  Change Order
+                </label>
+                <div className="flex gap-2">
+                  {(() => {
+                    const rIndex = routinesList.findIndex(
+                      (r) => r._id === manageRoutine._id
+                    );
+                    return (
+                      <>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            void handleMoveRoutineById(manageRoutine._id, -1);
+                          }}
+                          disabled={rIndex <= 0}
+                          className="flex-1 cursor-pointer"
+                        >
+                          <ChevronLeft className="h-4 w-4 mr-1.5" /> Move Left
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            void handleMoveRoutineById(manageRoutine._id, 1);
+                          }}
+                          disabled={
+                            rIndex === -1 || rIndex >= routinesList.length - 1
+                          }
+                          className="flex-1 cursor-pointer"
+                        >
+                          Move Right <ChevronRight className="h-4 w-4 ml-1.5" />
+                        </Button>
+                      </>
+                    );
+                  })()}
+                </div>
               </div>
+
+              <DialogFooter className="flex flex-col gap-2 border-t-0 p-0 pt-2 mt-2">
+                <Button
+                  onClick={async () => {
+                    if (!editModalName.trim()) return;
+                    try {
+                      await updateRoutine({
+                        id: manageRoutine._id,
+                        name: editModalName.trim(),
+                        icon: editModalIconTag || manageRoutine.icon,
+                      });
+                      const oldName = manageRoutine.name;
+                      if (effectiveRoutine === oldName) {
+                        setSelectedRoutine(editModalName.trim());
+                      }
+                      setManageRoutine(null);
+                    } catch (err) {
+                      console.error("Failed to update routine", err);
+                    }
+                  }}
+                  className="w-full font-black tracking-wider uppercase cursor-pointer"
+                >
+                  SAVE CHANGES
+                </Button>
+
+                <div className="flex w-full gap-2">
+                  <Button
+                    variant="destructive"
+                    onClick={async () => {
+                      if (
+                        !confirm(
+                          `Delete "${manageRoutine.name}" and all its items?`
+                        )
+                      )
+                        return;
+                      try {
+                        const routineToDeleteName = manageRoutine.name;
+                        const routineToDeleteId = manageRoutine._id;
+                        await deleteRoutine({ id: routineToDeleteId });
+                        const remaining = routinesList.filter(
+                          (r) => r._id !== routineToDeleteId
+                        );
+                        if (
+                          selectedRoutine === routineToDeleteName ||
+                          effectiveRoutine === routineToDeleteName
+                        ) {
+                          setSelectedRoutine(
+                            remaining.length > 0 ? remaining[0].name : ""
+                          );
+                        }
+                        setManageRoutine(null);
+                      } catch (err) {
+                        console.error("Failed to delete routine", err);
+                      }
+                    }}
+                    className="flex-1 text-xs font-bold tracking-wider uppercase cursor-pointer"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1.5" /> DELETE DESTINATION
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setManageRoutine(null)}
+                    className="flex-1 text-xs font-bold tracking-wider uppercase cursor-pointer"
+                  >
+                    CANCEL
+                  </Button>
+                </div>
+              </DialogFooter>
             </div>
-            <DialogFooter>
-              <Button variant="ghost" size="sm" onClick={() => setManageRoutine(null)}>
-                Done
-              </Button>
-            </DialogFooter>
           </DialogContent>
-        </Dialog>
-      )}
+        )}
+      </Dialog>
 
       {/* Edit Item Modal */}
       {manageItem && (
         <Dialog open={!!manageItem} onOpenChange={() => setManageItem(null)}>
-          <DialogContent className="sm:max-w-md bg-card">
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-base font-black">Edit Item</DialogTitle>
+              <DialogTitle className="text-xl font-bold">Item Settings</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-2">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-muted-foreground">Item Name</label>
-                <Input
-                  value={editModalName}
-                  onChange={(e) => setEditModalName(e.target.value)}
-                  className="font-bold"
-                />
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-muted-foreground">Icon</label>
+            <div className="space-y-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                  Item Icon & Name
+                </label>
+                <div className="flex gap-2">
                   <Button
-                    variant="outline"
                     type="button"
+                    variant="outline"
                     onClick={() => {
                       setIconPickerTarget("editItem");
                       setShowIconPicker(true);
                     }}
-                    className="w-full justify-start gap-2 font-bold text-xs"
+                    className="flex h-11 w-12 shrink-0 items-center justify-center rounded-lg px-0 cursor-pointer"
+                    title="Select Icon"
                   >
-                    <span>{renderItemIcon(editModalIconTag || editModalName)}</span>
-                    <span className="capitalize">{editModalIconTag || "Default"}</span>
+                    {editModalIconTag ? (
+                      renderItemIcon(editModalIconTag)
+                    ) : (
+                      <Tag className="h-4 w-4 text-muted-foreground" />
+                    )}
                   </Button>
+                  <Input
+                    type="text"
+                    value={editModalName}
+                    onChange={(e) => setEditModalName(e.target.value)}
+                    placeholder="Item name..."
+                    className="h-11 flex-1 font-bold text-sm"
+                  />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-muted-foreground">Quantity</label>
+              </div>
+
+              {/* Quantity & Location Note Inputs */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black tracking-wider text-muted-foreground uppercase">
+                    Quantity (Optional)
+                  </label>
                   <Input
                     type="number"
                     min={1}
@@ -1325,55 +1552,102 @@ export function OnlineDashboard({
                       setEditModalQuantity(isNaN(val) ? undefined : val);
                     }}
                     placeholder="1"
-                    className="font-bold"
+                    className="h-11 font-bold text-sm"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black tracking-wider text-muted-foreground uppercase">
+                    Location Note
+                  </label>
+                  <Input
+                    type="text"
+                    value={editModalLocationNote}
+                    onChange={(e) => setEditModalLocationNote(e.target.value)}
+                    placeholder="e.g. Front Pocket"
+                    className="h-11 font-bold text-sm"
                   />
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-muted-foreground">Location Note</label>
-                <Input
-                  value={editModalLocationNote}
-                  onChange={(e) => setEditModalLocationNote(e.target.value)}
-                  placeholder="e.g. Front desk, Backpack side pocket"
-                  className="font-bold text-xs"
-                />
+              {/* Reordering */}
+              <div className="flex flex-col gap-1.5 pt-2">
+                <label className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                  Change Order
+                </label>
+                <div className="flex gap-2">
+                  {(() => {
+                    const iIndex = items.findIndex(
+                      (i) => i._id === manageItem._id
+                    );
+                    return (
+                      <>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            void handleMoveItemById(manageItem._id, -1);
+                          }}
+                          disabled={iIndex <= 0}
+                          className="flex-1 cursor-pointer h-11 font-bold"
+                        >
+                          <ChevronUp className="h-4 w-4 mr-1.5" /> Move Up
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            void handleMoveItemById(manageItem._id, 1);
+                          }}
+                          disabled={iIndex === -1 || iIndex >= items.length - 1}
+                          className="flex-1 cursor-pointer h-11 font-bold"
+                        >
+                          Move Down <ChevronDown className="h-4 w-4 ml-1.5" />
+                        </Button>
+                      </>
+                    );
+                  })()}
+                </div>
               </div>
 
-              <div className="flex items-center justify-between border-t border-border pt-3">
-                <span className="text-xs font-bold text-destructive">Remove Item</span>
+              <DialogFooter className="flex flex-col gap-2 border-t-0 p-0 pt-2 mt-2">
                 <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleDeleteItemWithUndo(manageItem)}
-                  className="h-8 text-xs font-bold"
+                  onClick={async () => {
+                    if (!editModalName.trim()) return;
+                    try {
+                      await editItemMutation({
+                        id: manageItem._id,
+                        name: editModalName.trim(),
+                        emoji: editModalIconTag || undefined,
+                        quantity: editModalQuantity,
+                        locationNote: editModalLocationNote.trim() || undefined,
+                      });
+                      setManageItem(null);
+                    } catch (err) {
+                      console.error("Failed to update item", err);
+                    }
+                  }}
+                  className="w-full font-black tracking-wider uppercase cursor-pointer h-11"
                 >
-                  <Trash2 className="h-3.5 w-3.5 mr-1" />
-                  <span>Delete</span>
+                  SAVE CHANGES
                 </Button>
-              </div>
+
+                <div className="flex w-full gap-2">
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleDeleteItemWithUndo(manageItem)}
+                    className="flex-1 text-xs font-bold tracking-wider uppercase cursor-pointer h-11"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1.5" /> DELETE ITEM
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setManageItem(null)}
+                    className="flex-1 text-xs font-bold tracking-wider uppercase cursor-pointer h-11"
+                  >
+                    CANCEL
+                  </Button>
+                </div>
+              </DialogFooter>
             </div>
-            <DialogFooter className="flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setManageItem(null)}>
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={async () => {
-                  if (!editModalName.trim()) return;
-                  await editItemMutation({
-                    id: manageItem._id,
-                    name: editModalName.trim(),
-                    emoji: editModalIconTag || undefined,
-                    quantity: editModalQuantity,
-                    locationNote: editModalLocationNote.trim() || undefined,
-                  });
-                  setManageItem(null);
-                }}
-              >
-                Save Changes
-              </Button>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
@@ -1405,6 +1679,15 @@ export function OnlineDashboard({
       <IconPickerModal
         open={showIconPicker}
         onOpenChange={setShowIconPicker}
+        selectedKey={
+          iconPickerTarget === "newItem"
+            ? newItemTag
+            : iconPickerTarget === "editItem"
+            ? editModalIconTag
+            : iconPickerTarget === "newRoutine"
+            ? customRoutineIcon
+            : editModalIconTag
+        }
         onSelectIcon={(iconKey) => {
           if (iconPickerTarget === "newItem") {
             setNewItemTag(iconKey);
@@ -1412,6 +1695,8 @@ export function OnlineDashboard({
             setEditModalIconTag(iconKey);
           } else if (iconPickerTarget === "newRoutine") {
             setCustomRoutineIcon(iconKey);
+          } else if (iconPickerTarget === "editRoutine") {
+            setEditModalIconTag(iconKey);
           }
           setShowIconPicker(false);
         }}
@@ -1443,28 +1728,30 @@ export function OnlineDashboard({
       />
 
       {/* Routine Schedule Modal */}
-      {manageRoutine && (
-        <RoutineScheduleModal
-          open={showScheduleModal}
-          onOpenChange={setShowScheduleModal}
-          routineName={manageRoutine.name}
-          initialTime={manageRoutine.autoResetTime}
-          initialDays={manageRoutine.autoResetDays}
-          onSaveSchedule={async (time, days) => {
+      <RoutineScheduleModal
+        open={showScheduleModal}
+        onOpenChange={(open) => {
+          setShowScheduleModal(open);
+          if (!open) setManageRoutine(null);
+        }}
+        routineName={manageRoutine?.name || effectiveRoutine}
+        initialTime={manageRoutine?.autoResetTime || (manageRoutine ? undefined : currentRoutineObj?.autoResetTime)}
+        initialDays={manageRoutine?.autoResetDays || (manageRoutine ? undefined : currentRoutineObj?.autoResetDays)}
+        onSaveSchedule={async (time, days) => {
+          const target = manageRoutine || currentRoutineObj;
+          if (target) {
             await updateRoutine({
-              id: manageRoutine._id,
-              name: manageRoutine.name,
-              icon: manageRoutine.icon,
+              id: target._id,
+              name: target.name,
+              icon: target.icon,
               autoResetTime: time,
               autoResetDays: days,
             });
-            setManageRoutine((prev) =>
-              prev ? { ...prev, autoResetTime: time, autoResetDays: days } : null
-            );
             setShowScheduleModal(false);
-          }}
-        />
-      )}
+            setManageRoutine(null);
+          }
+        }}
+      />
 
       {/* Import Shared Modal */}
       <ImportSharedModal

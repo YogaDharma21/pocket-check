@@ -461,8 +461,8 @@ function IconPickerModalInner({
         onClose={() => onOpenChange(false)}
       >
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base font-black">
-            <Tag className="w-4 h-4 text-primary" /> Select Icon
+          <DialogTitle className="flex items-center gap-2 text-base font-bold text-foreground">
+            <Tag className="w-5 h-5 text-foreground" /> Select Icon
           </DialogTitle>
         </DialogHeader>
 
@@ -470,44 +470,43 @@ function IconPickerModalInner({
           {/* Search Bar */}
           <div className="relative">
             {isSearching ? (
-              <Loader2 className="w-4 h-4 absolute left-3 top-3 text-primary animate-spin" />
+              <Loader2 className="w-4 h-4 absolute left-3.5 top-3.5 text-primary animate-spin" />
             ) : (
-              <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
+              <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-muted-foreground" />
             )}
             <Input
               type="text"
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search any icon (e.g. chat, wifi, bottle, car, bot)..."
-              className="pl-9 pr-8 text-xs"
+              className="h-11 pl-10 pr-9 text-sm bg-muted/40 border-border/80 rounded-xl"
               autoFocus
             />
             {search && (
               <button
                 type="button"
                 onClick={() => handleSearchChange("")}
-                className="absolute right-3 top-3 text-muted-foreground hover:text-foreground cursor-pointer"
+                className="absolute right-3.5 top-3.5 text-muted-foreground hover:text-foreground cursor-pointer"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
 
           {/* Icon Grid / Shimmer Skeleton */}
           {isSearching ? (
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-64 overflow-y-auto p-1 pr-1.5 animate-fadeIn">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-80 overflow-y-auto p-1 pr-1.5 animate-fadeIn">
               {Array.from({ length: 18 }).map((_, idx) => (
                 <div
                   key={idx}
-                  className="flex flex-col items-center justify-center p-2 rounded-lg border border-border/50 gap-1.5 h-16"
+                  className="flex items-center justify-center p-2 rounded-xl border border-border/50 h-12"
                 >
-                  <Skeleton className="w-5 h-5 rounded-lg" />
-                  <Skeleton className="w-10 h-2.5 rounded-lg" />
+                  <Skeleton className="w-6 h-6 rounded-lg" />
                 </div>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-64 overflow-y-auto p-1 pr-1.5 animate-fadeIn">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-80 overflow-y-auto p-1 pr-1.5 animate-fadeIn">
               {/* None Option */}
               <button
                 type="button"
@@ -516,14 +515,14 @@ function IconPickerModalInner({
                   onOpenChange(false);
                   handleSearchChange("");
                 }}
-                className={`flex flex-col items-center justify-center p-2 rounded-lg border text-xs gap-1 transition-all cursor-pointer h-16 ${
+                title="None"
+                className={`flex items-center justify-center p-2 rounded-xl border transition-all cursor-pointer h-12 ${
                   !selectedKey
-                    ? "border-primary bg-primary/10 text-primary font-black"
-                    : "border-border hover:bg-muted text-muted-foreground"
+                    ? "border-foreground ring-2 ring-foreground/20 bg-muted/80 text-foreground font-bold shadow-xs"
+                    : "border-border/70 hover:bg-muted/60 text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <X className="w-4 h-4 opacity-50" />
-                <span className="text-[10px] truncate max-w-full">None</span>
+                <X className="w-5 h-5 opacity-70" />
               </button>
 
               {/* Custom Query / Direct Text Button */}
@@ -535,14 +534,11 @@ function IconPickerModalInner({
                     onOpenChange(false);
                     handleSearchChange("");
                   }}
-                  className="flex flex-col items-center justify-center p-2 rounded-lg border border-dashed border-primary bg-primary/5 hover:bg-primary/15 text-primary text-xs gap-1 transition-all cursor-pointer h-16"
+                  className="flex items-center justify-center p-2 rounded-xl border border-dashed border-primary bg-primary/10 hover:bg-primary/20 text-primary transition-all cursor-pointer h-12"
                   title={`Use "${cleanQuery}" directly`}
                 >
-                  <span className="text-base leading-none">
-                    {cleanQuery.slice(0, 2)}
-                  </span>
-                  <span className="text-[9px] font-black truncate max-w-full">
-                    Use Text
+                  <span className="text-sm font-black truncate max-w-full">
+                    {cleanQuery.slice(0, 2).toUpperCase()}
                   </span>
                 </button>
               )}
@@ -566,16 +562,13 @@ function IconPickerModalInner({
                       handleSearchChange("");
                     }}
                     title={displayName}
-                    className={`flex flex-col items-center justify-center p-2 rounded-lg border text-xs gap-1 transition-all cursor-pointer h-16 ${
+                    className={`flex items-center justify-center p-2 rounded-xl border transition-all cursor-pointer h-12 ${
                       isSelected
-                        ? "border-primary bg-primary/10 text-primary font-black shadow-xs"
-                        : "border-border hover:bg-muted/80 text-foreground"
+                        ? "border-foreground ring-2 ring-foreground/20 bg-muted/80 text-foreground font-bold shadow-xs"
+                        : "border-border/70 bg-card/40 hover:bg-muted/60 text-foreground hover:text-foreground"
                     }`}
                   >
-                    <IconComp className="w-4 h-4" />
-                    <span className="text-[10px] truncate max-w-full text-center">
-                      {displayName}
-                    </span>
+                    <IconComp className="w-5 h-5" />
                   </button>
                 );
               })}

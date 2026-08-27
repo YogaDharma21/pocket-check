@@ -648,20 +648,6 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Active Routine Pill on Desktop */}
-          {effectiveRoutine ? (
-            <div className="hidden items-center gap-2 rounded-full border border-border bg-muted/60 px-3.5 py-1.5 text-xs font-extrabold select-none md:flex">
-              <span className="text-muted-foreground">Active:</span>
-              <span className="flex items-center gap-1.5 font-black text-foreground">
-                {renderRoutineIcon(currentRoutineObj?.icon || effectiveRoutine)}
-                <span>{effectiveRoutine}</span>
-              </span>
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-              <span className="font-bold text-muted-foreground">
-                {packedItems}/{totalItems} Packed
-              </span>
-            </div>
-          ) : null}
 
           {/* Action and Utility Buttons */}
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
@@ -1487,22 +1473,13 @@ export function Dashboard() {
                                       )}
                                     </div>
 
-                                    <div className="flex flex-wrap items-center gap-2">
-                                      <Badge
-                                        variant={
-                                          item.isPacked ? "default" : "outline"
-                                        }
-                                        className="px-2 py-0 text-[10px] font-black"
-                                      >
-                                        {item.isPacked ? "Packed" : "Missing"}
-                                      </Badge>
-
-                                      {item.locationNote && (
+                                    {item.locationNote && (
+                                      <div className="flex flex-wrap items-center gap-2">
                                         <span className="text-[11px] font-medium text-muted-foreground italic">
                                           📍 {item.locationNote}
                                         </span>
-                                      )}
-                                    </div>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
 
