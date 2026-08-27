@@ -11,6 +11,8 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
   Tag,
   GripVertical,
   AlertTriangle,
@@ -481,6 +483,21 @@ export function OnlineDashboard({
     } finally {
       setDraggedItemId(null);
       setDragOverItemId(null);
+    }
+  };
+
+  const handleMoveItemById = async (id: Id<"items">, direction: -1 | 1) => {
+    const index = items.findIndex((i) => i._id === id);
+    if (index === -1) return;
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= items.length) return;
+    try {
+      const ids = items.map((i) => i._id);
+      const [moved] = ids.splice(index, 1);
+      ids.splice(targetIndex, 0, moved);
+      await reorderItems({ ids });
+    } catch (err) {
+      console.error("Failed to reorder item", err);
     }
   };
 
@@ -1448,38 +1465,49 @@ export function OnlineDashboard({
       {/* Edit Item Modal */}
       {manageItem && (
         <Dialog open={!!manageItem} onOpenChange={() => setManageItem(null)}>
-          <DialogContent className="sm:max-w-md bg-card">
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-base font-black">Edit Item</DialogTitle>
+              <DialogTitle className="text-xl font-bold">Item Settings</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-2">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-muted-foreground">Item Name</label>
-                <Input
-                  value={editModalName}
-                  onChange={(e) => setEditModalName(e.target.value)}
-                  className="font-bold"
-                />
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-muted-foreground">Icon</label>
+            <div className="space-y-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                  Item Icon & Name
+                </label>
+                <div className="flex gap-2">
                   <Button
-                    variant="outline"
                     type="button"
+                    variant="outline"
                     onClick={() => {
                       setIconPickerTarget("editItem");
                       setShowIconPicker(true);
                     }}
-                    className="w-full justify-start gap-2 font-bold text-xs"
+                    className="flex h-11 w-12 shrink-0 items-center justify-center rounded-lg px-0 cursor-pointer"
+                    title="Select Icon"
                   >
-                    <span>{renderItemIcon(editModalIconTag || editModalName)}</span>
-                    <span className="capitalize">{editModalIconTag || "Default"}</span>
+                    {editModalIconTag ? (
+                      renderItemIcon(editModalIconTag)
+                    ) : (
+                      <Tag className="h-4 w-4 text-muted-foreground" />
+                    )}
                   </Button>
+                  <Input
+                    type="text"
+                    value={editModalName}
+                    onChange={(e) => setEditModalName(e.target.value)}
+                    placeholder="Item name..."
+                    className="h-11 flex-1 font-bold text-sm"
+                  />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-muted-foreground">Quantity</label>
+              </div>
+
+              {/* Quantity & Location Note Inputs */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black tracking-wider text-muted-foreground uppercase">
+                    Quantity (Optional)
+                  </label>
                   <Input
                     type="number"
                     min={1}
@@ -1490,55 +1518,102 @@ export function OnlineDashboard({
                       setEditModalQuantity(isNaN(val) ? undefined : val);
                     }}
                     placeholder="1"
-                    className="font-bold"
+                    className="h-11 font-bold text-sm"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black tracking-wider text-muted-foreground uppercase">
+                    Location Note
+                  </label>
+                  <Input
+                    type="text"
+                    value={editModalLocationNote}
+                    onChange={(e) => setEditModalLocationNote(e.target.value)}
+                    placeholder="e.g. Front Pocket"
+                    className="h-11 font-bold text-sm"
                   />
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-muted-foreground">Location Note</label>
-                <Input
-                  value={editModalLocationNote}
-                  onChange={(e) => setEditModalLocationNote(e.target.value)}
-                  placeholder="e.g. Front desk, Backpack side pocket"
-                  className="font-bold text-xs"
-                />
+              {/* Reordering */}
+              <div className="flex flex-col gap-1.5 pt-2">
+                <label className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                  Change Order
+                </label>
+                <div className="flex gap-2">
+                  {(() => {
+                    const iIndex = items.findIndex(
+                      (i) => i._id === manageItem._id
+                    );
+                    return (
+                      <>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            void handleMoveItemById(manageItem._id, -1);
+                          }}
+                          disabled={iIndex <= 0}
+                          className="flex-1 cursor-pointer h-11 font-bold"
+                        >
+                          <ChevronUp className="h-4 w-4 mr-1.5" /> Move Up
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            void handleMoveItemById(manageItem._id, 1);
+                          }}
+                          disabled={iIndex === -1 || iIndex >= items.length - 1}
+                          className="flex-1 cursor-pointer h-11 font-bold"
+                        >
+                          Move Down <ChevronDown className="h-4 w-4 ml-1.5" />
+                        </Button>
+                      </>
+                    );
+                  })()}
+                </div>
               </div>
 
-              <div className="flex items-center justify-between border-t border-border pt-3">
-                <span className="text-xs font-bold text-destructive">Remove Item</span>
+              <DialogFooter className="flex flex-col gap-2 border-t-0 p-0 pt-2 mt-2">
                 <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleDeleteItemWithUndo(manageItem)}
-                  className="h-8 text-xs font-bold"
+                  onClick={async () => {
+                    if (!editModalName.trim()) return;
+                    try {
+                      await editItemMutation({
+                        id: manageItem._id,
+                        name: editModalName.trim(),
+                        emoji: editModalIconTag || undefined,
+                        quantity: editModalQuantity,
+                        locationNote: editModalLocationNote.trim() || undefined,
+                      });
+                      setManageItem(null);
+                    } catch (err) {
+                      console.error("Failed to update item", err);
+                    }
+                  }}
+                  className="w-full font-black tracking-wider uppercase cursor-pointer h-11"
                 >
-                  <Trash2 className="h-3.5 w-3.5 mr-1" />
-                  <span>Delete</span>
+                  SAVE CHANGES
                 </Button>
-              </div>
+
+                <div className="flex w-full gap-2">
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleDeleteItemWithUndo(manageItem)}
+                    className="flex-1 text-xs font-bold tracking-wider uppercase cursor-pointer h-11"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1.5" /> DELETE ITEM
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setManageItem(null)}
+                    className="flex-1 text-xs font-bold tracking-wider uppercase cursor-pointer h-11"
+                  >
+                    CANCEL
+                  </Button>
+                </div>
+              </DialogFooter>
             </div>
-            <DialogFooter className="flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setManageItem(null)}>
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={async () => {
-                  if (!editModalName.trim()) return;
-                  await editItemMutation({
-                    id: manageItem._id,
-                    name: editModalName.trim(),
-                    emoji: editModalIconTag || undefined,
-                    quantity: editModalQuantity,
-                    locationNote: editModalLocationNote.trim() || undefined,
-                  });
-                  setManageItem(null);
-                }}
-              >
-                Save Changes
-              </Button>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
