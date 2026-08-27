@@ -625,6 +625,20 @@ export default function DashboardScreen() {
             />
           ) : null}
 
+          {/* Add Item Form with Multi-Item Batch Support & Auto-Icon Detection */}
+          {effectiveRoutine ? (
+            <AddItemForm
+              onAddItem={handleAddItem}
+              onAddItemsBatch={handleAddItemsBatch}
+              onOpenIconPicker={() => {
+                setIconPickerTarget("newItem");
+                setShowIconPicker(true);
+              }}
+              selectedIconKey={newItemIconKey}
+              theme={theme}
+            />
+          ) : null}
+
           {/* Filter Tabs & Quick Actions */}
           <FilterTabs
             filter={filter}
@@ -718,20 +732,6 @@ export default function DashboardScreen() {
               ))
             )}
           </View>
-
-          {/* Add Item Form with Multi-Item Batch Support & Auto-Icon Detection */}
-          {effectiveRoutine ? (
-            <AddItemForm
-              onAddItem={handleAddItem}
-              onAddItemsBatch={handleAddItemsBatch}
-              onOpenIconPicker={() => {
-                setIconPickerTarget("newItem");
-                setShowIconPicker(true);
-              }}
-              selectedIconKey={newItemIconKey}
-              theme={theme}
-            />
-          ) : null}
         </ScrollView>
 
         {/* Modals */}
