@@ -1272,46 +1272,76 @@ export function OnlineDashboard({
       )}
 
       {/* New Routine Modal */}
-      <Dialog open={showNewRoutineModal} onOpenChange={setShowNewRoutineModal}>
-        <DialogContent className="sm:max-w-md bg-card">
+      <Dialog
+        open={showNewRoutineModal}
+        onOpenChange={(open) => {
+          setShowNewRoutineModal(open);
+          if (!open) {
+            setCustomRoutineName("");
+            setCustomRoutineIcon("tag");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-base font-black">Create New Destination</DialogTitle>
+            <DialogTitle className="flex items-center gap-2 text-base font-black">
+              <Plus className="h-4 w-4 text-primary" /> New Destination
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">Destination Name</label>
-              <Input
-                value={customRoutineName}
-                onChange={(e) => setCustomRoutineName(e.target.value)}
-                placeholder="e.g. Work, Gym, Library, Hiking..."
-                className="font-bold"
-                autoFocus
-              />
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleCreateRoutine();
+            }}
+            className="space-y-4 py-2 select-none"
+          >
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                Destination Icon & Name
+              </label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIconPickerTarget("newRoutine");
+                    setShowIconPicker(true);
+                  }}
+                  className="flex h-11 w-12 shrink-0 cursor-pointer items-center justify-center rounded-lg px-0"
+                  title="Select Destination Icon"
+                >
+                  {renderRoutineIcon(customRoutineIcon)}
+                </Button>
+                <Input
+                  type="text"
+                  value={customRoutineName}
+                  onChange={(e) => setCustomRoutineName(e.target.value)}
+                  placeholder="e.g. Campus, Work, Gym, Weekend Trip..."
+                  className="h-11 flex-1 text-sm font-bold"
+                  autoFocus
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-muted-foreground">Icon Symbol</label>
+
+            <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button
-                variant="outline"
                 type="button"
-                onClick={() => {
-                  setIconPickerTarget("newRoutine");
-                  setShowIconPicker(true);
-                }}
-                className="w-full justify-start gap-2 font-bold"
+                variant="outline"
+                onClick={() => setShowNewRoutineModal(false)}
+                className="cursor-pointer text-xs font-bold h-10 px-4"
               >
-                <span>{renderRoutineIcon(customRoutineIcon)}</span>
-                <span className="capitalize">{customRoutineIcon}</span>
+                Cancel
               </Button>
-            </div>
-          </div>
-          <DialogFooter className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setShowNewRoutineModal(false)}>
-              Cancel
-            </Button>
-            <Button size="sm" disabled={!customRoutineName.trim()} onClick={handleCreateRoutine}>
-              Create Destination
-            </Button>
-          </DialogFooter>
+              <Button
+                type="submit"
+                disabled={!customRoutineName.trim()}
+                className="cursor-pointer text-xs font-black tracking-wider uppercase h-10 px-4"
+              >
+                CREATE DESTINATION
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
