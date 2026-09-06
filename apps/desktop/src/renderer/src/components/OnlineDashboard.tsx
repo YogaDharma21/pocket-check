@@ -1222,7 +1222,7 @@ export function OnlineDashboard({
                           )}
                           {item.locationNote && (
                             <span className="text-[11px] font-semibold text-muted-foreground truncate hidden sm:inline">
-                              📍 {item.locationNote}
+                              {item.locationNote}
                             </span>
                           )}
                         </div>

@@ -1476,7 +1476,7 @@ export function Dashboard() {
                                     {item.locationNote && (
                                       <div className="flex flex-wrap items-center gap-2">
                                         <span className="text-[11px] font-medium text-muted-foreground italic">
-                                          📍 {item.locationNote}
+                                          {item.locationNote}
                                         </span>
                                       </div>
                                     )}

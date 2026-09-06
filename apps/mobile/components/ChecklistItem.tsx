@@ -125,7 +125,7 @@ export function ChecklistItem({
                 style={[styles.locationNote, { color: colors.mutedForeground }]}
                 numberOfLines={1}
               >
-                {"\uD83D\uDCCD"} {item.locationNote}
+                {item.locationNote}
               </Text>
             ) : null}
           </View>
