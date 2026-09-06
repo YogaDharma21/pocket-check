@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react"
+import Image from "next/image"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Id } from "@/convex/_generated/dataModel"
@@ -635,9 +636,11 @@ export function Dashboard() {
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-2.5 sm:gap-4 sm:px-6 sm:py-3.5 lg:px-8">
           <div className="flex shrink-0 items-center gap-2 select-none sm:gap-3">
             <div className="overflow-hidden rounded-xl border border-border shadow-xs">
-              <img
+              <Image
                 src="/icon-192.png"
                 alt="PocketChecker"
+                width={36}
+                height={36}
                 className="h-7 w-7 object-contain sm:h-9 sm:w-9"
               />
             </div>
@@ -1476,7 +1479,7 @@ export function Dashboard() {
                                     {item.locationNote && (
                                       <div className="flex flex-wrap items-center gap-2">
                                         <span className="text-[11px] font-medium text-muted-foreground italic">
-                                          📍 {item.locationNote}
+                                          {item.locationNote}
                                         </span>
                                       </div>
                                     )}
