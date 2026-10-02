@@ -22,7 +22,7 @@ Each app in `/apps` is completely independent:
 
 ### Each App Lives Alone
 Every project in `/apps/*` is self-contained:
-- Own package manager (npm, pip, cargo, go mod, etc.)
+- Own package manager (pnpm, pip, cargo, go mod, etc.)
 - Own dependencies
 - Own build system
 - Own configuration files

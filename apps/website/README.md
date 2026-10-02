@@ -15,7 +15,7 @@ The Next.js web application for PocketCheck, built with shadcn/ui (Base UI Vega 
 
 1. Install dependencies:
 ```bash
-npm install
+pnpm install
 ```
 
 2. Configure environment variables in `.env.local`:
@@ -26,16 +26,16 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_<your-clerk-publishable-key>
 
 3. Run the development server:
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Scripts
 
-- `npm run dev`: Start Next.js development server
-- `npm run build`: Build production application
-- `npm run start`: Run production build
-- `npm run typecheck`: Type check TypeScript files
-- `npm run lint`: Lint source files with ESLint
-- `npm run format`: Format code with Prettier
+- `pnpm run dev`: Start Next.js development server
+- `pnpm run build`: Build production application
+- `pnpm run start`: Run production build
+- `pnpm run typecheck`: Type check TypeScript files
+- `pnpm run lint`: Lint source files with ESLint
+- `pnpm run format`: Format code with Prettier
