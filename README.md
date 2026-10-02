@@ -42,7 +42,7 @@ pocket-check/
 ### Prerequisites
 
 - Node.js 20+
-- npm or pnpm
+- pnpm 10+ (`npm install -g pnpm` or `corepack enable pnpm`)
 
 ### Web Application Setup
 
@@ -53,7 +53,7 @@ pocket-check/
 
 2. Install dependencies:
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. Set up environment variables in `apps/website/.env.local`:
@@ -65,7 +65,7 @@ pocket-check/
 
 4. Run the development server:
    ```bash
-   npm run dev
+   pnpm run dev
    ```
 
 ### Mobile Application Setup
@@ -77,12 +77,12 @@ pocket-check/
 
 2. Install dependencies:
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. Start Expo:
    ```bash
-   npm run start
+   pnpm run start
    ```
 
 ### Desktop Application Setup
@@ -94,7 +94,7 @@ pocket-check/
 
 2. Install dependencies:
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. Set up environment variables in `apps/desktop/.env.local`:
@@ -105,12 +105,12 @@ pocket-check/
 
 4. Run the development server:
    ```bash
-   npm run dev
+   pnpm run dev
    ```
 
 5. Run test suite:
    ```bash
-   npm test
+   pnpm test
    ```
 
 ## CI/CD Workflow
