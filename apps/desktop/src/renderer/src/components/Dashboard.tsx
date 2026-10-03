@@ -59,6 +59,7 @@ import {
 } from "@/lib/sound";
 import { isOnlineBackendConfigured, useOfflineData } from "@/components/ConvexClientProvider";
 import { OnlineDashboard } from "@/components/OnlineDashboard";
+import { FloatingNavbar } from "@/components/FloatingNavbar";
 
 interface RestorableItem {
   routine: string;
@@ -991,7 +992,7 @@ function OfflineDashboard({
 
       {/* Floating Undo Toast (UX-01) */}
       {undoToast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-2xl text-foreground animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-24 right-6 z-50 flex items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-2xl text-foreground animate-in slide-in-from-bottom-5">
           <p className="text-xs font-bold">{undoToast.message}</p>
           <Button
             size="sm"
@@ -1486,6 +1487,29 @@ function OfflineDashboard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Floating quick-access navbar */}
+      <FloatingNavbar
+        hasRoutine={!!effectiveRoutine}
+        onHome={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        onPresets={() => setShowPresetsModal(true)}
+        onExport={() => setShowExportModal(true)}
+        onShare={() => setShowShareModal(true)}
+        onSchedule={() => {
+          if (currentRoutineObj) {
+            setManageRoutine(currentRoutineObj);
+          }
+          setShowScheduleModal(true);
+        }}
+        onAbout={() => {
+          const url = "https://github.com/YogaDharma21/pocket-check";
+          if (window.electronAPI?.openExternal) {
+            void window.electronAPI.openExternal(url);
+          } else {
+            window.open(url, "_blank", "noopener,noreferrer");
+          }
+        }}
+      />
     </>
   );
 }

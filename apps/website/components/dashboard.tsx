@@ -53,6 +53,7 @@ import {
   IconPickerModal,
 } from "@/components/icon-picker-modal"
 import { SmartPresetsModal } from "@/components/smart-presets-modal"
+import { FloatingNavbar } from "@/components/floating-navbar"
 import { SmartIntelligenceBanner } from "@/components/smart-intelligence-banner"
 import { WeatherAlertBanner } from "@/components/weather-alert-banner"
 import { ExportModal } from "@/components/export-modal"
@@ -1526,7 +1527,7 @@ export function Dashboard() {
 
       {/* Floating Undo Toast Notification (UX-01) */}
       {undoToast && (
-        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 animate-in items-center gap-3 rounded-xl border border-border bg-foreground px-4 py-3 text-background shadow-2xl duration-200 fade-in slide-in-from-bottom-4">
+        <div className="fixed bottom-24 left-1/2 z-50 flex -translate-x-1/2 animate-in items-center gap-3 rounded-xl border border-border bg-foreground px-4 py-3 text-background shadow-2xl duration-200 fade-in slide-in-from-bottom-4">
           <span className="text-xs font-bold text-background">
             {undoToast.message}
           </span>
@@ -2209,6 +2210,22 @@ export function Dashboard() {
             setEditModalIconTag(key)
           }
         }}
+      />
+
+      {/* Floating quick-access navbar */}
+      <FloatingNavbar
+        hasRoutine={!!effectiveRoutine}
+        onHome={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        onPresets={() => setShowPresetsModal(true)}
+        onExport={() => setShowExportModal(true)}
+        onShare={() => setShowShareModal(true)}
+        onSchedule={() => {
+          if (currentRoutineObj) {
+            setManageRoutine(currentRoutineObj)
+            setShowScheduleModal(true)
+          }
+        }}
+        onAbout={() => setShowAboutDialog(true)}
       />
     </>
   )

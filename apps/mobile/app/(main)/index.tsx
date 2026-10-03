@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -35,6 +35,7 @@ import { ExportModal } from "../../components/ExportModal";
 import { ShareRoutineModal } from "../../components/ShareRoutineModal";
 import { ScheduleModal } from "../../components/ScheduleModal";
 import { UndoToast } from "../../components/UndoToast";
+import { FloatingNavbar } from "../../components/FloatingNavbar";
 import { UserProfileModal } from "../../components/UserProfileModal";
 import { ConfirmModal } from "../../components/ConfirmModal";
 import { PresetRoutine } from "../../lib/presets";
@@ -86,6 +87,7 @@ export default function DashboardScreen() {
     onConfirm: () => void;
   } | null>(null);
   const [avatarError, setAvatarError] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Undo Toast state
   const [undoToast, setUndoToast] = useState<{
@@ -583,6 +585,7 @@ export default function DashboardScreen() {
 
         {/* Scrollable Dashboard Body */}
         <ScrollView
+          ref={scrollViewRef}
           contentContainerStyle={styles.scrollBody}
           showsVerticalScrollIndicator={false}
         >
@@ -733,6 +736,23 @@ export default function DashboardScreen() {
             )}
           </View>
         </ScrollView>
+
+        {/* Floating quick-access navbar */}
+        <FloatingNavbar
+          theme={theme}
+          hasRoutine={!!effectiveRoutine}
+          onHome={() => scrollViewRef.current?.scrollTo({ y: 0, animated: true })}
+          onPresets={() => setShowPresetsModal(true)}
+          onExport={() => setShowExportModal(true)}
+          onShare={() => setShowShareModal(true)}
+          onSchedule={() => {
+            if (currentRoutineObj) {
+              setScheduleTargetRoutine(currentRoutineObj);
+              setShowScheduleModal(true);
+            }
+          }}
+          onAbout={() => setShowAboutModal(true)}
+        />
 
         {/* Modals */}
         <IconPickerModal
@@ -959,7 +979,7 @@ const styles = StyleSheet.create({
   },
   scrollBody: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 110,
   },
   checklistContainer: {
     marginVertical: 4,

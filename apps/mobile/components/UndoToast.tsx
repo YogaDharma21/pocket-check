@@ -68,7 +68,7 @@ export function UndoToast({ message, onUndo, onDismiss }: UndoToastProps) {
 const styles = StyleSheet.create({
   toastContainer: {
     position: "absolute",
-    bottom: 32,
+    bottom: 100,
     left: 20,
     right: 20,
     zIndex: 999,
