@@ -418,7 +418,7 @@ function OfflineDashboard({
 
   return (
     <>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 pb-24 sm:px-6 md:py-8 md:pb-12 lg:px-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 pb-28 sm:px-6 md:py-8 md:pb-32 lg:px-8">
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-8">
           {/* Left Column / Sidebar */}
           <div className="space-y-6 lg:sticky lg:top-20 lg:col-span-4">
