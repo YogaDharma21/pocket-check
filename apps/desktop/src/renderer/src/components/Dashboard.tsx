@@ -59,6 +59,7 @@ import {
 } from "@/lib/sound";
 import { isOnlineBackendConfigured, useOfflineData } from "@/components/ConvexClientProvider";
 import { OnlineDashboard } from "@/components/OnlineDashboard";
+import { FloatingNavbar } from "@/components/FloatingNavbar";
 
 interface RestorableItem {
   routine: string;
@@ -417,7 +418,7 @@ function OfflineDashboard({
 
   return (
     <>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 pb-24 sm:px-6 md:py-8 md:pb-12 lg:px-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 pb-28 sm:px-6 md:py-8 md:pb-32 lg:px-8">
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-8">
           {/* Left Column / Sidebar */}
           <div className="space-y-6 lg:sticky lg:top-20 lg:col-span-4">
@@ -991,7 +992,7 @@ function OfflineDashboard({
 
       {/* Floating Undo Toast (UX-01) */}
       {undoToast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-2xl text-foreground animate-in slide-in-from-bottom-5">
+        <div className="fixed bottom-24 right-6 z-50 flex items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-2xl text-foreground animate-in slide-in-from-bottom-5">
           <p className="text-xs font-bold">{undoToast.message}</p>
           <Button
             size="sm"
@@ -1486,6 +1487,29 @@ function OfflineDashboard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Floating quick-access navbar */}
+      <FloatingNavbar
+        hasRoutine={!!effectiveRoutine}
+        onHome={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        onPresets={() => setShowPresetsModal(true)}
+        onExport={() => setShowExportModal(true)}
+        onShare={() => setShowShareModal(true)}
+        onSchedule={() => {
+          if (currentRoutineObj) {
+            setManageRoutine(currentRoutineObj);
+          }
+          setShowScheduleModal(true);
+        }}
+        onAbout={() => {
+          const url = "https://github.com/YogaDharma21/pocket-check";
+          if (window.electronAPI?.openExternal) {
+            void window.electronAPI.openExternal(url);
+          } else {
+            window.open(url, "_blank", "noopener,noreferrer");
+          }
+        }}
+      />
     </>
   );
 }

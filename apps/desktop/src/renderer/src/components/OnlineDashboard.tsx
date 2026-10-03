@@ -43,6 +43,7 @@ import {
   IconPickerModal,
 } from "@/components/IconPickerModal";
 import { SmartPresetsModal } from "@/components/SmartPresetsModal";
+import { FloatingNavbar } from "@/components/FloatingNavbar";
 import { SmartIntelligenceBanner } from "@/components/SmartIntelligenceBanner";
 import { WeatherAlertBanner } from "@/components/WeatherAlertBanner";
 import { ExportModal } from "@/components/ExportModal";
@@ -647,7 +648,7 @@ export function OnlineDashboard({
 
   return (
     <>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 pb-24 sm:px-6 md:py-8 md:pb-12 lg:px-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 pb-28 sm:px-6 md:py-8 md:pb-32 lg:px-8">
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-8">
           {/* Left Column / Destinations Sidebar */}
           <div className="space-y-6 lg:sticky lg:top-14 lg:col-span-4">
@@ -1257,7 +1258,7 @@ export function OnlineDashboard({
 
       {/* Floating Undo Toast */}
       {undoToast && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-3 rounded-lg border border-border bg-card px-5 py-3 shadow-2xl animate-in fade-in slide-in-from-bottom-4">
+        <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 flex items-center gap-3 rounded-lg border border-border bg-card px-5 py-3 shadow-2xl animate-in fade-in slide-in-from-bottom-4">
           <span className="text-xs font-bold text-foreground">{undoToast.message}</span>
           <Button
             size="sm"
@@ -1775,6 +1776,29 @@ export function OnlineDashboard({
           }
           setSelectedRoutine(sharedImportData.name);
           setShowImportModal(false);
+        }}
+      />
+
+      {/* Floating quick-access navbar */}
+      <FloatingNavbar
+        hasRoutine={!!effectiveRoutine}
+        onHome={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        onPresets={() => setShowPresetsModal(true)}
+        onExport={() => setShowExportModal(true)}
+        onShare={() => setShowShareModal(true)}
+        onSchedule={() => {
+          if (currentRoutineObj) {
+            setManageRoutine(currentRoutineObj);
+          }
+          setShowScheduleModal(true);
+        }}
+        onAbout={() => {
+          const url = "https://github.com/YogaDharma21/pocket-check";
+          if (window.electronAPI?.openExternal) {
+            void window.electronAPI.openExternal(url);
+          } else {
+            window.open(url, "_blank", "noopener,noreferrer");
+          }
         }}
       />
     </>
