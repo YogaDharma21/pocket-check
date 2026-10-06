@@ -18,8 +18,6 @@ import {
   AlertTriangle,
   Settings,
   Sparkles,
-  Share2,
-  Download,
   Clock,
   Undo2,
   Compass,
@@ -44,8 +42,6 @@ import {
 } from "@/components/IconPickerModal";
 import { SmartPresetsModal } from "@/components/SmartPresetsModal";
 import { FloatingNavbar } from "@/components/FloatingNavbar";
-import { SmartIntelligenceBanner } from "@/components/SmartIntelligenceBanner";
-import { WeatherAlertBanner } from "@/components/WeatherAlertBanner";
 import { ExportModal } from "@/components/ExportModal";
 import { ShareRoutineModal } from "@/components/ShareRoutineModal";
 import { RoutineScheduleModal } from "@/components/RoutineScheduleModal";
@@ -941,24 +937,6 @@ export function OnlineDashboard({
                     <Clock className="h-3.5 w-3.5" />
                     <span>Schedule</span>
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowShareModal(true)}
-                    className="h-8 gap-1.5 text-xs font-bold cursor-pointer"
-                  >
-                    <Share2 className="h-3.5 w-3.5" />
-                    <span>Share</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowExportModal(true)}
-                    className="h-8 gap-1.5 text-xs font-bold cursor-pointer"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    <span>Export</span>
-                  </Button>
 
                   {/* Filter tabs */}
                   <div className="flex items-center rounded-lg border border-border bg-muted/60 p-0.5">
@@ -998,34 +976,6 @@ export function OnlineDashboard({
                   </div>
                 </div>
               </div>
-            )}
-
-            {/* Smart Weather Alerts */}
-            {effectiveRoutine && (
-              <WeatherAlertBanner
-                currentRoutineItems={items}
-                onQuickAddItem={async (itemName, iconTag) => {
-                  await addItem({
-                    routine: effectiveRoutine,
-                    name: itemName,
-                    emoji: iconTag || "Umbrella",
-                  });
-                }}
-              />
-            )}
-
-            {/* Departure Intelligence */}
-            {effectiveRoutine && (
-              <SmartIntelligenceBanner
-                routineName={effectiveRoutine}
-                items={items}
-                onQuickPack={async (id) => {
-                  const target = items.find((i) => i._id === id);
-                  if (target) {
-                    await handleToggle(target._id, target.isPacked);
-                  }
-                }}
-              />
             )}
 
             {/* Quick Add Item Bar with Live Auto-Icon Detection */}
@@ -1783,6 +1733,11 @@ export function OnlineDashboard({
       <FloatingNavbar
         hasRoutine={!!effectiveRoutine}
         onHome={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        onNewDestination={() => {
+          setCustomRoutineName("");
+          setCustomRoutineIcon("tag");
+          setShowNewRoutineModal(true);
+        }}
         onPresets={() => setShowPresetsModal(true)}
         onExport={() => setShowExportModal(true)}
         onShare={() => setShowShareModal(true)}

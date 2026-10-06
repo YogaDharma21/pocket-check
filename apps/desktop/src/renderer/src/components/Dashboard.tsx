@@ -18,8 +18,6 @@ import {
   Undo2,
   Compass,
   MapPin,
-  Share2,
-  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -39,8 +37,6 @@ import {
   IconPickerModal,
 } from "@/components/IconPickerModal";
 import { SmartPresetsModal } from "@/components/SmartPresetsModal";
-import { SmartIntelligenceBanner } from "@/components/SmartIntelligenceBanner";
-import { WeatherAlertBanner } from "@/components/WeatherAlertBanner";
 import { ExportModal } from "@/components/ExportModal";
 import { ShareRoutineModal } from "@/components/ShareRoutineModal";
 import { RoutineScheduleModal } from "@/components/RoutineScheduleModal";
@@ -686,26 +682,6 @@ function OfflineDashboard({
                         <Clock className="h-3.5 w-3.5" />
                         <span className="hidden sm:inline">Schedule</span>
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowShareModal(true)}
-                        className="h-8 text-xs font-bold gap-1 cursor-pointer border-border"
-                        title="Share Destination Routine"
-                      >
-                        <Share2 className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Share</span>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowExportModal(true)}
-                        className="h-8 text-xs font-bold gap-1 cursor-pointer border-border"
-                        title="Export Destination Checklist (Markdown, JSON, Print)"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Export</span>
-                      </Button>
                     </div>
 
                     {/* Filter Segmented Control */}
@@ -757,27 +733,6 @@ function OfflineDashboard({
                     </div>
                   </div>
                 </div>
-
-                {/* Weather Alert Banner */}
-                <WeatherAlertBanner
-                  currentRoutineItems={items}
-                  onQuickAddItem={async (name, emoji) => {
-                    await db.addItem(userId, {
-                      routine: effectiveRoutine,
-                      name,
-                      emoji: emoji || "Umbrella",
-                    });
-                  }}
-                />
-
-                {/* Departure Intelligence Banner */}
-                <SmartIntelligenceBanner
-                  routineName={effectiveRoutine}
-                  items={items}
-                  onQuickPack={async (id) => {
-                    await handleToggle(id, false);
-                  }}
-                />
 
                 {/* Quick Add Bar */}
                 <Card className="border-border shadow-xs">
@@ -1492,6 +1447,11 @@ function OfflineDashboard({
       <FloatingNavbar
         hasRoutine={!!effectiveRoutine}
         onHome={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        onNewDestination={() => {
+          setCustomRoutineName("");
+          setCustomRoutineIcon("tag");
+          setShowNewRoutineModal(true);
+        }}
         onPresets={() => setShowPresetsModal(true)}
         onExport={() => setShowExportModal(true)}
         onShare={() => setShowShareModal(true)}

@@ -7,6 +7,7 @@ interface FloatingNavbarProps {
   theme: "light" | "dark";
   hasRoutine: boolean;
   onHome: () => void;
+  onNewDestination: () => void;
   onPresets: () => void;
   onExport: () => void;
   onShare: () => void;
@@ -18,6 +19,7 @@ export function FloatingNavbar({
   theme,
   hasRoutine,
   onHome,
+  onNewDestination,
   onPresets,
   onExport,
   onShare,
@@ -26,20 +28,27 @@ export function FloatingNavbar({
 }: FloatingNavbarProps) {
   const colors = Colors[theme];
 
-  const items: Array<{
+  const items: {
     key: string;
     label: string;
     icon: keyof typeof Ionicons.glyphMap;
     onPress: () => void;
     disabled?: boolean;
     accessibilityLabel: string;
-  }> = [
+  }[] = [
     {
       key: "home",
       label: "Home",
       icon: "home-outline",
       onPress: onHome,
       accessibilityLabel: "Back to checklist top",
+    },
+    {
+      key: "new",
+      label: "New",
+      icon: "add-circle-outline",
+      onPress: onNewDestination,
+      accessibilityLabel: "Create new destination",
     },
     {
       key: "presets",

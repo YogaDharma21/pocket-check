@@ -29,8 +29,7 @@ import { ItemSettingsModal } from "../../components/ItemSettingsModal";
 import { AboutModal } from "../../components/AboutModal";
 import { MenuModal } from "../../components/MenuModal";
 import { SmartPresetsModal } from "../../components/SmartPresetsModal";
-import { SmartIntelligenceBanner } from "../../components/SmartIntelligenceBanner";
-import { WeatherBanner } from "../../components/WeatherBanner";
+import { NewDestinationModal } from "../../components/NewDestinationModal";
 import { ExportModal } from "../../components/ExportModal";
 import { ShareRoutineModal } from "../../components/ShareRoutineModal";
 import { ScheduleModal } from "../../components/ScheduleModal";
@@ -73,6 +72,7 @@ export default function DashboardScreen() {
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showPresetsModal, setShowPresetsModal] = useState(false);
+  const [showNewDestinationModal, setShowNewDestinationModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -607,27 +607,6 @@ export default function DashboardScreen() {
             theme={theme}
           />
 
-          {/* Weather Intelligence Banner */}
-          {effectiveRoutine ? (
-            <WeatherBanner
-              currentRoutineItems={items}
-              onQuickAddItem={(name, emoji) => void handleAddItem(name, emoji)}
-              theme={theme}
-            />
-          ) : null}
-
-          {/* Smart Departure Intelligence Banner */}
-          {effectiveRoutine && items.length > 0 ? (
-            <SmartIntelligenceBanner
-              routineName={effectiveRoutine}
-              items={items}
-              onQuickPack={async (id) => {
-                await handleToggle(id, false);
-              }}
-              theme={theme}
-            />
-          ) : null}
-
           {/* Add Item Form with Multi-Item Batch Support & Auto-Icon Detection */}
           {effectiveRoutine ? (
             <AddItemForm
@@ -742,6 +721,7 @@ export default function DashboardScreen() {
           theme={theme}
           hasRoutine={!!effectiveRoutine}
           onHome={() => scrollViewRef.current?.scrollTo({ y: 0, animated: true })}
+          onNewDestination={() => setShowNewDestinationModal(true)}
           onPresets={() => setShowPresetsModal(true)}
           onExport={() => setShowExportModal(true)}
           onShare={() => setShowShareModal(true)}
@@ -755,6 +735,13 @@ export default function DashboardScreen() {
         />
 
         {/* Modals */}
+        <NewDestinationModal
+          visible={showNewDestinationModal}
+          onClose={() => setShowNewDestinationModal(false)}
+          onCreate={handleCreateRoutine}
+          theme={theme}
+        />
+
         <IconPickerModal
           visible={showIconPicker}
           onClose={() => setShowIconPicker(false)}

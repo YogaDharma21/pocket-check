@@ -54,8 +54,6 @@ import {
 } from "@/components/icon-picker-modal"
 import { SmartPresetsModal } from "@/components/smart-presets-modal"
 import { FloatingNavbar } from "@/components/floating-navbar"
-import { SmartIntelligenceBanner } from "@/components/smart-intelligence-banner"
-import { WeatherAlertBanner } from "@/components/weather-alert-banner"
 import { ExportModal } from "@/components/export-modal"
 import { ShareRoutineModal } from "@/components/share-routine-modal"
 import { RoutineScheduleModal } from "@/components/routine-schedule-modal"
@@ -655,35 +653,6 @@ export function Dashboard() {
 
           {/* Action and Utility Buttons */}
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-            {/* Desktop Routine Actions */}
-            {effectiveRoutine ? (
-              <div className="hidden items-center gap-1.5 sm:flex">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowExportModal(true)}
-                  className="h-8 cursor-pointer items-center gap-1.5 border-border text-xs font-bold text-foreground hover:bg-muted"
-                  title="Export or Print Checklist"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  <span>Export</span>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowShareModal(true)}
-                  className="h-8 cursor-pointer items-center gap-1.5 border-border text-xs font-bold text-foreground hover:bg-muted"
-                  title="Share Checklist Link"
-                >
-                  <Share2 className="h-3.5 w-3.5" />
-                  <span>Share</span>
-                </Button>
-
-                <div className="mx-0.5 h-4 w-px bg-border" />
-              </div>
-            ) : null}
-
             {/* Desktop About Button */}
             <Button
               variant="ghost"
@@ -1178,27 +1147,6 @@ export function Dashboard() {
                     </button>
                   </div>
                 </div>
-
-                {/* Free Weather-Aware Packing Suggestions Banner (FEAT-01) */}
-                <WeatherAlertBanner
-                  currentRoutineItems={items}
-                  onQuickAddItem={async (name, emoji) => {
-                    await addItem({
-                      routine: effectiveRoutine,
-                      name,
-                      emoji: emoji || "Umbrella",
-                    })
-                  }}
-                />
-
-                {/* Smart Departure Intelligence Banner (UX-05) */}
-                <SmartIntelligenceBanner
-                  routineName={effectiveRoutine}
-                  items={items}
-                  onQuickPack={async (id) => {
-                    await handleToggle(id, false)
-                  }}
-                />
 
                 {/* Quick Add Item Bar with Live Auto-Icon Detection (UX-03, UX-04) */}
                 <Card className="border-border shadow-xs">
@@ -2216,6 +2164,11 @@ export function Dashboard() {
       <FloatingNavbar
         hasRoutine={!!effectiveRoutine}
         onHome={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        onNewDestination={() => {
+          setCustomRoutineName("")
+          setCustomRoutineIcon("tag")
+          setShowNewRoutineModal(true)
+        }}
         onPresets={() => setShowPresetsModal(true)}
         onExport={() => setShowExportModal(true)}
         onShare={() => setShowShareModal(true)}
