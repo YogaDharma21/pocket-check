@@ -2,6 +2,7 @@
 
 import {
   Home,
+  Plus,
   Sparkles,
   Download,
   Share2,
@@ -12,6 +13,7 @@ import { cn } from "@/lib/utils"
 
 interface FloatingNavbarProps {
   onHome: () => void
+  onNewDestination: () => void
   onPresets: () => void
   onExport: () => void
   onShare: () => void
@@ -22,6 +24,7 @@ interface FloatingNavbarProps {
 
 export function FloatingNavbar({
   onHome,
+  onNewDestination,
   onPresets,
   onExport,
   onShare,
@@ -54,6 +57,17 @@ export function FloatingNavbar({
         >
           <Home className="h-5 w-5 sm:h-4 sm:w-4" />
           <span className={labelClass}>Home</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={onNewDestination}
+          title="Create new destination"
+          aria-label="Create new destination"
+          className={itemClass()}
+        >
+          <Plus className="h-5 w-5 sm:h-4 sm:w-4" />
+          <span className={labelClass}>New Dest</span>
         </button>
 
         <button
