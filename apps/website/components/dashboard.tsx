@@ -33,7 +33,6 @@ import {
   MapPin,
   Menu,
 } from "lucide-react"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -676,9 +675,6 @@ export function Dashboard() {
               <Menu className="h-4 w-4" />
               <span className="sr-only">Open Menu</span>
             </Button>
-
-            {/* Theme Toggle */}
-            <ThemeToggle />
 
             {/* User Account Avatar with safe padding and shrink-0 */}
             <div className="flex shrink-0 items-center justify-center pl-0.5">

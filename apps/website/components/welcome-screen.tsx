@@ -1,7 +1,6 @@
 import Image from "next/image"
 import { SignInButton, SignUpButton } from "@clerk/nextjs"
 import {
-  PackageCheck,
   ShieldCheck,
   Smartphone,
   Check,
@@ -20,7 +19,7 @@ export function WelcomeScreen() {
         {/* Left / Hero Column */}
         <div className="space-y-6 text-center lg:col-span-7 lg:text-left">
           <div className="flex items-center justify-center gap-3 lg:justify-start">
-            <div className="shrink-0 overflow-hidden rounded-2xl shadow-md border border-border">
+            <div className="shrink-0 overflow-hidden rounded-lg shadow-md border border-border bg-card">
               <Image
                 src="/icon-192.png"
                 alt="PocketCheck"

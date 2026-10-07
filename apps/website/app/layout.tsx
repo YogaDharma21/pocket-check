@@ -44,7 +44,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", nunito.variable, fontMono.variable)}
+      className={cn("dark antialiased", nunito.variable, fontMono.variable)}
     >
       <body className="font-sans antialiased">
         <ConvexClientProvider>

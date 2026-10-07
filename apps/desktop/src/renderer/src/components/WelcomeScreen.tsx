@@ -134,7 +134,7 @@ export function WelcomeScreen() {
     <div className="flex min-h-[calc(100vh-2.25rem)] w-full flex-col items-center justify-center bg-black text-white px-6 selection:bg-zinc-800">
       <div className="flex w-full max-w-sm flex-col items-center text-center space-y-8">
         {/* Rounded Container with Official App Icon */}
-        <div className="flex h-28 w-28 items-center justify-center rounded-2xl overflow-hidden shadow-2xl border border-zinc-800 bg-zinc-900">
+        <div className="flex h-28 w-28 items-center justify-center rounded-lg overflow-hidden shadow-2xl border border-border bg-card">
           <img
             src="/icon.png"
             alt="PocketCheck"
@@ -146,9 +146,9 @@ export function WelcomeScreen() {
         <div className="space-y-3">
           <h1 className="text-2xl sm:text-3xl font-black tracking-wider uppercase">
             <span className="text-white">POCKET</span>
-            <span className="text-zinc-500">CHECKER</span>
+            <span className="text-primary">CHECKER</span>
           </h1>
-          <div className="text-xs sm:text-sm font-semibold text-zinc-400 leading-relaxed max-w-xs mx-auto">
+          <div className="text-xs sm:text-sm font-semibold text-muted-foreground leading-relaxed max-w-xs mx-auto">
             <p>Double-check your pockets before you step out!</p>
             <p>Never forget your keys, wallet, or phone again.</p>
           </div>
@@ -157,7 +157,7 @@ export function WelcomeScreen() {
         {/* Auth Button */}
         <div className="w-full space-y-3 pt-2">
           {errorMsg && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-center text-xs font-bold text-red-400">
+            <div className="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-center text-xs font-bold text-red-400">
               {errorMsg}
             </div>
           )}
@@ -166,16 +166,16 @@ export function WelcomeScreen() {
             type="button"
             disabled={loading || !isLoaded}
             onClick={handleGoogleAuth}
-            className="flex h-14 w-full items-center justify-center rounded-lg bg-white px-6 font-black text-xs sm:text-sm tracking-wider text-black uppercase transition-all hover:bg-zinc-200 active:scale-[0.98] disabled:opacity-50 cursor-pointer shadow-lg"
+            className="flex h-14 w-full items-center justify-center rounded-lg bg-primary px-6 font-black text-xs sm:text-sm tracking-wider text-primary-foreground uppercase transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50 cursor-pointer shadow-lg"
           >
             {loading ? (
               <div className="flex items-center gap-2">
-                <Loader2 className="h-5 w-5 animate-spin text-black" />
+                <Loader2 className="h-5 w-5 animate-spin text-primary-foreground" />
                 <span>Authenticating in browser...</span>
               </div>
             ) : (
               <div className="flex items-center justify-center gap-3">
-                <svg className="h-5 w-5 fill-current text-black shrink-0" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 fill-current text-primary-foreground shrink-0" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />

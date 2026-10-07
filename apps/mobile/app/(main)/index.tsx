@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  useColorScheme,
   ActivityIndicator,
   Image,
 } from "react-native";
@@ -50,9 +49,8 @@ interface RestorableItem {
 }
 
 export default function DashboardScreen() {
-  const colorScheme = useColorScheme() ?? "dark";
-  const theme = colorScheme;
-  const colors = Colors[theme];
+  const theme = "dark";
+  const colors = Colors.dark;
   const router = useRouter();
 
   const { signOut } = useAuth();
@@ -527,7 +525,7 @@ export default function DashboardScreen() {
               />
             </View>
             <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-              POCKET<Text style={{ color: colors.mutedForeground }}>CHECKER</Text>
+              POCKET<Text style={{ color: colors.primary }}>CHECKER</Text>
             </Text>
           </View>
 
@@ -926,7 +924,7 @@ const styles = StyleSheet.create({
   headerIconBox: {
     width: 32,
     height: 32,
-    borderRadius: 10,
+    borderRadius: 6,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -949,13 +947,13 @@ const styles = StyleSheet.create({
   headerAvatar: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: 6,
     borderWidth: 1.5,
   },
   headerAvatarFallback: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: 6,
     borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
@@ -973,7 +971,7 @@ const styles = StyleSheet.create({
   },
   emptyCard: {
     padding: 24,
-    borderRadius: 16,
+    borderRadius: 8,
     borderWidth: 1,
     borderStyle: "dashed",
     alignItems: "center",
@@ -991,7 +989,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: 6,
   },
   presetQuickBtnText: {
     fontSize: 12,

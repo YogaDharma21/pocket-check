@@ -4,8 +4,8 @@
   "description": "Double-check your pockets before you step out! Create packing lists for work, the gym, or your custom routines.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0284c7",
+  "background_color": "#090a0f",
+  "theme_color": "#00e575",
   "icons": [
     {
       "src": "/favicon.ico",

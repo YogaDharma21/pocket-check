@@ -11,89 +11,19 @@ interface ThemeContextType {
 
 const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined);
 
-const THEME_STORAGE_KEY = "pocketcheck-theme";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = React.useState<Theme>(() => {
-    if (typeof window === "undefined") return "dark";
-    const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-    return saved || "dark";
-  });
+  const theme: Theme = "dark";
+  const resolvedTheme: "dark" = "dark";
 
-  const [resolvedTheme, setResolvedTheme] = React.useState<"dark" | "light">("dark");
-
-  const updateResolvedTheme = React.useCallback((currentTheme: Theme) => {
-    let resolved: "dark" | "light" = "dark";
-    if (currentTheme === "system") {
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      resolved = prefersDark ? "dark" : "light";
-    } else {
-      resolved = currentTheme;
-    }
-
-    setResolvedTheme(resolved);
+  React.useEffect(() => {
     const root = document.documentElement;
-    if (resolved === "dark") {
-      root.classList.add("dark");
-      root.classList.remove("light");
-    } else {
-      root.classList.remove("dark");
-      root.classList.add("light");
-    }
+    root.classList.add("dark");
+    root.classList.remove("light");
   }, []);
 
-  const setTheme = React.useCallback(
-    (newTheme: Theme) => {
-      setThemeState(newTheme);
-      localStorage.setItem(THEME_STORAGE_KEY, newTheme);
-      updateResolvedTheme(newTheme);
-    },
-    [updateResolvedTheme]
-  );
-
-  const toggleTheme = React.useCallback(() => {
-    setTheme(resolvedTheme === "dark" ? "light" : "dark");
-  }, [resolvedTheme, setTheme]);
-
-  React.useEffect(() => {
-    updateResolvedTheme(theme);
-
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const handleChange = () => {
-      if (theme === "system") {
-        updateResolvedTheme("system");
-      }
-    };
-
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, [theme, updateResolvedTheme]);
-
-  // Global 'D' Hotkey handler
-  React.useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.defaultPrevented || event.repeat) return;
-      if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
-      if (event.key.toLowerCase() !== "d") return;
-
-      const target = event.target;
-      if (target instanceof HTMLElement) {
-        if (
-          target.isContentEditable ||
-          target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.tagName === "SELECT"
-        ) {
-          return;
-        }
-      }
-
-      toggleTheme();
-    }
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [toggleTheme]);
+  const setTheme = React.useCallback(() => {}, []);
+  const toggleTheme = React.useCallback(() => {}, []);
 
   return (
     <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, toggleTheme }}>

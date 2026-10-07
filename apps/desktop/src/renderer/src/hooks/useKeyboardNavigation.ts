@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { useTheme } from "@/components/ThemeProvider";
 
 interface UseKeyboardNavigationProps {
   totalItems: number;
@@ -24,8 +23,6 @@ export function useKeyboardNavigation({
   onFocusQuickAdd,
   isModalOpen = false,
 }: UseKeyboardNavigationProps) {
-  const { toggleTheme } = useTheme();
-
   // Keep latest callbacks in refs to avoid stale closures in event listeners
   const propsRef = useRef({
     totalItems,
@@ -37,7 +34,6 @@ export function useKeyboardNavigation({
     onResetRoutine,
     onFocusQuickAdd,
     isModalOpen,
-    toggleTheme,
   });
 
   propsRef.current = {
@@ -50,7 +46,6 @@ export function useKeyboardNavigation({
     onResetRoutine,
     onFocusQuickAdd,
     isModalOpen,
-    toggleTheme,
   };
 
   useEffect(() => {
@@ -65,7 +60,6 @@ export function useKeyboardNavigation({
         onResetRoutine,
         onFocusQuickAdd,
         isModalOpen,
-        toggleTheme,
       } = propsRef.current;
 
       // Disable during open modals
@@ -91,13 +85,6 @@ export function useKeyboardNavigation({
         if (event.key === "Escape") {
           target.blur();
         }
-        return;
-      }
-
-      // Theme toggle: 'd' or 'D'
-      if (event.key.toLowerCase() === "d" && !event.ctrlKey && !event.metaKey && !event.altKey) {
-        event.preventDefault();
-        toggleTheme();
         return;
       }
 

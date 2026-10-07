@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Minus, Square, Copy, X } from "lucide-react";
 import { UserButton, SignedIn, useAuth } from "@clerk/clerk-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { isOnlineBackendConfigured } from "@/components/ConvexClientProvider";
 
 export function UserAuthMenu() {
@@ -96,7 +95,6 @@ export function TitleBar(_props?: TitleBarProps) {
       {/* Right: Actions & Window Controls */}
       <div className="flex items-center gap-1.5 app-no-drag">
         {!isLoggedOut && <UserAuthMenu />}
-        {!isLoggedOut && <ThemeToggle />}
 
         {!isMac && (
           <div className="flex items-center ml-1 gap-0.5">

@@ -24,7 +24,7 @@ export function FloatingNavbar({
 }: FloatingNavbarProps) {
   const itemClass = (disabled?: boolean) =>
     cn(
-      "group flex h-11 w-11 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-full transition-colors sm:h-auto sm:w-auto sm:gap-1 sm:rounded-xl sm:px-3 sm:py-2",
+      "group flex h-11 w-11 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-md transition-colors sm:h-auto sm:w-auto sm:gap-1 sm:rounded-md sm:px-3 sm:py-2",
       disabled
         ? "cursor-not-allowed text-muted-foreground opacity-40"
         : "text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95"
@@ -34,7 +34,7 @@ export function FloatingNavbar({
 
   return (
     <nav aria-label="Quick actions" className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 sm:bottom-6">
-      <div className="flex items-center gap-1 rounded-full border border-border bg-card/90 p-1.5 shadow-lg backdrop-blur-md sm:gap-0.5 sm:rounded-2xl sm:px-2">
+      <div className="flex items-center gap-1 rounded-lg border border-border bg-card/95 p-1.5 shadow-lg backdrop-blur-md sm:gap-0.5 sm:rounded-lg sm:px-2">
         <button
           type="button"
           onClick={onHome}

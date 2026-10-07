@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderRadius: 28,
+    borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 8,
     shadowColor: "#000",

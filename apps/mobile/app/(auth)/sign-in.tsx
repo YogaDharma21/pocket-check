@@ -72,7 +72,7 @@ export default function SignInScreen() {
             />
           </View>
           <Text style={[styles.title, { color: colors.foreground }]}>
-            POCKET<Text style={{ color: colors.mutedForeground }}>CHECKER</Text>
+            POCKET<Text style={{ color: colors.primary }}>CHECKER</Text>
           </Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
             Double-check your pockets before you step out! Never forget your
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   iconBox: {
     width: 96,
     height: 96,
-    borderRadius: 24,
+    borderRadius: 10,
     borderWidth: 1,
     overflow: "hidden",
     alignItems: "center",
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     padding: 14,
-    borderRadius: 16,
+    borderRadius: 8,
     gap: 10,
   },
   errorText: {
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   },
   googleBtn: {
     height: 56,
-    borderRadius: 18,
+    borderRadius: 8,
     borderWidth: 1,
     flexDirection: "row",
     alignItems: "center",
