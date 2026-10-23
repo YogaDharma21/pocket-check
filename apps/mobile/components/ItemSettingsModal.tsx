@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Modal,
   View,
@@ -42,18 +42,12 @@ export function ItemSettingsModal({
   theme,
 }: ItemSettingsModalProps) {
   const colors = Colors[theme];
-  const [name, setName] = useState("");
-  const [quantity, setQuantity] = useState<string>("");
-  const [locationNote, setLocationNote] = useState("");
+  const [name, setName] = useState(item?.name ?? "");
+  const [quantity, setQuantity] = useState<string>(
+    item?.quantity && item.quantity > 1 ? String(item.quantity) : ""
+  );
+  const [locationNote, setLocationNote] = useState(item?.locationNote ?? "");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  useEffect(() => {
-    if (item) {
-      setName(item.name);
-      setQuantity(item.quantity && item.quantity > 1 ? String(item.quantity) : "");
-      setLocationNote(item.locationNote ?? "");
-    }
-  }, [item]);
 
   if (!item) return null;
 
