@@ -10,7 +10,7 @@ This repository is organized as a monorepo containing the web application, mobil
 pocket-check/
 ├── apps/
 │   ├── website/        # Next.js 16 web application (React 19, Tailwind CSS v4, Base UI)
-│   ├── mobile/         # Expo SDK 54 mobile application (React Native, Expo Router)
+│   ├── mobile/         # Expo SDK 58 mobile application (React Native, Expo Router)
 │   └── desktop/        # Electron desktop application (React 19, Vite, Tailwind CSS v4, Lucide)
 ├── docs/               # Architecture and design documentation
 └── .github/
@@ -31,7 +31,7 @@ pocket-check/
 ## Tech Stack
 
 - **Frontend (Web)**: Next.js 16 (App Router), React 19, Tailwind CSS v4, Base UI / Radix primitives, Lucide Icons
-- **Mobile**: React Native 0.81, Expo SDK 54, Expo Router v6
+- **Mobile**: React Native 0.88, Expo SDK 58, Expo Router v58
 - **Desktop**: Electron 34, React 19, Vite 6, Tailwind CSS v4, Lucide Icons, electron-builder
 - **Database & Realtime**: Convex Cloud
 - **Authentication**: Clerk

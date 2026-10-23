@@ -1,5 +1,11 @@
 import React, { useEffect, useRef } from "react";
-import { Text, StyleSheet, TouchableOpacity, Animated } from "react-native";
+import {
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  useAnimatedValue,
+} from "react-native";
 
 interface UndoToastProps {
   message: string;
@@ -9,10 +15,13 @@ interface UndoToastProps {
 }
 
 export function UndoToast({ message, onUndo, onDismiss }: UndoToastProps) {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(20)).current;
+  const opacity = useAnimatedValue(0);
+  const translateY = useAnimatedValue(20);
   const onDismissRef = useRef(onDismiss);
-  onDismissRef.current = onDismiss;
+
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
+  }, [onDismiss]);
 
   useEffect(() => {
     Animated.parallel([
