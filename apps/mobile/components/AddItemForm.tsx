@@ -180,7 +180,7 @@ export function AddItemForm({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: 24,
     borderWidth: 1,
     padding: 16,
     marginVertical: 12,

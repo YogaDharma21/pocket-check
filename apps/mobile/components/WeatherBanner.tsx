@@ -469,6 +469,7 @@ const styles = StyleSheet.create({
   weatherStats: {
     fontSize: 11,
     fontWeight: "600",
+    fontVariant: ["tabular-nums"],
   },
   dismissBtn: {
     padding: 4,

@@ -685,7 +685,7 @@ export function OnlineDashboard({
                           </span>
                           <Badge
                             variant={percentage === 100 ? "default" : "secondary"}
-                            className="px-2 py-0.5 text-[10px] font-black"
+                            className="px-2 py-0.5 text-[10px] font-black tabular-nums"
                           >
                             {Math.round(percentage)}% Packed
                           </Badge>
@@ -701,7 +701,7 @@ export function OnlineDashboard({
 
                     <div className="space-y-2">
                       <Progress value={percentage} className="h-2.5" />
-                      <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
+                      <div className="flex items-center justify-between text-xs font-bold text-muted-foreground tabular-nums">
                         <span id="progress-text">
                           <strong className="font-black text-foreground">
                             {packedItems}
@@ -754,7 +754,7 @@ export function OnlineDashboard({
                 {isRoutinesLoading ? (
                   <Skeleton className="h-5 w-12 rounded-lg" />
                 ) : (
-                  <Badge variant="outline" className="text-xs font-black">
+                  <Badge variant="outline" className="text-xs font-black tabular-nums">
                     {routinesList.length} lists
                   </Badge>
                 )}
@@ -786,7 +786,7 @@ export function OnlineDashboard({
                             onClick={() => {
                               setSelectedRoutine(routine.name);
                             }}
-                            className={`group flex cursor-pointer items-center justify-between rounded-lg border p-2.5 transition-all ${
+                            className={`group flex cursor-pointer items-center justify-between rounded-2xl border p-2.5 transition-all ${
                               isActive
                                 ? "border-primary bg-primary font-black text-primary-foreground shadow-xs"
                                 : "border-border bg-card font-bold text-foreground hover:bg-muted/60"
@@ -794,7 +794,7 @@ export function OnlineDashboard({
                           >
                             <div className="flex min-w-0 flex-1 items-center gap-3">
                               <div
-                                className={`shrink-0 rounded-lg p-2 ${
+                                className={`shrink-0 rounded-xl p-2 ${
                                   isActive
                                     ? "bg-primary-foreground/15 text-primary-foreground"
                                     : "bg-muted text-foreground"
@@ -949,7 +949,7 @@ export function OnlineDashboard({
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      All <span className="opacity-70">{totalItems}</span>
+                      All <span className="opacity-70 tabular-nums">{totalItems}</span>
                     </button>
                     <button
                       type="button"
@@ -960,7 +960,7 @@ export function OnlineDashboard({
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      Missing <span className="text-destructive">{missingItems}</span>
+                      Missing <span className="text-destructive tabular-nums">{missingItems}</span>
                     </button>
                     <button
                       type="button"
@@ -971,7 +971,7 @@ export function OnlineDashboard({
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      Packed <span className="text-primary">{packedItems}</span>
+                      Packed <span className="text-primary tabular-nums">{packedItems}</span>
                     </button>
                   </div>
                 </div>
@@ -1127,7 +1127,7 @@ export function OnlineDashboard({
                         setDragOverItemId(null);
                       }}
                       onClick={() => void handleToggle(item._id, item.isPacked)}
-                      className={`group relative flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3.5 transition-all select-none ${
+                      className={`group relative flex cursor-pointer items-center justify-between gap-3 rounded-[16px] border p-3.5 transition-all select-none ${
                         item.isPacked
                           ? "border-border/60 bg-muted/40 text-muted-foreground"
                           : "border-border bg-card text-foreground hover:border-primary/50 shadow-xs"
@@ -1167,7 +1167,7 @@ export function OnlineDashboard({
                             {item.name}
                           </span>
                           {item.quantity && item.quantity > 1 && (
-                            <Badge variant="secondary" className="text-[10px] font-black px-1.5 py-0 h-4">
+                            <Badge variant="secondary" className="text-[10px] font-black px-1.5 py-0 h-4 tabular-nums">
                               {item.quantity}x
                             </Badge>
                           )}

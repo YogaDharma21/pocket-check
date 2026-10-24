@@ -9,7 +9,7 @@ function Card({
     <div
       data-slot="card"
       className={cn(
-        "rounded-lg border border-border bg-card text-card-foreground shadow-xs",
+        "rounded-[24px] border border-border bg-card text-card-foreground shadow-[0_28px_56px_-40px_rgba(0,0,0,0.9)]",
         className
       )}
       {...props}

@@ -75,7 +75,7 @@ export function DialogContent({
   return (
     <div
       className={cn(
-        "rounded-lg border border-border bg-card p-5 sm:p-6 text-card-foreground shadow-2xl relative select-none",
+        "rounded-[24px] border border-border bg-popover p-5 sm:p-6 text-popover-foreground shadow-[0_28px_56px_-40px_rgba(0,0,0,0.9)] relative select-none",
         className
       )}
     >
@@ -83,7 +83,7 @@ export function DialogContent({
         <button
           type="button"
           onClick={handleClose}
-          className="absolute right-3.5 top-3.5 sm:right-4 sm:top-4 rounded-lg p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+          className="absolute right-3.5 top-3.5 sm:right-4 sm:top-4 rounded-xl p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
         >
           <X className="h-5 w-5" />
           <span className="sr-only">Close</span>

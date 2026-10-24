@@ -46,8 +46,8 @@ export function FilterTabs({
           style={styles.actionBtn}
           onPress={onClearList}
         >
-          <Ionicons name="trash-outline" size={13} color="#ef4444" />
-          <Text style={[styles.actionText, { color: "#ef4444" }]}>
+          <Ionicons name="trash-outline" size={13} color={colors.destructive} />
+          <Text style={[styles.actionText, { color: colors.destructive }]}>
             CLEAR LIST
           </Text>
         </TouchableOpacity>
@@ -100,7 +100,7 @@ export function FilterTabs({
             styles.segmentBtn,
             filter === "missing" && [
               styles.activeSegmentBtn,
-              { backgroundColor: colors.card, borderColor: "#ef4444" },
+              { backgroundColor: colors.card, borderColor: colors.destructive },
             ],
           ]}
           onPress={() => onFilterChange("missing")}
@@ -121,13 +121,13 @@ export function FilterTabs({
           <View
             style={[
               styles.badge,
-              { backgroundColor: "#ef4444" },
+              { backgroundColor: colors.destructive },
             ]}
           >
             <Text
               style={[
                 styles.badgeText,
-                { color: "#ffffff" },
+                { color: colors.destructiveForeground },
               ]}
             >
               {missingCount}

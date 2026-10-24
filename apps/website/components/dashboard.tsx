@@ -731,7 +731,7 @@ export function Dashboard() {
                             variant={
                               percentage === 100 ? "default" : "secondary"
                             }
-                            className="px-2 py-0.5 text-[10px] font-black"
+                            className="px-2 py-0.5 text-[10px] font-black tabular-nums"
                           >
                             {Math.round(percentage)}% Packed
                           </Badge>
@@ -747,7 +747,7 @@ export function Dashboard() {
 
                     <div className="space-y-2">
                       <Progress value={percentage} className="h-2.5" />
-                      <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
+                      <div className="flex items-center justify-between text-xs font-bold text-muted-foreground tabular-nums">
                         <span id="progress-text">
                           <strong className="font-black text-foreground">
                             {packedItems}
@@ -800,7 +800,7 @@ export function Dashboard() {
                 {isRoutinesLoading ? (
                   <Skeleton className="h-5 w-12 rounded-full" />
                 ) : (
-                  <Badge variant="outline" className="text-xs font-black">
+                  <Badge variant="outline" className="text-xs font-black tabular-nums">
                     {routinesList.length} lists
                   </Badge>
                 )}
@@ -834,7 +834,7 @@ export function Dashboard() {
                             onClick={() => {
                               setSelectedRoutine(routine.name)
                             }}
-                            className={`group flex cursor-pointer items-center justify-between rounded-lg border p-2.5 transition-all ${
+                            className={`group flex cursor-pointer items-center justify-between rounded-2xl border p-2.5 transition-all ${
                               isActive
                                 ? "border-primary bg-primary font-black text-primary-foreground shadow-xs"
                                 : "border-border bg-card font-bold text-foreground hover:bg-muted/60"
@@ -842,7 +842,7 @@ export function Dashboard() {
                           >
                             <div className="flex min-w-0 flex-1 items-center gap-3">
                               <div
-                                className={`shrink-0 rounded-lg p-2 ${
+                                className={`shrink-0 rounded-xl p-2 ${
                                   isActive
                                     ? "bg-primary-foreground/15 text-primary-foreground"
                                     : "bg-muted text-foreground"
@@ -857,7 +857,7 @@ export function Dashboard() {
                                   {routine.name}
                                 </span>
                                 {routine.autoResetTime && (
-                                  <span className="flex items-center gap-1 font-mono text-[10px] opacity-70">
+                                  <span className="flex items-center gap-1 font-mono text-[10px] opacity-70 tabular-nums">
                                     <Clock className="h-2.5 w-2.5" />
                                     {routine.autoResetTime}
                                   </span>
@@ -1104,7 +1104,7 @@ export function Dashboard() {
                       <span>All</span>
                       <Badge
                         variant="secondary"
-                        className="rounded-md px-1.5 py-0 text-[10px] font-extrabold"
+                        className="rounded-md px-1.5 py-0 text-[10px] font-extrabold tabular-nums"
                       >
                         {items.length}
                       </Badge>
@@ -1122,7 +1122,7 @@ export function Dashboard() {
                       <span>Missing</span>
                       <Badge
                         variant="destructive"
-                        className="rounded-md px-1.5 py-0 text-[10px] font-extrabold"
+                        className="rounded-md px-1.5 py-0 text-[10px] font-extrabold tabular-nums"
                       >
                         {missingItems}
                       </Badge>
@@ -1140,7 +1140,7 @@ export function Dashboard() {
                       <span>Packed</span>
                       <Badge
                         variant="default"
-                        className="rounded-md px-1.5 py-0 text-[10px] font-extrabold"
+                        className="rounded-md px-1.5 py-0 text-[10px] font-extrabold tabular-nums"
                       >
                         {packedItems}
                       </Badge>
@@ -1360,7 +1360,7 @@ export function Dashboard() {
                                 setFocusedItemIndex(itemIdx)
                                 void handleToggle(item._id, item.isPacked)
                               }}
-                              className={`relative cursor-pointer transition-all ${
+                              className={`relative cursor-pointer rounded-[16px] transition-all ${
                                 item.isPacked
                                   ? "bg-muted/40"
                                   : "hover:bg-accent/40"
@@ -1419,7 +1419,7 @@ export function Dashboard() {
                                       </p>
 
                                       {item.quantity && item.quantity > 1 && (
-                                        <span className="py-0.2 shrink-0 rounded border border-border bg-muted/60 px-1.5 font-mono text-[11px] font-bold text-foreground">
+                                        <span className="py-0.2 shrink-0 rounded border border-border bg-muted/60 px-1.5 font-mono text-[11px] font-bold text-foreground tabular-nums">
                                           {item.quantity}x
                                         </span>
                                       )}
