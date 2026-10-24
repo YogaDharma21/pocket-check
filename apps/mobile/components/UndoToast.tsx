@@ -6,15 +6,17 @@ import {
   Animated,
   useAnimatedValue,
 } from "react-native";
+import { Colors } from "@/constants/theme";
 
 interface UndoToastProps {
   message: string;
   onUndo: () => void;
   onDismiss: () => void;
-  theme: "light" | "dark"; // kept for API compat but toast is dark by design
+  theme?: "light" | "dark";
 }
 
-export function UndoToast({ message, onUndo, onDismiss }: UndoToastProps) {
+export function UndoToast({ message, onUndo, onDismiss, theme = "dark" }: UndoToastProps) {
+  const colors = Colors[theme];
   const opacity = useAnimatedValue(0);
   const translateY = useAnimatedValue(20);
   const onDismissRef = useRef(onDismiss);
@@ -62,13 +64,18 @@ export function UndoToast({ message, onUndo, onDismiss }: UndoToastProps) {
         styles.toastContainer, 
         { 
           opacity, 
-          transform: [{ translateY }] 
+          transform: [{ translateY }],
+          backgroundColor: colors.card,
+          borderColor: colors.border,
         }
       ]}
     >
-      <Text style={styles.message} numberOfLines={1}>{message}</Text>
-      <TouchableOpacity style={styles.undoButton} onPress={onUndo}>
-        <Text style={styles.undoText}>Undo</Text>
+      <Text style={[styles.message, { color: colors.foreground }]} numberOfLines={1}>{message}</Text>
+      <TouchableOpacity 
+        style={[styles.undoButton, { backgroundColor: colors.primary }]} 
+        onPress={onUndo}
+      >
+        <Text style={[styles.undoText, { color: colors.primaryForeground }]}>Undo</Text>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -85,8 +92,6 @@ const styles = StyleSheet.create({
     padding: 14,
     flexDirection: "row",
     gap: 12,
-    backgroundColor: "#18181b",
-    borderColor: "#27272a",
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "space-between",
@@ -100,18 +105,15 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   message: {
-    color: "#ffffff",
     fontSize: 14,
     flex: 1,
   },
   undoButton: {
-    backgroundColor: "#ffffff",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
   },
   undoText: {
-    color: "#000000",
     fontSize: 14,
     fontWeight: "bold",
   },

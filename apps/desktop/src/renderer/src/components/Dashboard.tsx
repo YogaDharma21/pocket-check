@@ -438,7 +438,7 @@ function OfflineDashboard({
                       </span>
                       <Badge
                         variant={percentage === 100 ? "default" : "secondary"}
-                        className="px-2 py-0.5 text-[10px] font-black"
+                        className="px-2 py-0.5 text-[10px] font-black tabular-nums"
                       >
                         {Math.round(percentage)}% Packed
                       </Badge>
@@ -451,7 +451,7 @@ function OfflineDashboard({
 
                 <div className="space-y-2">
                   <Progress value={percentage} className="h-2.5" />
-                  <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
+                  <div className="flex items-center justify-between text-xs font-bold text-muted-foreground tabular-nums">
                     <span>
                       <strong className="font-black text-foreground">{packedItems}</strong> of {totalItems} items packed
                     </span>
@@ -493,7 +493,7 @@ function OfflineDashboard({
                   </h3>
                   <p className="text-sm font-black text-foreground">Where are you heading?</p>
                 </div>
-                <Badge variant="outline" className="text-xs font-black">
+                <Badge variant="outline" className="text-xs font-black tabular-nums">
                   {routines.length} lists
                 </Badge>
               </CardHeader>
@@ -515,7 +515,7 @@ function OfflineDashboard({
                           <div
                             key={routine._id}
                             onClick={() => setActiveRoutine(routine.name)}
-                            className={`group flex cursor-pointer items-center justify-between rounded-lg border p-2.5 transition-all ${
+                            className={`group flex cursor-pointer items-center justify-between rounded-2xl border p-2.5 transition-all ${
                               isActive
                                 ? "border-primary bg-primary font-black text-primary-foreground shadow-xs"
                                 : "border-border bg-card font-bold text-foreground hover:bg-muted/60"
@@ -523,7 +523,7 @@ function OfflineDashboard({
                           >
                             <div className="flex min-w-0 flex-1 items-center gap-3">
                               <div
-                                className={`shrink-0 rounded-lg p-2 ${
+                                className={`shrink-0 rounded-xl p-2 ${
                                   isActive
                                     ? "bg-primary-foreground/15 text-primary-foreground"
                                     : "bg-muted text-foreground"
@@ -536,7 +536,7 @@ function OfflineDashboard({
                                   {routine.name}
                                 </span>
                                 {routine.autoResetTime && (
-                                  <span className="text-[10px] font-mono opacity-70 flex items-center gap-1">
+                                  <span className="text-[10px] font-mono opacity-70 flex items-center gap-1 tabular-nums">
                                     <Clock className="h-2.5 w-2.5" />
                                     {routine.autoResetTime}
                                   </span>
@@ -696,7 +696,7 @@ function OfflineDashboard({
                         }`}
                       >
                         <span>All</span>
-                        <Badge variant="secondary" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold">
+                        <Badge variant="secondary" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold tabular-nums">
                           {items.length}
                         </Badge>
                       </button>
@@ -711,7 +711,7 @@ function OfflineDashboard({
                         }`}
                       >
                         <span>Missing</span>
-                        <Badge variant="destructive" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold">
+                        <Badge variant="destructive" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold tabular-nums">
                           {missingItems}
                         </Badge>
                       </button>
@@ -726,7 +726,7 @@ function OfflineDashboard({
                         }`}
                       >
                         <span>Packed</span>
-                        <Badge variant="default" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold">
+                        <Badge variant="default" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold tabular-nums">
                           {packedItems}
                         </Badge>
                       </button>
@@ -862,7 +862,7 @@ function OfflineDashboard({
                             setFocusedItemIndex(itemIdx);
                             void handleToggle(item._id, item.isPacked);
                           }}
-                          className={`relative cursor-pointer transition-all ${
+                          className={`relative cursor-pointer rounded-[16px] transition-all ${
                             item.isPacked ? "bg-muted/40" : "hover:bg-accent/40"
                           } ${isFocused ? "ring-2 ring-primary ring-offset-1" : ""} ${
                             isDragging ? "scale-[0.98] border-dashed border-primary opacity-40" : ""
@@ -902,7 +902,7 @@ function OfflineDashboard({
                                     {item.name}
                                   </h4>
                                   {item.quantity && item.quantity > 1 && (
-                                    <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-bold">
+                                    <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-bold tabular-nums">
                                       {item.quantity}x
                                     </Badge>
                                   )}

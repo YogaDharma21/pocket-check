@@ -162,7 +162,7 @@ export function UserProfileModal({
                   style={[
                     styles.signOutBtn,
                     {
-                      backgroundColor: colors.destructive || "#ef4444",
+                      backgroundColor: colors.destructive,
                     },
                   ]}
                   onPress={() => {
@@ -174,9 +174,9 @@ export function UserProfileModal({
                   <Ionicons
                     name="log-out-outline"
                     size={18}
-                    color="#ffffff"
+                    color={colors.primaryForeground}
                   />
-                  <Text style={styles.signOutBtnText}>Log Out of PocketChecker</Text>
+                  <Text style={[styles.signOutBtnText, { color: colors.primaryForeground }]}>Log Out of PocketChecker</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    borderRadius: 20,
+    borderRadius: 24,
     borderWidth: 1,
     padding: 20,
     gap: 16,
