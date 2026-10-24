@@ -75,7 +75,9 @@ export function ConfirmModal({
       : colors.primary;
 
   const confirmTextColor =
-    variant === "warning"
+    variant === "destructive"
+      ? colors.destructiveForeground
+      : variant === "warning"
       ? theme === "dark"
         ? "#0a0a0b"
         : "#f6f4ef"

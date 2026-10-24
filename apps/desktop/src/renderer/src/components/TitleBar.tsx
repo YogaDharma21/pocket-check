@@ -131,7 +131,7 @@ export function TitleBar(_props?: TitleBarProps) {
             <button
               type="button"
               onClick={handleClose}
-              className="flex h-7 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-destructive hover:text-white transition-colors cursor-pointer"
+              className="flex h-7 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-destructive hover:text-destructive-foreground transition-colors cursor-pointer"
               title="Close"
             >
               <X className="h-3.5 w-3.5" />

@@ -174,9 +174,9 @@ export function UserProfileModal({
                   <Ionicons
                     name="log-out-outline"
                     size={18}
-                    color={colors.primaryForeground}
+                    color={colors.destructiveForeground}
                   />
-                  <Text style={[styles.signOutBtnText, { color: colors.primaryForeground }]}>Log Out of PocketChecker</Text>
+                  <Text style={[styles.signOutBtnText, { color: colors.destructiveForeground }]}>Log Out of PocketChecker</Text>
                 </TouchableOpacity>
               </View>
             </View>
