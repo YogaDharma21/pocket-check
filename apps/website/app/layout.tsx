@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Nunito, Geist_Mono } from "next/font/google";
+import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ConvexClientProvider } from "@/components/convex-client-provider";
@@ -7,10 +7,9 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { cn } from "@/lib/utils";
 
-const nunito = Nunito({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-nunito",
-  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-inter",
 });
 
 const fontMono = Geist_Mono({
@@ -44,7 +43,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn("antialiased", nunito.variable, fontMono.variable)}
+      className={cn("antialiased", inter.variable, fontMono.variable)}
     >
       <body className="font-sans antialiased">
         <ConvexClientProvider>

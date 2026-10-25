@@ -136,8 +136,7 @@ export function IconPickerModal({
                 style={[
                   styles.searchBox,
                   {
-                    backgroundColor: colors.background,
-                    borderColor: colors.border,
+                    backgroundColor: colors.surfaceInset,
                   },
                 ]}
               >
@@ -264,8 +263,8 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 999,
+    borderWidth: 0,
     paddingHorizontal: 12,
     height: 44,
     marginBottom: 16,

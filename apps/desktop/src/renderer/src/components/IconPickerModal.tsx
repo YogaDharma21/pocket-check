@@ -479,7 +479,7 @@ function IconPickerModalInner({
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search any icon (e.g. chat, wifi, bottle, car, bot)..."
-              className="h-11 pl-10 pr-9 text-sm bg-muted/40 border-border/80 rounded-xl"
+              className="h-11 pl-10 pr-9 text-sm rounded-full border-0 bg-surface-inset shadow-none focus-visible:ring-0 focus-visible:outline-none"
               autoFocus
             />
             {search && (

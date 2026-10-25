@@ -157,7 +157,7 @@ export function WelcomeScreen() {
         {/* Auth Button */}
         <div className="w-full space-y-3 pt-2">
           {errorMsg && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-center text-xs font-bold text-red-400">
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-center text-xs font-bold text-destructive">
               {errorMsg}
             </div>
           )}

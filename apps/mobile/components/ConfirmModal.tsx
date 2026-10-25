@@ -47,34 +47,41 @@ export function ConfirmModal({
 
   const iconColor =
     variant === "destructive"
-      ? "#ef4444"
+      ? colors.crimson
       : variant === "warning"
-      ? "#f59e0b"
-      : colors.primary;
+      ? colors.amber
+      : colors.blue;
 
   const iconBg =
     variant === "destructive"
-      ? "rgba(239, 68, 68, 0.12)"
+      ? theme === "dark"
+        ? "rgba(194, 133, 123, 0.13)"
+        : "rgba(162, 84, 74, 0.12)"
       : variant === "warning"
-      ? "rgba(245, 158, 11, 0.12)"
-      : "rgba(59, 130, 246, 0.12)";
+      ? theme === "dark"
+        ? "rgba(210, 189, 147, 0.12)"
+        : "rgba(138, 107, 52, 0.12)"
+      : theme === "dark"
+      ? "rgba(166, 176, 189, 0.12)"
+      : "rgba(92, 107, 122, 0.12)";
 
-  const iconBorder =
-    variant === "destructive"
-      ? "rgba(239, 68, 68, 0.3)"
-      : variant === "warning"
-      ? "rgba(245, 158, 11, 0.3)"
-      : "rgba(59, 130, 246, 0.3)";
+  const iconBorder = colors.border;
 
   const confirmBg =
     variant === "destructive"
-      ? "#ef4444"
+      ? colors.crimson
       : variant === "warning"
-      ? "#f59e0b"
+      ? colors.amber
       : colors.primary;
 
   const confirmTextColor =
-    variant === "warning" ? "#000000" : "#ffffff";
+    variant === "destructive"
+      ? colors.destructiveForeground
+      : variant === "warning"
+      ? theme === "dark"
+        ? "#0a0a0b"
+        : "#f6f4ef"
+      : colors.primaryForeground;
 
   return (
     <Modal
@@ -186,7 +193,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   card: {
-    borderRadius: 22,
+    borderRadius: 24,
     borderWidth: 1,
     padding: 20,
     gap: 16,

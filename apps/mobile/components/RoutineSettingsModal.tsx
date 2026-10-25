@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Modal,
   View,
@@ -39,14 +39,8 @@ export function RoutineSettingsModal({
   theme,
 }: RoutineSettingsModalProps) {
   const colors = Colors[theme];
-  const [name, setName] = useState("");
+  const [name, setName] = useState(routine?.name ?? "");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  useEffect(() => {
-    if (routine) {
-      setName(routine.name);
-    }
-  }, [routine]);
 
   if (!routine) return null;
 
@@ -303,7 +297,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   card: {
-    borderRadius: 20,
+    borderRadius: 24,
     borderWidth: 1,
     padding: 20,
     gap: 16,

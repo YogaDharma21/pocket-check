@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   card: {
-    borderRadius: 22,
+    borderRadius: 24,
     borderWidth: 1,
     padding: 20,
     gap: 16,

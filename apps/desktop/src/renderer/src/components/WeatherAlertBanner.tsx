@@ -131,7 +131,7 @@ export function WeatherAlertBanner({
   // If user hasn't set their location yet, show an opt-in prompt state
   if (!hasLocation || !weather || !weather.suggestion) {
     return (
-      <div className="relative overflow-hidden rounded-xl border border-border bg-card p-3.5 shadow-xs">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-3.5 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-start gap-3">
             <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
@@ -197,7 +197,7 @@ export function WeatherAlertBanner({
   );
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-card p-3.5 shadow-xs">
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-3.5 shadow-xs">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-start gap-3">
           <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground">
@@ -229,7 +229,7 @@ export function WeatherAlertBanner({
                   <span>{isLocating ? "Updating..." : weather.locationName}</span>
                 </button>
               )}
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-[10px] text-muted-foreground tabular-nums">
                 • {weather.temperatureMax}°C / {weather.precipitationProbability}% Rain
               </span>
             </div>

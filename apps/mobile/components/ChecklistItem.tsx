@@ -91,8 +91,18 @@ export function ChecklistItem({
               {item.name}
             </Text>
             {item.quantity != null && item.quantity > 1 && (
-              <View style={styles.quantityBadge}>
-                <Text style={styles.quantityText}>{item.quantity}x</Text>
+              <View
+                style={[
+                  styles.quantityBadge,
+                  {
+                    backgroundColor: colors.surfaceInset,
+                    borderColor: colors.borderSubtle,
+                  },
+                ]}
+              >
+                <Text style={[styles.quantityText, { color: colors.foreground }]}>
+                  {item.quantity}x
+                </Text>
               </View>
             )}
           </View>
@@ -201,9 +211,7 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   quantityBadge: {
-    backgroundColor: "#27272a",
     borderWidth: 1,
-    borderColor: "#3f3f46",
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 1,
@@ -212,7 +220,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     fontFamily: "monospace",
-    color: "#a1a1aa",
   },
   locationNote: {
     fontSize: 11,

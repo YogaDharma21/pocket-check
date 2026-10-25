@@ -3,15 +3,17 @@ import { View, Text, ActivityIndicator, StyleSheet, useColorScheme } from "react
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
-import { Stack, useRouter, useSegments } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { Ionicons } from "@expo/vector-icons";
-import * as SystemUI from "expo-system-ui";
 import {
   DarkTheme,
   DefaultTheme,
+  Stack,
   ThemeProvider,
-} from "@react-navigation/native";
+  useRouter,
+  useSegments,
+} from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { Ionicons } from "@expo/vector-icons";
+import * as SystemUI from "expo-system-ui";
 import { tokenCache } from "../lib/clerk-token-cache";
 import { convex } from "../lib/convex";
 import { Colors } from "../constants/theme";
@@ -104,7 +106,6 @@ export default function RootLayout() {
           <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
             <StatusBar
               style={colorScheme === "dark" ? "light" : "dark"}
-              backgroundColor={colors.background}
             />
             <InitialLayout />
           </ConvexProviderWithClerk>

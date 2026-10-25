@@ -70,7 +70,7 @@ export function SmartIntelligenceBanner({
                 </span>
                 <Badge
                   variant="outline"
-                  className="h-5 px-2 py-0 text-[10px] font-bold text-muted-foreground"
+                  className="h-5 px-2 py-0 text-[10px] font-bold text-muted-foreground tabular-nums"
                 >
                   {isAllPacked ? "All Packed" : `${missingCount} Remaining`}
                 </Badge>

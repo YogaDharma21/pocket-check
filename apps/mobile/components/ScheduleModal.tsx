@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -48,14 +48,6 @@ export function ScheduleModal({
     initialDays && initialDays.length > 0 ? initialDays : [1, 2, 3, 4, 5]
   );
   const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    if (visible) {
-      setEnabled(!!initialTime);
-      setTime(initialTime || "06:00");
-      setActiveDays(initialDays && initialDays.length > 0 ? initialDays : [1, 2, 3, 4, 5]);
-    }
-  }, [visible, initialTime, initialDays]);
 
   const toggleDay = (dayValue: number) => {
     setActiveDays((prev) => {
@@ -245,7 +237,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    borderRadius: 20,
+    borderRadius: 24,
     borderWidth: 1,
     padding: 20,
     gap: 14,

@@ -75,7 +75,7 @@ export function ProgressCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: 24,
     borderWidth: 1,
     padding: 18,
     marginVertical: 8,
@@ -111,5 +111,6 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 12,
     fontWeight: "700",
+    fontVariant: ["tabular-nums"],
   },
 });

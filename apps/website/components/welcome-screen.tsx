@@ -46,7 +46,7 @@ export function WelcomeScreen() {
 
           {/* Feature Highlights Grid */}
           <div className="grid grid-cols-1 gap-3 pt-2 text-left sm:grid-cols-3">
-            <div className="space-y-1 rounded-lg border border-border bg-card/60 p-3.5 shadow-xs">
+            <div className="space-y-1 rounded-2xl border border-border bg-card/60 p-3.5 shadow-xs">
               <div className="w-fit rounded-lg bg-primary/10 p-1.5 text-primary">
                 <Layers className="h-4 w-4" />
               </div>
@@ -58,7 +58,7 @@ export function WelcomeScreen() {
               </p>
             </div>
 
-            <div className="space-y-1 rounded-lg border border-border bg-card/60 p-3.5 shadow-xs">
+            <div className="space-y-1 rounded-2xl border border-border bg-card/60 p-3.5 shadow-xs">
               <div className="w-fit rounded-lg bg-primary/10 p-1.5 text-primary">
                 <ShieldCheck className="h-4 w-4" />
               </div>
@@ -70,7 +70,7 @@ export function WelcomeScreen() {
               </p>
             </div>
 
-            <div className="space-y-1 rounded-lg border border-border bg-card/60 p-3.5 shadow-xs">
+            <div className="space-y-1 rounded-2xl border border-border bg-card/60 p-3.5 shadow-xs">
               <div className="w-fit rounded-lg bg-primary/10 p-1.5 text-primary">
                 <Smartphone className="h-4 w-4" />
               </div>
@@ -113,15 +113,15 @@ export function WelcomeScreen() {
                   Work Routine Preview
                 </span>
               </div>
-              <Badge variant="default" className="px-2 text-[10px] font-black">
+              <Badge variant="default" className="px-2 text-[10px] font-black tabular-nums">
                 3/4 Packed
               </Badge>
             </CardHeader>
 
             <CardContent className="space-y-4 p-4 sm:p-5">
               {/* Progress Box */}
-              <div className="space-y-2 rounded-lg border border-border bg-card p-3.5">
-                <div className="flex items-center justify-between text-xs font-black">
+              <div className="space-y-2 rounded-2xl border border-border bg-card p-3.5">
+                <div className="flex items-center justify-between text-xs font-black tabular-nums">
                   <span className="text-foreground">75% Ready to leave</span>
                   <span className="font-bold text-primary">
                     1 item remaining
@@ -132,7 +132,7 @@ export function WelcomeScreen() {
 
               {/* Sample Checklist Items */}
               <div className="space-y-2 select-none">
-                <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 p-3">
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/30 p-3">
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
                       <Check className="h-3.5 w-3.5 stroke-[3]" />
@@ -149,7 +149,7 @@ export function WelcomeScreen() {
                   </Badge>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 p-3">
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/30 p-3">
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
                       <Check className="h-3.5 w-3.5 stroke-[3]" />
@@ -166,7 +166,7 @@ export function WelcomeScreen() {
                   </Badge>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 p-3">
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-muted/30 p-3">
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
                       <Check className="h-3.5 w-3.5 stroke-[3]" />
@@ -183,7 +183,7 @@ export function WelcomeScreen() {
                   </Badge>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/40 bg-primary/5 p-3 shadow-xs">
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-primary/40 bg-primary/5 p-3 shadow-xs">
                   <div className="flex items-center gap-2.5">
                     <div className="h-6 w-6 rounded-md border-2 border-primary bg-card" />
                     <span className="text-sm font-black text-foreground">
