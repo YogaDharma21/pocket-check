@@ -3,8 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react"
 import Image from "next/image"
 import { useMutation, useQuery } from "convex/react"
-import { api } from "@/convex/_generated/api"
-import { Id } from "@/convex/_generated/dataModel"
+import { api, type Id } from "@pocket-check/convex"
 import { UserButton } from "@clerk/nextjs"
 import {
   Check,

@@ -22,6 +22,7 @@
     "@base-ui/react": "^1.7.0",
     "@clerk/clerk-react": "^5.24.0",
     "@clerk/themes": "^2.4.57",
+    "@pocket-check/convex": "workspace:*",
     "@pocket-check/presets": "workspace:*",
     "@pocket-check/types": "workspace:*",
     "@pocket-check/weather": "workspace:*",

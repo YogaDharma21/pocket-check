@@ -16,6 +16,7 @@
   "dependencies": {
     "@clerk/clerk-expo": "^2.19.31",
     "@expo/vector-icons": "^15.0.3",
+    "@pocket-check/convex": "workspace:*",
     "@pocket-check/presets": "workspace:*",
     "@pocket-check/types": "workspace:*",
     "@pocket-check/weather": "workspace:*",

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { renderItemIcon } from "@/components/icon-picker-modal"
 import { SMART_PRESETS } from "@/lib/presets"
-import { Id } from "@/convex/_generated/dataModel"
+import type { Id } from "@pocket-check/convex"
 
 interface ChecklistItemData {
   _id: Id<"items">
