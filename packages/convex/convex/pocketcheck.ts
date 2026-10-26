@@ -1,11 +1,11 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-/** No-op kept for API compatibility — new users start with an empty slate. */
+/** No-op kept for API compatibility - new users start with an empty slate. */
 export const ensureInitialized = mutation({
   args: {},
   handler: async () => {
-    // Nothing to seed — users create their own destinations and items.
+    // Nothing to seed - users create their own destinations and items.
   },
 });
 
