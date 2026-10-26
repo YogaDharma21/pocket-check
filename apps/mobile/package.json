@@ -10,11 +10,15 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.19.31",
     "@expo/vector-icons": "^15.0.3",
+    "@pocket-check/presets": "workspace:*",
+    "@pocket-check/types": "workspace:*",
+    "@pocket-check/weather": "workspace:*",
     "convex": "^1.43.0",
     "expo": "~58.0.17",
     "expo-auth-session": "~58.0.14",
