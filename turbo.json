@@ -11,6 +11,9 @@
       "dependsOn": ["^typecheck"],
       "inputs": ["$TURBO_DEFAULT$"]
     },
+    "test": {
+      "dependsOn": ["^build"]
+    },
     "lint": {
       "dependsOn": ["^lint"]
     },

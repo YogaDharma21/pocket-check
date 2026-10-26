@@ -1,4 +1,5 @@
 import type { NextConfig } from "next"
+import path from "node:path"
 
 const nextConfig: NextConfig = {
   transpilePackages: [
@@ -7,6 +8,9 @@ const nextConfig: NextConfig = {
     "@pocket-check/weather",
     "@pocket-check/convex",
   ],
+  turbopack: {
+    root: path.resolve(__dirname, "../.."),
+  },
 }
 
 export default nextConfig
