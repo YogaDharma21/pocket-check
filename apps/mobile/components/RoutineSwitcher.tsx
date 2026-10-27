@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/theme";
-import { Id } from "../convex/_generated/dataModel";
+import type { Id } from "@pocket-check/convex";
 
 export interface RoutineItem {
   _id: Id<"routines">;

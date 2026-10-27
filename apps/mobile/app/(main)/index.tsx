@@ -15,8 +15,7 @@ import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { useQuery, useMutation } from "convex/react";
 import { Ionicons } from "@expo/vector-icons";
-import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
+import { api, type Id } from "@pocket-check/convex";
 import { Colors } from "../../constants/theme";
 
 import { ProgressCard } from "../../components/ProgressCard";

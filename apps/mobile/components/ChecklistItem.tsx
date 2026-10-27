@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/theme";
 import { renderItemIconHelper } from "./IconPicker";
-import { Id } from "../convex/_generated/dataModel";
+import type { Id } from "@pocket-check/convex";
 
 export interface ItemData {
   _id: Id<"items">;
