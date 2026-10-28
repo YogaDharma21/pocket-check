@@ -1,37 +1,54 @@
-import React from "react";
-import { View, Text, ActivityIndicator, StyleSheet, useColorScheme } from "react-native";
-import { useAuth } from "@clerk/clerk-expo";
-import { Redirect } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { Colors } from "../constants/theme";
+import React from "react"
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  useColorScheme,
+} from "react-native"
+import { useAuth } from "@clerk/clerk-expo"
+import { Redirect, useLocalSearchParams } from "expo-router"
+import { Ionicons } from "@expo/vector-icons"
+import { Colors } from "../constants/theme"
 
 export default function Index() {
-  const { isLoaded, isSignedIn } = useAuth();
-  const colorScheme = useColorScheme() ?? "dark";
-  const colors = Colors[colorScheme];
+  const { isLoaded, isSignedIn } = useAuth()
+  const colorScheme = useColorScheme() ?? "dark"
+  const colors = Colors[colorScheme]
+  const params = useLocalSearchParams<{ import?: string; data?: string }>()
 
   if (!isLoaded) {
     return (
-      <View
-        style={[
-          styles.container,
-          { backgroundColor: colors.background },
-        ]}
-      >
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Ionicons name="cube" size={56} color={colors.primary} />
         <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
           LOADING POCKETCHECK...
         </Text>
-        <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 16 }} />
+        <ActivityIndicator
+          size="large"
+          color={colors.primary}
+          style={{ marginTop: 16 }}
+        />
       </View>
-    );
+    )
   }
 
   if (isSignedIn) {
-    return <Redirect href="/(main)" />;
+    const importParam = params.import || params.data
+    if (importParam) {
+      return (
+        <Redirect
+          href={{
+            pathname: "/(main)",
+            params: { import: importParam },
+          }}
+        />
+      )
+    }
+    return <Redirect href="/(main)" />
   }
 
-  return <Redirect href="/(auth)/sign-in" />;
+  return <Redirect href="/(auth)/sign-in" />
 }
 
 const styles = StyleSheet.create({
@@ -46,4 +63,4 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 1.5,
   },
-});
+})
