@@ -14,7 +14,8 @@
   "scripts": {
     "dev": "convex dev",
     "codegen": "convex codegen",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test test/pocketcheck.test.ts"
   },
   "dependencies": {
     "convex": "^1.45.0"

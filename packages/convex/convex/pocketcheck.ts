@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query } from "./_generated/server.js";
 import { v } from "convex/values";
 
 /** No-op kept for API compatibility - new users start with an empty slate. */
@@ -143,6 +143,10 @@ export const editItem = mutation({
   handler: async (ctx, { id, name, emoji, quantity, locationNote }) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
+    const userId = identity.subject;
+
+    const item = await ctx.db.get(id);
+    if (!item || item.userId !== userId) throw new Error("Not found");
 
     await ctx.db.patch(id, {
       name,
@@ -231,6 +235,10 @@ export const toggleItem = mutation({
   handler: async (ctx, { id, isPacked }) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
+    const userId = identity.subject;
+
+    const item = await ctx.db.get(id);
+    if (!item || item.userId !== userId) throw new Error("Not found");
 
     await ctx.db.patch(id, { isPacked });
   },
@@ -244,6 +252,10 @@ export const deleteItem = mutation({
   handler: async (ctx, { id }) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
+    const userId = identity.subject;
+
+    const item = await ctx.db.get(id);
+    if (!item || item.userId !== userId) throw new Error("Not found");
 
     await ctx.db.delete(id);
   },
@@ -398,8 +410,12 @@ export const reorderItems = mutation({
   handler: async (ctx, { ids }) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
+    const userId = identity.subject;
 
+    const items = await Promise.all(ids.map((id) => ctx.db.get(id)));
     for (let i = 0; i < ids.length; i++) {
+      const item = items[i];
+      if (!item || item.userId !== userId) throw new Error("Not found");
       await ctx.db.patch(ids[i], { order: i });
     }
   },
@@ -413,8 +429,12 @@ export const reorderRoutines = mutation({
   handler: async (ctx, { ids }) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
+    const userId = identity.subject;
 
+    const routines = await Promise.all(ids.map((id) => ctx.db.get(id)));
     for (let i = 0; i < ids.length; i++) {
+      const routine = routines[i];
+      if (!routine || routine.userId !== userId) throw new Error("Not found");
       await ctx.db.patch(ids[i], { order: i });
     }
   },
