@@ -27,4 +27,13 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_name", ["userId", "name"]),
+
+  completions: defineTable({
+    userId: v.string(),
+    routine: v.string(),
+    completedAt: v.number(),
+  })
+    .index("by_user_routine", ["userId", "routine"])
+    .index("by_user_routine_time", ["userId", "routine", "completedAt"])
+    .index("by_user", ["userId"]),
 });

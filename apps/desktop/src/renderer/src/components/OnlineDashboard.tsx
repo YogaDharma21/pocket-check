@@ -45,6 +45,7 @@ import { ExportModal } from "@/components/ExportModal";
 import { ShareRoutineModal } from "@/components/ShareRoutineModal";
 import { RoutineScheduleModal } from "@/components/RoutineScheduleModal";
 import { ImportSharedModal } from "@/components/ImportSharedModal";
+import { CompletionHistoryStrip } from "@/components/CompletionHistoryStrip";
 import {
   parseMultiItemInput,
   detectIconForItem,
@@ -173,6 +174,7 @@ export function OnlineDashboard({
   const checkAndExecuteAutoReset = useMutation(api.pocketcheck.checkAndExecuteAutoReset);
   const reorderItems = useMutation(api.pocketcheck.reorderItems);
   const reorderRoutines = useMutation(api.pocketcheck.reorderRoutines);
+  const logCompletion = useMutation(api.pocketcheck.logCompletion);
 
   const customRoutines = useQuery(api.pocketcheck.listRoutines);
   const isRoutinesLoading = customRoutines === undefined;
@@ -252,6 +254,43 @@ export function OnlineDashboard({
   const packedItems = items.filter((i) => i.isPacked).length;
   const missingItems = totalItems - packedItems;
   const percentage = totalItems > 0 ? (packedItems / totalItems) * 100 : 0;
+
+  // Automatically record completion history when routine reaches 100%
+  const prevPackedCountRef = useRef<number>(-1);
+  const prevRoutineRef = useRef<string>(effectiveRoutine);
+  const lastLoggedKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (prevRoutineRef.current !== effectiveRoutine) {
+      prevRoutineRef.current = effectiveRoutine;
+      prevPackedCountRef.current = -1;
+      lastLoggedKeyRef.current = null;
+    }
+
+    if (!effectiveRoutine || totalItems === 0) {
+      prevPackedCountRef.current = packedItems;
+      return;
+    }
+
+    const isComplete = packedItems === totalItems;
+    const wasIncomplete =
+      prevPackedCountRef.current !== -1 &&
+      prevPackedCountRef.current < totalItems;
+    const key = `${effectiveRoutine}-${totalItems}`;
+
+    if (isComplete && wasIncomplete && lastLoggedKeyRef.current !== key) {
+      lastLoggedKeyRef.current = key;
+      void logCompletion({ routine: effectiveRoutine }).catch((err) => {
+        console.error("Failed to log routine completion", err);
+      });
+    }
+
+    if (!isComplete) {
+      lastLoggedKeyRef.current = null;
+    }
+
+    prevPackedCountRef.current = packedItems;
+  }, [packedItems, totalItems, effectiveRoutine, logCompletion]);
 
   // Broadcast TitleBar status
   useEffect(() => {
@@ -682,12 +721,17 @@ export function OnlineDashboard({
                           <span className="text-xs font-black tracking-wider text-muted-foreground uppercase">
                             Pocket Status
                           </span>
-                          <Badge
-                            variant={percentage === 100 ? "default" : "secondary"}
-                            className="px-2 py-0.5 text-[10px] font-black tabular-nums"
-                          >
-                            {Math.round(percentage)}% Packed
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            {effectiveRoutine && (
+                              <CompletionHistoryStrip routine={effectiveRoutine} />
+                            )}
+                            <Badge
+                              variant={percentage === 100 ? "default" : "secondary"}
+                              className="px-2 py-0.5 text-[10px] font-black tabular-nums"
+                            >
+                              {Math.round(percentage)}% Packed
+                            </Badge>
+                          </div>
                         </div>
                         <h2
                           id="status-headline"

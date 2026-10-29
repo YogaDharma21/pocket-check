@@ -183,6 +183,16 @@ export const updateRoutine = mutation({
       for (const item of items) {
         await ctx.db.patch(item._id, { routine: name });
       }
+
+      const completions = await ctx.db
+        .query("completions")
+        .withIndex("by_user_routine", (q) =>
+          q.eq("userId", userId).eq("routine", oldName)
+        )
+        .collect();
+      for (const comp of completions) {
+        await ctx.db.patch(comp._id, { routine: name });
+      }
     }
 
     await ctx.db.patch(id, {
@@ -216,6 +226,17 @@ export const deleteRoutine = mutation({
       .collect();
     for (const item of items) {
       await ctx.db.delete(item._id);
+    }
+
+    // Delete all completions in this routine
+    const completions = await ctx.db
+      .query("completions")
+      .withIndex("by_user_routine", (q) =>
+        q.eq("userId", userId).eq("routine", routine.name)
+      )
+      .collect();
+    for (const comp of completions) {
+      await ctx.db.delete(comp._id);
     }
 
     await ctx.db.delete(id);
@@ -553,5 +574,66 @@ export const applyPreset = mutation({
     }
 
     return { routineName: finalRoutineName, insertedIds };
+  },
+});
+
+/** Record completion timestamp when routine reaches 100%. */
+export const logCompletion = mutation({
+  args: {
+    routine: v.string(),
+  },
+  handler: async (ctx, { routine }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+    const userId = identity.subject;
+
+    const now = Date.now();
+    // Throttle completions: skip if already logged within last 5 minutes
+    const fiveMinutesAgo = now - 5 * 60 * 1000;
+    const recent = await ctx.db
+      .query("completions")
+      .withIndex("by_user_routine_time", (q) =>
+        q
+          .eq("userId", userId)
+          .eq("routine", routine)
+          .gte("completedAt", fiveMinutesAgo)
+      )
+      .first();
+
+    if (recent) {
+      return recent._id;
+    }
+
+    return await ctx.db.insert("completions", {
+      userId,
+      routine,
+      completedAt: now,
+    });
+  },
+});
+
+/** List recent completions for a routine (default 7 days). */
+export const listRecentCompletions = query({
+  args: {
+    routine: v.string(),
+    days: v.optional(v.number()),
+  },
+  handler: async (ctx, { routine, days = 7 }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return [];
+    const userId = identity.subject;
+
+    const cutoff = Date.now() - (days || 7) * 24 * 60 * 60 * 1000;
+    const completions = await ctx.db
+      .query("completions")
+      .withIndex("by_user_routine_time", (q) =>
+        q
+          .eq("userId", userId)
+          .eq("routine", routine)
+          .gte("completedAt", cutoff)
+      )
+      .collect();
+
+    return completions.sort((a, b) => b.completedAt - a.completedAt);
   },
 });

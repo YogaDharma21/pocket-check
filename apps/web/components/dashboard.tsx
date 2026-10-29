@@ -57,6 +57,7 @@ import { ExportModal } from "@/components/export-modal"
 import { ShareRoutineModal } from "@/components/share-routine-modal"
 import { RoutineScheduleModal } from "@/components/routine-schedule-modal"
 import { ImportSharedModal } from "@/components/import-shared-modal"
+import { CompletionHistoryStrip } from "@/components/completion-history-strip"
 import {
   SMART_PRESETS,
   parseMultiItemInput,
@@ -181,6 +182,7 @@ export function Dashboard() {
   )
   const reorderItems = useMutation(api.pocketcheck.reorderItems)
   const reorderRoutines = useMutation(api.pocketcheck.reorderRoutines)
+  const logCompletion = useMutation(api.pocketcheck.logCompletion)
 
   const customRoutines = useQuery(api.pocketcheck.listRoutines)
   const isRoutinesLoading = customRoutines === undefined
@@ -425,6 +427,43 @@ export function Dashboard() {
   const missingItems = totalItems - packedItems
   const percentage = totalItems > 0 ? (packedItems / totalItems) * 100 : 0
 
+  // Automatically record completion history when routine reaches 100%
+  const prevPackedCountRef = useRef<number>(-1)
+  const prevRoutineRef = useRef<string>(effectiveRoutine)
+  const lastLoggedKeyRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (prevRoutineRef.current !== effectiveRoutine) {
+      prevRoutineRef.current = effectiveRoutine
+      prevPackedCountRef.current = -1
+      lastLoggedKeyRef.current = null
+    }
+
+    if (!effectiveRoutine || totalItems === 0) {
+      prevPackedCountRef.current = packedItems
+      return
+    }
+
+    const isComplete = packedItems === totalItems
+    const wasIncomplete =
+      prevPackedCountRef.current !== -1 &&
+      prevPackedCountRef.current < totalItems
+    const key = `${effectiveRoutine}-${totalItems}`
+
+    if (isComplete && wasIncomplete && lastLoggedKeyRef.current !== key) {
+      lastLoggedKeyRef.current = key
+      void logCompletion({ routine: effectiveRoutine }).catch((err) => {
+        console.error("Failed to log routine completion", err)
+      })
+    }
+
+    if (!isComplete) {
+      lastLoggedKeyRef.current = null
+    }
+
+    prevPackedCountRef.current = packedItems
+  }, [packedItems, totalItems, effectiveRoutine, logCompletion])
+
   // Headline message
   let headline = "Let's double-check before you pack!"
   if (!effectiveRoutine) {
@@ -649,6 +688,10 @@ export function Dashboard() {
             </div>
           </div>
 
+          {/* 7-Day Completion History Dot Strip */}
+          {effectiveRoutine && (
+            <CompletionHistoryStrip routine={effectiveRoutine} />
+          )}
 
           {/* Action and Utility Buttons */}
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
