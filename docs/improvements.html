@@ -114,6 +114,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      flex-wrap: wrap;
     }
 
     .stats-grid {
@@ -291,48 +292,72 @@
       border-top: 1px solid var(--border-subtle);
     }
 
-    .score-pills {
+    .filter-subgroup {
       display: flex;
       align-items: center;
       gap: 6px;
       flex-wrap: wrap;
     }
 
-    .score-pill-btn {
+    .filter-group-label {
+      font-size: 11px;
+      color: var(--muted-foreground);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-right: 4px;
+    }
+
+    .chip-btn {
       background: transparent;
       border: 1px solid var(--border);
       color: var(--muted-foreground);
-      font-family: var(--font-mono);
+      font-family: var(--font-sans);
       font-size: 11px;
       font-weight: 500;
       padding: 4px 10px;
       border-radius: 8px;
       cursor: pointer;
-      transition: all 0.3s ease-out;
+      transition: all 0.2s ease-out;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    .score-pill-btn:hover {
+    .chip-btn:hover {
       color: var(--foreground);
-      border-color: var(--ring);
+      border-color: rgba(255, 255, 255, 0.2);
     }
 
-    .score-pill-btn.active {
+    .chip-btn.active {
       background: var(--surface-inset);
       color: var(--foreground);
       border-color: var(--foreground);
+      font-weight: 600;
     }
 
-    .sort-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .chip-btn .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      display: inline-block;
     }
 
-    .sort-label {
-      font-size: 11px;
-      color: var(--muted-foreground);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+    .chip-btn.status-working.active {
+      background: var(--amber-bg);
+      color: var(--amber);
+      border-color: var(--amber-border);
+    }
+
+    .chip-btn.status-done.active {
+      background: var(--emerald-bg);
+      color: var(--emerald);
+      border-color: var(--emerald-border);
+    }
+
+    .chip-btn.status-rejected.active {
+      background: var(--crimson-bg);
+      color: var(--crimson);
+      border-color: var(--crimson-border);
     }
 
     .select-input {
@@ -368,6 +393,25 @@
 
     .item-card:hover {
       border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .item-card.is-working {
+      border-color: rgba(210, 189, 147, 0.4);
+    }
+
+    .item-card.is-done {
+      border-color: rgba(169, 191, 169, 0.4);
+    }
+
+    .item-card.is-rejected {
+      opacity: 0.55;
+      border-color: rgba(194, 133, 123, 0.25);
+    }
+
+    .item-card.is-rejected .item-title {
+      text-decoration: line-through;
+      text-decoration-color: var(--subtle-foreground);
+      color: var(--muted-foreground);
     }
 
     .item-header {
@@ -425,6 +469,36 @@
       border-radius: 6px;
     }
 
+    .decision-pill {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .decision-pill.working {
+      background: var(--amber-bg);
+      color: var(--amber);
+      border: 1px solid var(--amber-border);
+    }
+
+    .decision-pill.done {
+      background: var(--emerald-bg);
+      color: var(--emerald);
+      border: 1px solid var(--emerald-border);
+    }
+
+    .decision-pill.rejected {
+      background: var(--crimson-bg);
+      color: var(--crimson);
+      border: 1px solid var(--crimson-border);
+    }
+
     .score-badge {
       display: inline-flex;
       flex-direction: column;
@@ -461,6 +535,7 @@
       color: var(--foreground);
       margin-bottom: 8px;
       line-height: 1.4;
+      transition: all 0.2s ease-out;
     }
 
     .item-desc {
@@ -469,6 +544,82 @@
       line-height: 1.5;
       margin-bottom: 16px;
       flex-grow: 1;
+    }
+
+    .item-middle {
+      margin-bottom: 14px;
+    }
+
+    .decision-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--surface-inset);
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+
+    .decision-bar-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--subtle-foreground);
+    }
+
+    .decision-action-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .action-btn {
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 8px;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted-foreground);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease-out;
+    }
+
+    .action-btn:hover {
+      color: var(--foreground);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .action-btn:active {
+      transform: scale(0.95);
+    }
+
+    .action-btn.active-working {
+      background: var(--amber-bg);
+      color: var(--amber);
+      border-color: var(--amber-border);
+      font-weight: 600;
+    }
+
+    .action-btn.active-done {
+      background: var(--emerald-bg);
+      color: var(--emerald);
+      border-color: var(--emerald-border);
+      font-weight: 600;
+    }
+
+    .action-btn.active-rejected {
+      background: var(--crimson-bg);
+      color: var(--crimson);
+      border-color: var(--crimson-border);
+      font-weight: 600;
     }
 
     .item-footer {
@@ -583,6 +734,13 @@
             </svg>
             Export List
           </button>
+          <button class="btn btn-secondary" onclick="clearAllStatuses()" title="Reset all decisions to Backlog">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+            Reset
+          </button>
         </div>
       </div>
 
@@ -600,46 +758,46 @@
 
         <div class="stat-card">
           <div class="stat-card-header">
-            <span class="stat-label">Critical (10/10)</span>
-            <div class="stat-icon" style="background: var(--crimson-bg); color: var(--crimson);">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            </div>
-          </div>
-          <div class="stat-value tabular-nums" id="statCritical" style="color: var(--crimson);">5</div>
-          <div class="stat-sub">Immediate blocking defects &amp; sync</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-card-header">
-            <span class="stat-label">New Features</span>
-            <div class="stat-icon" style="background: var(--emerald-bg); color: var(--emerald);">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </div>
-          </div>
-          <div class="stat-value tabular-nums" id="statFeatures">15</div>
-          <div class="stat-sub">Average score 8.3 / 10</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-card-header">
-            <span class="stat-label">Adjustments</span>
+            <span class="stat-label">Working On</span>
             <div class="stat-icon" style="background: var(--amber-bg); color: var(--amber);">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </div>
           </div>
-          <div class="stat-value tabular-nums" id="statAdjustments">15</div>
-          <div class="stat-sub">Average score 8.1 / 10</div>
+          <div class="stat-value tabular-nums" id="statWorking" style="color: var(--amber);">0</div>
+          <div class="stat-sub">Active implementation in progress</div>
         </div>
 
         <div class="stat-card">
           <div class="stat-card-header">
-            <span class="stat-label">Bug Fixes</span>
-            <div class="stat-icon" style="background: var(--crimson-bg); color: var(--crimson);">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>
+            <span class="stat-label">Done</span>
+            <div class="stat-icon" style="background: var(--emerald-bg); color: var(--emerald);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
           </div>
-          <div class="stat-value tabular-nums" id="statBugs">15</div>
-          <div class="stat-sub">Average score 8.6 / 10</div>
+          <div class="stat-value tabular-nums" id="statDone" style="color: var(--emerald);">0</div>
+          <div class="stat-sub">Completed and verified items</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <span class="stat-label">Rejected</span>
+            <div class="stat-icon" style="background: var(--crimson-bg); color: var(--crimson);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+          </div>
+          <div class="stat-value tabular-nums" id="statRejected" style="color: var(--crimson);">0</div>
+          <div class="stat-sub">Dismissed or out of scope</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <span class="stat-label">Pending Backlog</span>
+            <div class="stat-icon" style="background: var(--surface-inset); color: var(--subtle-foreground);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </div>
+          </div>
+          <div class="stat-value tabular-nums" id="statPending">45</div>
+          <div class="stat-sub">Awaiting prioritization</div>
         </div>
       </div>
     </header>
@@ -670,17 +828,37 @@
       </div>
 
       <div class="secondary-filters">
-        <div class="score-pills">
-          <span class="sort-label">Score:</span>
-          <button class="score-pill-btn active" data-score="all" onclick="setScoreFilter('all')">All</button>
-          <button class="score-pill-btn" data-score="10" onclick="setScoreFilter('10')">10/10</button>
-          <button class="score-pill-btn" data-score="9" onclick="setScoreFilter('9')">9/10</button>
-          <button class="score-pill-btn" data-score="8" onclick="setScoreFilter('8')">8/10</button>
-          <button class="score-pill-btn" data-score="7" onclick="setScoreFilter('7')">7/10</button>
+        <div class="filter-subgroup">
+          <span class="filter-group-label">Status:</span>
+          <button class="chip-btn active" data-status="all" onclick="setStatusFilter('all')">All</button>
+          <button class="chip-btn status-working" data-status="working" onclick="setStatusFilter('working')">
+            <span class="dot" style="background: var(--amber);"></span>
+            Working (<span id="filterCountWorking">0</span>)
+          </button>
+          <button class="chip-btn status-done" data-status="done" onclick="setStatusFilter('done')">
+            <span class="dot" style="background: var(--emerald);"></span>
+            Done (<span id="filterCountDone">0</span>)
+          </button>
+          <button class="chip-btn status-rejected" data-status="rejected" onclick="setStatusFilter('rejected')">
+            <span class="dot" style="background: var(--crimson);"></span>
+            Rejected (<span id="filterCountRejected">0</span>)
+          </button>
+          <button class="chip-btn" data-status="backlog" onclick="setStatusFilter('backlog')">
+            Backlog (<span id="filterCountBacklog">45</span>)
+          </button>
         </div>
 
-        <div class="sort-group">
-          <span class="sort-label">Sort By:</span>
+        <div class="filter-subgroup">
+          <span class="filter-group-label">Score:</span>
+          <button class="chip-btn active" data-score="all" onclick="setScoreFilter('all')">All</button>
+          <button class="chip-btn" data-score="10" onclick="setScoreFilter('10')">10/10</button>
+          <button class="chip-btn" data-score="9" onclick="setScoreFilter('9')">9/10</button>
+          <button class="chip-btn" data-score="8" onclick="setScoreFilter('8')">8/10</button>
+          <button class="chip-btn" data-score="7" onclick="setScoreFilter('7')">7/10</button>
+        </div>
+
+        <div class="filter-subgroup">
+          <span class="filter-group-label">Sort:</span>
           <select id="sortSelect" class="select-input" onchange="handleSort()">
             <option value="score-desc">Score (Highest First)</option>
             <option value="score-asc">Score (Lowest First)</option>
@@ -697,6 +875,8 @@
   </div>
 
   <script>
+    const STORAGE_KEY = "pocketcheck_proposals_status_v1";
+
     const proposals = [
       // 1. NEW FEATURES (15 items)
       {
@@ -1112,8 +1292,73 @@
 
     let currentCategory = "all";
     let currentScore = "all";
+    let currentStatus = "all";
     let currentSearch = "";
     let currentSort = "score-desc";
+
+    function loadStatuses() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveStatuses(statuses) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(statuses));
+      } catch (err) {
+        console.error("Failed to write to localStorage", err);
+      }
+    }
+
+    function setProposalStatus(id, newStatus) {
+      const statuses = loadStatuses();
+      if (statuses[id] === newStatus) {
+        // Toggle back to backlog
+        delete statuses[id];
+      } else {
+        statuses[id] = newStatus;
+      }
+      saveStatuses(statuses);
+      updateStatsCounters();
+      renderItems();
+    }
+
+    function clearAllStatuses() {
+      if (confirm("Reset all proposals back to unassigned Backlog status?")) {
+        localStorage.removeItem(STORAGE_KEY);
+        updateStatsCounters();
+        renderItems();
+      }
+    }
+
+    function updateStatsCounters() {
+      const statuses = loadStatuses();
+      let workingCount = 0;
+      let doneCount = 0;
+      let rejectedCount = 0;
+
+      proposals.forEach(p => {
+        const st = statuses[p.id];
+        if (st === "working") workingCount++;
+        else if (st === "done") doneCount++;
+        else if (st === "rejected") rejectedCount++;
+      });
+
+      const pendingCount = proposals.length - (workingCount + doneCount + rejectedCount);
+
+      document.getElementById("statWorking").innerText = workingCount;
+      document.getElementById("statDone").innerText = doneCount;
+      document.getElementById("statRejected").innerText = rejectedCount;
+      document.getElementById("statPending").innerText = pendingCount;
+
+      document.getElementById("filterCountWorking").innerText = workingCount;
+      document.getElementById("filterCountDone").innerText = doneCount;
+      document.getElementById("filterCountRejected").innerText = rejectedCount;
+      document.getElementById("filterCountBacklog").innerText = pendingCount;
+    }
 
     function getMeterColor(score) {
       if (score === 10) return "var(--crimson)";
@@ -1125,10 +1370,15 @@
     function renderItems() {
       const grid = document.getElementById("itemsGrid");
       grid.innerHTML = "";
+      const statuses = loadStatuses();
 
       let filtered = proposals.filter(item => {
+        const itemStatus = statuses[item.id] || "backlog";
+
         if (currentCategory !== "all" && item.category !== currentCategory) return false;
         if (currentScore !== "all" && item.score !== parseInt(currentScore, 10)) return false;
+        if (currentStatus !== "all" && itemStatus !== currentStatus) return false;
+
         if (currentSearch.trim()) {
           const q = currentSearch.toLowerCase();
           const matchTitle = item.title.toLowerCase().includes(q);
@@ -1165,21 +1415,38 @@
 
       filtered.forEach(item => {
         const card = document.createElement("article");
-        card.className = "item-card";
+        const status = statuses[item.id] || "backlog";
+
+        let statusClass = "";
+        if (status === "working") statusClass = "is-working";
+        else if (status === "done") statusClass = "is-done";
+        else if (status === "rejected") statusClass = "is-rejected";
+
+        card.className = `item-card ${statusClass}`;
 
         const categoryLabel =
           item.category === "feature" ? "New Feature" :
           item.category === "adjustment" ? "Adjustment" : "Bug Fix";
 
+        let decisionBadge = "";
+        if (status === "working") {
+          decisionBadge = `<span class="decision-pill working">Working On</span>`;
+        } else if (status === "done") {
+          decisionBadge = `<span class="decision-pill done">Done</span>`;
+        } else if (status === "rejected") {
+          decisionBadge = `<span class="decision-pill rejected">Rejected</span>`;
+        }
+
         const barColor = getMeterColor(item.score);
         const barWidth = `${item.score * 10}%`;
 
         card.innerHTML = `
-          <div>
+          <div class="item-middle">
             <div class="item-header">
               <div class="tag-cluster">
                 <span class="category-tag ${item.category}">${categoryLabel}</span>
                 <span class="subsystem-tag">${item.subsystem}</span>
+                ${decisionBadge}
               </div>
               <div class="score-badge">
                 <span class="score-numeric tabular-nums">${item.score}/10</span>
@@ -1191,6 +1458,36 @@
 
             <h3 class="item-title">${item.title}</h3>
             <p class="item-desc">${item.description}</p>
+
+            <div class="decision-bar">
+              <span class="decision-bar-label">Action</span>
+              <div class="decision-action-group">
+                <button
+                  type="button"
+                  class="action-btn ${status === 'working' ? 'active-working' : ''}"
+                  onclick="setProposalStatus('${item.id}', 'working')"
+                  title="Mark as working on this"
+                >
+                  Working
+                </button>
+                <button
+                  type="button"
+                  class="action-btn ${status === 'done' ? 'active-done' : ''}"
+                  onclick="setProposalStatus('${item.id}', 'done')"
+                  title="Mark as completed"
+                >
+                  Done
+                </button>
+                <button
+                  type="button"
+                  class="action-btn ${status === 'rejected' ? 'active-rejected' : ''}"
+                  onclick="setProposalStatus('${item.id}', 'rejected')"
+                  title="Reject or dismiss proposal"
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="item-footer">
@@ -1217,8 +1514,20 @@
 
     function setScoreFilter(score) {
       currentScore = score;
-      document.querySelectorAll(".score-pill-btn").forEach(btn => {
+      document.querySelectorAll(".chip-btn[data-score]").forEach(btn => {
         if (btn.getAttribute("data-score") === score) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+      renderItems();
+    }
+
+    function setStatusFilter(status) {
+      currentStatus = status;
+      document.querySelectorAll(".chip-btn[data-status]").forEach(btn => {
+        if (btn.getAttribute("data-status") === status) {
           btn.classList.add("active");
         } else {
           btn.classList.remove("active");
@@ -1238,14 +1547,17 @@
     }
 
     function exportMarkdownSummary() {
+      const statuses = loadStatuses();
       let md = "# PocketCheck Improvement & Refactoring Matrix\n\n";
       md += `Generated: ${new Date().toISOString().split("T")[0]}\n\n`;
-      md += "| ID | Category | Subsystem | Score | Title | Impact Seam |\n";
-      md += "| :--- | :--- | :--- | :---: | :--- | :--- |\n";
+      md += "| ID | Status | Category | Subsystem | Score | Title | Impact Seam |\n";
+      md += "| :--- | :--- | :--- | :--- | :---: | :--- | :--- |\n";
 
       proposals.forEach(p => {
         const cat = p.category === "feature" ? "New Feature" : p.category === "adjustment" ? "Adjustment" : "Bug Fix";
-        md += `| ${p.id} | ${cat} | ${p.subsystem} | ${p.score}/10 | ${p.title} | \`${p.seam}\` |\n`;
+        const st = statuses[p.id] || "backlog";
+        const statusLabel = st === "working" ? "Working" : st === "done" ? "Done" : st === "rejected" ? "Rejected" : "Backlog";
+        md += `| ${p.id} | ${statusLabel} | ${cat} | ${p.subsystem} | ${p.score}/10 | ${p.title} | \`${p.seam}\` |\n`;
       });
 
       const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
@@ -1257,8 +1569,8 @@
       URL.revokeObjectURL(url);
     }
 
-    // Initialize counts on header
     document.addEventListener("DOMContentLoaded", () => {
+      updateStatsCounters();
       renderItems();
     });
   </script>
