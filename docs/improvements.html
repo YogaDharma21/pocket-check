@@ -638,7 +638,79 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      max-width: 240px;
+      max-width: 200px;
+    }
+
+    .footer-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .copy-task-btn {
+      height: 24px;
+      padding: 0 8px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: var(--surface-inset);
+      color: var(--muted-foreground);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease-out;
+    }
+
+    .copy-task-btn:hover {
+      color: var(--foreground);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .copy-task-btn:active {
+      transform: scale(0.95);
+    }
+
+    .copy-task-btn.copied {
+      background: var(--emerald-bg);
+      color: var(--emerald);
+      border-color: var(--emerald-border);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--card);
+      color: var(--foreground);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.9);
+      padding: 10px 20px;
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 9999;
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--emerald);
     }
 
     .item-id {
@@ -872,6 +944,11 @@
     <main class="items-grid" id="itemsGrid">
       <!-- Items dynamically populated via JavaScript -->
     </main>
+  </div>
+
+  <div id="toast" class="toast">
+    <span class="toast-dot"></span>
+    <span id="toastMsg">Task prompt copied</span>
   </div>
 
   <script>
@@ -1492,7 +1569,21 @@
 
           <div class="item-footer">
             <span class="seam-label" title="${item.seam}">seam: ${item.seam}</span>
-            <span class="item-id">${item.id}</span>
+            <div class="footer-actions">
+              <button
+                type="button"
+                class="copy-task-btn"
+                onclick="copyTaskPrompt('${item.id}', this)"
+                title="Copy prompt for a new thread"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Copy Task</span>
+              </button>
+              <span class="item-id">${item.id}</span>
+            </div>
           </div>
         `;
 
@@ -1544,6 +1635,67 @@
     function handleSort() {
       currentSort = document.getElementById("sortSelect").value;
       renderItems();
+    }
+
+    let toastTimeout = null;
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      const toastMsg = document.getElementById("toastMsg");
+      if (!toast || !toastMsg) return;
+
+      toastMsg.innerText = msg;
+      toast.classList.add("visible");
+
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove("visible");
+      }, 2500);
+    }
+
+    function copyTaskPrompt(id, btn) {
+      const item = proposals.find(p => p.id === id);
+      if (!item) return;
+
+      const categoryLabel =
+        item.category === "feature" ? "New Feature" :
+        item.category === "adjustment" ? "Adjustment" : "Bug Fix";
+
+      const prompt = [
+        `Implement ticket ${item.id} for PocketCheck: "${item.title}"`,
+        ``,
+        `Type: ${categoryLabel}`,
+        `Priority Score: ${item.score}/10`,
+        `Subsystem: ${item.subsystem}`,
+        `Target Seam: ${item.seam}`,
+        ``,
+        `Objective:`,
+        item.description,
+        ``,
+        `Directives:`,
+        `- Strictly adhere to DESIGN.md (#08090b canvas, #121316 card surface, solid matte surfaces, hairline borders rgba(255,255,255,0.07), muted mineral accents, tabular figures, zero emojis, zero em dashes).`,
+        `- Keep implementation minimal, robust, and consistent with monorepo patterns.`,
+        `- Run and verify typecheck, lint, or tests before finalizing.`
+      ].join("\n");
+
+      navigator.clipboard.writeText(prompt).then(() => {
+        const originalHtml = btn.innerHTML;
+        btn.classList.add("copied");
+        btn.innerHTML = `
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>Copied!</span>
+        `;
+
+        showToast(`Copied ${item.id} prompt to clipboard for new thread`);
+
+        setTimeout(() => {
+          btn.classList.remove("copied");
+          btn.innerHTML = originalHtml;
+        }, 2000);
+      }).catch(err => {
+        console.error("Clipboard copy failed", err);
+      });
     }
 
     function exportMarkdownSummary() {
