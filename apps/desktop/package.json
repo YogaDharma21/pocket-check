@@ -25,7 +25,6 @@
     "@pocket-check/convex": "workspace:*",
     "@pocket-check/presets": "workspace:*",
     "@pocket-check/types": "workspace:*",
-    "@pocket-check/weather": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "convex": "^1.45.0",

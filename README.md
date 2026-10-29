@@ -1,6 +1,6 @@
 # PocketCheck
 
-PocketCheck is an intelligent everyday carry (EDC) and departure checklist platform designed to ensure you never leave essential gear behind. It features real-time synchronization, destination routines, departure intelligence, weather-aware packing suggestions, and keyboard-first accessibility.
+PocketCheck is an intelligent everyday carry (EDC) and departure checklist platform designed to ensure you never leave essential gear behind. It features real-time synchronization, destination routines, departure intelligence, and keyboard-first accessibility.
 
 ## Repository Overview
 
@@ -21,7 +21,6 @@ pocket-check/
 
 - **Destination Routines**: Custom checklists tailored for Work, Campus, Travel, Gym, or daily outings.
 - **Departure Intelligence**: Smart assistant highlighting remaining items before stepping out.
-- **Free Weather Suggestions**: Contextual alerts powered by the open-source Open-Meteo API suggesting gear like umbrellas based on daily rain forecasts.
 - **Custom Auto-Reset Schedules**: User-scheduled reset times and active weekdays to automatically refresh checklists each morning.
 - **Keyboard-First Workflow**: Fast keyboard navigation (`Space` to toggle, `J`/`K` to move, `1`-`9` for routines, `Shift+U` to reset).
 - **Multi-Item Quick Add**: Bulk comma and newline parser to paste complete checklists from notes in seconds.

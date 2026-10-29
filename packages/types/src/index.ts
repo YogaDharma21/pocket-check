@@ -22,23 +22,6 @@ export interface Routine {
   order?: number;
 }
 
-export interface DailyWeatherForecast {
-  date: string;
-  weatherCode: number;
-  temperatureMax: number;
-  temperatureMin: number;
-  precipitationProbability: number;
-}
-
-export interface WeatherSuggestion {
-  message: string;
-  suggestedItem: {
-    name: string;
-    emoji: string;
-  };
-  reason: "rain" | "heat" | "cold";
-}
-
 export interface PresetItem {
   name: string;
   emoji?: string;
@@ -52,21 +35,4 @@ export interface PresetRoutine {
   icon: string;
   description: string;
   items: PresetItem[];
-}
-
-export interface WeatherData {
-  precipitationProbability: number;
-  temperatureMax: number;
-  temperatureMin: number;
-  weatherCode: number;
-  isRainExpected: boolean;
-  isHotDay: boolean;
-  isColdDay: boolean;
-  description: string;
-  suggestion: string | null;
-  locationName?: string;
-  suggestedItem: {
-    name: string;
-    emoji: string;
-  } | null;
 }
