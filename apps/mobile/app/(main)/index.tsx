@@ -8,7 +8,6 @@ import {
   useColorScheme,
   ActivityIndicator,
   Image,
-  type ScrollViewInstance,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth, useUser } from "@clerk/clerk-expo";
@@ -87,7 +86,7 @@ export default function DashboardScreen() {
     onConfirm: () => void;
   } | null>(null);
   const [avatarError, setAvatarError] = useState(false);
-  const scrollViewRef = useRef<ScrollViewInstance>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // Undo Toast state
   const [undoToast, setUndoToast] = useState<{
