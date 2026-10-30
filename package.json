@@ -19,6 +19,9 @@
   "pnpm": {
     "overrides": {
       "@expo/metro-runtime": "~6.1.2"
+    },
+    "patchedDependencies": {
+      "@expo/cli@54.0.28": "patches/@expo__cli@54.0.28.patch"
     }
   }
 }

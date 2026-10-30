@@ -11,7 +11,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test": "node --experimental-strip-types --test test/import-routine.test.ts",
+    "test": "node --experimental-strip-types --test test/import-routine.test.ts test/expo-cli-resilience.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
