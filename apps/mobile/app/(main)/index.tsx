@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react"
 import {
   View,
   Text,
@@ -8,112 +8,174 @@ import {
   useColorScheme,
   ActivityIndicator,
   Image,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth, useUser } from "@clerk/clerk-expo";
-import { useRouter } from "expo-router";
-import { useQuery, useMutation } from "convex/react";
-import { Ionicons } from "@expo/vector-icons";
-import { api, type Id } from "@pocket-check/convex";
-import { Colors } from "../../constants/theme";
+} from "react-native"
+import { SafeAreaView } from "react-native-safe-area-context"
+import { useAuth, useUser } from "@clerk/clerk-expo"
+import { useRouter, useLocalSearchParams } from "expo-router"
+import * as Linking from "expo-linking"
+import { useQuery, useMutation } from "convex/react"
+import { Ionicons } from "@expo/vector-icons"
+import { api, type Id } from "@pocket-check/convex"
+import { Colors } from "../../constants/theme"
 
-import { ProgressCard } from "../../components/ProgressCard";
-import { RoutineSwitcher, RoutineItem } from "../../components/RoutineSwitcher";
-import { FilterTabs, FilterType } from "../../components/FilterTabs";
-import { ChecklistItem, ItemData } from "../../components/ChecklistItem";
-import { AddItemForm } from "../../components/AddItemForm";
-import { IconPickerModal } from "../../components/IconPicker";
-import { RoutineSettingsModal } from "../../components/RoutineSettingsModal";
-import { ItemSettingsModal } from "../../components/ItemSettingsModal";
-import { AboutModal } from "../../components/AboutModal";
-import { MenuModal } from "../../components/MenuModal";
-import { SmartPresetsModal } from "../../components/SmartPresetsModal";
-import { NewDestinationModal } from "../../components/NewDestinationModal";
-import { ExportModal } from "../../components/ExportModal";
-import { ShareRoutineModal } from "../../components/ShareRoutineModal";
-import { ScheduleModal } from "../../components/ScheduleModal";
-import { UndoToast } from "../../components/UndoToast";
-import { FloatingNavbar } from "../../components/FloatingNavbar";
-import { UserProfileModal } from "../../components/UserProfileModal";
-import { ConfirmModal } from "../../components/ConfirmModal";
-import { PresetRoutine } from "../../lib/presets";
+import { ProgressCard } from "../../components/ProgressCard"
+import { RoutineSwitcher, RoutineItem } from "../../components/RoutineSwitcher"
+import { FilterTabs, FilterType } from "../../components/FilterTabs"
+import { ChecklistItem, ItemData } from "../../components/ChecklistItem"
+import { AddItemForm } from "../../components/AddItemForm"
+import { IconPickerModal } from "../../components/IconPicker"
+import { RoutineSettingsModal } from "../../components/RoutineSettingsModal"
+import { ItemSettingsModal } from "../../components/ItemSettingsModal"
+import { AboutModal } from "../../components/AboutModal"
+import { MenuModal } from "../../components/MenuModal"
+import { SmartPresetsModal } from "../../components/SmartPresetsModal"
+import { NewDestinationModal } from "../../components/NewDestinationModal"
+import { ExportModal } from "../../components/ExportModal"
+import { ShareRoutineModal } from "../../components/ShareRoutineModal"
+import { ImportSharedModal } from "../../components/ImportSharedModal"
+import { ScheduleModal } from "../../components/ScheduleModal"
+import { UndoToast } from "../../components/UndoToast"
+import { FloatingNavbar } from "../../components/FloatingNavbar"
+import { UserProfileModal } from "../../components/UserProfileModal"
+import { ConfirmModal } from "../../components/ConfirmModal"
+import { PresetRoutine } from "../../lib/presets"
+import {
+  decodeRoutinePayload,
+  parseRoutineFromUrl,
+  type ImportRoutineData,
+} from "../../lib/import-routine"
 
 interface RestorableItem {
-  routine: string;
-  name: string;
-  isPacked: boolean;
-  emoji?: string;
-  quantity?: number;
-  locationNote?: string;
-  order?: number;
+  routine: string
+  name: string
+  isPacked: boolean
+  emoji?: string
+  quantity?: number
+  locationNote?: string
+  order?: number
 }
 
 export default function DashboardScreen() {
-  const colorScheme = useColorScheme() ?? "dark";
-  const theme = colorScheme;
-  const colors = Colors[theme];
-  const router = useRouter();
+  const colorScheme = useColorScheme() ?? "dark"
+  const theme = colorScheme
+  const colors = Colors[theme]
+  const router = useRouter()
 
-  const { signOut } = useAuth();
-  const { user } = useUser();
+  const { signOut } = useAuth()
+  const { user } = useUser()
 
-  const [selectedRoutine, setSelectedRoutine] = useState<string>("");
-  const [filter, setFilter] = useState<FilterType>("all");
+  const [selectedRoutine, setSelectedRoutine] = useState<string>("")
+  const [filter, setFilter] = useState<FilterType>("all")
 
   // Modals state
-  const [manageRoutine, setManageRoutine] = useState<RoutineItem | null>(null);
-  const [manageItem, setManageItem] = useState<ItemData | null>(null);
-  const [showIconPicker, setShowIconPicker] = useState(false);
-  const [iconPickerTarget, setIconPickerTarget] = useState<"newItem" | "editItem">("newItem");
-  const [newItemIconKey, setNewItemIconKey] = useState<string>("");
-  const [editItemIconKey, setEditItemIconKey] = useState<string>("");
-  const [showAboutModal, setShowAboutModal] = useState(false);
-  const [showMenuModal, setShowMenuModal] = useState(false);
-  const [showUserModal, setShowUserModal] = useState(false);
-  const [showPresetsModal, setShowPresetsModal] = useState(false);
-  const [showNewDestinationModal, setShowNewDestinationModal] = useState(false);
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [scheduleTargetRoutine, setScheduleTargetRoutine] = useState<RoutineItem | null>(null);
+  const [manageRoutine, setManageRoutine] = useState<RoutineItem | null>(null)
+  const [manageItem, setManageItem] = useState<ItemData | null>(null)
+  const [showIconPicker, setShowIconPicker] = useState(false)
+  const [iconPickerTarget, setIconPickerTarget] = useState<
+    "newItem" | "editItem"
+  >("newItem")
+  const [newItemIconKey, setNewItemIconKey] = useState<string>("")
+  const [editItemIconKey, setEditItemIconKey] = useState<string>("")
+  const [showAboutModal, setShowAboutModal] = useState(false)
+  const [showMenuModal, setShowMenuModal] = useState(false)
+  const [showUserModal, setShowUserModal] = useState(false)
+  const [showPresetsModal, setShowPresetsModal] = useState(false)
+  const [showNewDestinationModal, setShowNewDestinationModal] = useState(false)
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [pendingImportData, setPendingImportData] =
+    useState<ImportRoutineData | null>(null)
+
+  const routeParams = useLocalSearchParams<{ import?: string; data?: string }>()
+
+  // Deep linking: listener for incoming routine share links
+  useEffect(() => {
+    let isMounted = true
+
+    void Linking.getInitialURL().then((url) => {
+      if (!isMounted || !url) return
+      const routine = parseRoutineFromUrl(url)
+      if (routine) {
+        setPendingImportData(routine)
+        setShowImportModal(true)
+      }
+    })
+
+    const subscription = Linking.addEventListener("url", (event) => {
+      if (!isMounted) return
+      const routine = parseRoutineFromUrl(event.url)
+      if (routine) {
+        setPendingImportData(routine)
+        setShowImportModal(true)
+      }
+    })
+
+    return () => {
+      isMounted = false
+      subscription.remove()
+    }
+  }, [])
+
+  // Also handle route params forwarded from app/index.tsx
+  useEffect(() => {
+    const importParam = routeParams.import || routeParams.data
+    if (!importParam) return
+
+    const timer = setTimeout(() => {
+      const routine = decodeRoutinePayload(importParam)
+      if (routine) {
+        setPendingImportData(routine)
+        setShowImportModal(true)
+      }
+    }, 0)
+
+    return () => clearTimeout(timer)
+  }, [routeParams.import, routeParams.data])
+
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [scheduleTargetRoutine, setScheduleTargetRoutine] =
+    useState<RoutineItem | null>(null)
   const [confirmDialog, setConfirmDialog] = useState<{
-    visible: boolean;
-    title: string;
-    message: string;
-    confirmText: string;
-    cancelText?: string;
-    variant: "destructive" | "warning" | "primary";
-    onConfirm: () => void;
-  } | null>(null);
-  const [avatarError, setAvatarError] = useState(false);
-  const scrollViewRef = useRef<ScrollView>(null);
+    visible: boolean
+    title: string
+    message: string
+    confirmText: string
+    cancelText?: string
+    variant: "destructive" | "warning" | "primary"
+    onConfirm: () => void
+  } | null>(null)
+  const [avatarError, setAvatarError] = useState(false)
+  const scrollViewRef = useRef<ScrollView>(null)
 
   // Undo Toast state
   const [undoToast, setUndoToast] = useState<{
-    message: string;
-    items: RestorableItem[];
-  } | null>(null);
+    message: string
+    items: RestorableItem[]
+  } | null>(null)
 
   // Convex mutations & queries
-  const ensureInitialized = useMutation(api.pocketcheck.ensureInitialized);
-  const addRoutine = useMutation(api.pocketcheck.addRoutine);
-  const updateRoutine = useMutation(api.pocketcheck.updateRoutine);
-  const deleteRoutine = useMutation(api.pocketcheck.deleteRoutine);
-  const addItem = useMutation(api.pocketcheck.addItem);
-  const addItemsBatch = useMutation(api.pocketcheck.addItemsBatch);
-  const applyPreset = useMutation(api.pocketcheck.applyPreset);
-  const editItemMutation = useMutation(api.pocketcheck.editItem);
-  const toggleItem = useMutation(api.pocketcheck.toggleItem);
-  const deleteItem = useMutation(api.pocketcheck.deleteItem);
-  const resetItems = useMutation(api.pocketcheck.resetItems);
-  const deleteAllItems = useMutation(api.pocketcheck.deleteAllItems);
-  const restoreItems = useMutation(api.pocketcheck.restoreItems);
-  const checkAndExecuteAutoReset = useMutation(api.pocketcheck.checkAndExecuteAutoReset);
-  const reorderItems = useMutation(api.pocketcheck.reorderItems);
-  const reorderRoutines = useMutation(api.pocketcheck.reorderRoutines);
+  const ensureInitialized = useMutation(api.pocketcheck.ensureInitialized)
+  const addRoutine = useMutation(api.pocketcheck.addRoutine)
+  const updateRoutine = useMutation(api.pocketcheck.updateRoutine)
+  const deleteRoutine = useMutation(api.pocketcheck.deleteRoutine)
+  const addItem = useMutation(api.pocketcheck.addItem)
+  const addItemsBatch = useMutation(api.pocketcheck.addItemsBatch)
+  const applyPreset = useMutation(api.pocketcheck.applyPreset)
+  const editItemMutation = useMutation(api.pocketcheck.editItem)
+  const toggleItem = useMutation(api.pocketcheck.toggleItem)
+  const deleteItem = useMutation(api.pocketcheck.deleteItem)
+  const resetItems = useMutation(api.pocketcheck.resetItems)
+  const deleteAllItems = useMutation(api.pocketcheck.deleteAllItems)
+  const restoreItems = useMutation(api.pocketcheck.restoreItems)
+  const checkAndExecuteAutoReset = useMutation(
+    api.pocketcheck.checkAndExecuteAutoReset
+  )
+  const reorderItems = useMutation(api.pocketcheck.reorderItems)
+  const reorderRoutines = useMutation(api.pocketcheck.reorderRoutines)
 
-  const rawRoutines = useQuery(api.pocketcheck.listRoutines);
-  const isRoutinesLoading = rawRoutines === undefined;
+  const rawRoutines = useQuery(api.pocketcheck.listRoutines)
+  const isRoutinesLoading = rawRoutines === undefined
   const routines: RoutineItem[] = (rawRoutines ?? []).map((r) => ({
     _id: r._id,
     name: r.name,
@@ -122,59 +184,64 @@ export default function DashboardScreen() {
     autoResetTime: r.autoResetTime,
     autoResetDays: r.autoResetDays,
     lastResetDate: r.lastResetDate,
-  }));
+  }))
 
-  const activeRoutine = routines.find((r) => r.name === selectedRoutine);
+  const activeRoutine = routines.find((r) => r.name === selectedRoutine)
   const effectiveRoutine = activeRoutine
     ? activeRoutine.name
     : routines.length > 0
-    ? routines[0].name
-    : "";
+      ? routines[0].name
+      : ""
 
-  const currentRoutineObj = routines.find((r) => r.name === effectiveRoutine);
+  const currentRoutineObj = routines.find((r) => r.name === effectiveRoutine)
 
   const rawItems = useQuery(
     api.pocketcheck.listItems,
     effectiveRoutine ? { routine: effectiveRoutine } : "skip"
-  );
-  const isItemsLoading = effectiveRoutine ? rawItems === undefined : false;
+  )
+  const isItemsLoading = effectiveRoutine ? rawItems === undefined : false
 
   useEffect(() => {
-    void ensureInitialized();
-  }, [ensureInitialized]);
+    void ensureInitialized()
+  }, [ensureInitialized])
 
   // Auto-Reset Time check per routine (background check interval)
   useEffect(() => {
-    if (!currentRoutineObj || !currentRoutineObj.autoResetTime) return;
+    if (!currentRoutineObj || !currentRoutineObj.autoResetTime) return
 
     const checkSchedule = async () => {
-      const now = new Date();
-      const currentDay = now.getDay();
-      const activeDays = currentRoutineObj.autoResetDays ?? [1, 2, 3, 4, 5];
+      const now = new Date()
+      const currentDay = now.getDay()
+      const activeDays = currentRoutineObj.autoResetDays ?? [1, 2, 3, 4, 5]
 
-      if (!activeDays.includes(currentDay)) return;
+      if (!activeDays.includes(currentDay)) return
 
-      const [hours, minutes] = currentRoutineObj.autoResetTime!.split(":").map(Number);
-      const scheduledTime = new Date();
-      scheduledTime.setHours(hours, minutes, 0, 0);
+      const [hours, minutes] = currentRoutineObj
+        .autoResetTime!.split(":")
+        .map(Number)
+      const scheduledTime = new Date()
+      scheduledTime.setHours(hours, minutes, 0, 0)
 
-      const todayStr = now.toISOString().split("T")[0];
-      if (now >= scheduledTime && currentRoutineObj.lastResetDate !== todayStr) {
+      const todayStr = now.toISOString().split("T")[0]
+      if (
+        now >= scheduledTime &&
+        currentRoutineObj.lastResetDate !== todayStr
+      ) {
         try {
           await checkAndExecuteAutoReset({
             routineId: currentRoutineObj._id,
             currentDateStr: todayStr,
-          });
+          })
         } catch (err) {
-          console.warn("Auto-reset execution failed", err);
+          console.warn("Auto-reset execution failed", err)
         }
       }
-    };
+    }
 
-    void checkSchedule();
-    const timer = setInterval(checkSchedule, 30000);
-    return () => clearInterval(timer);
-  }, [currentRoutineObj, checkAndExecuteAutoReset]);
+    void checkSchedule()
+    const timer = setInterval(checkSchedule, 30000)
+    return () => clearInterval(timer)
+  }, [currentRoutineObj, checkAndExecuteAutoReset])
 
   const items: ItemData[] = (rawItems ?? []).map((i) => ({
     _id: i._id,
@@ -185,54 +252,54 @@ export default function DashboardScreen() {
     quantity: i.quantity,
     locationNote: i.locationNote,
     order: i.order,
-  }));
+  }))
 
   // Calculations
-  const totalItems = items.length;
-  const packedItems = items.filter((i) => i.isPacked).length;
-  const missingItems = totalItems - packedItems;
+  const totalItems = items.length
+  const packedItems = items.filter((i) => i.isPacked).length
+  const missingItems = totalItems - packedItems
 
   const filteredItems = items.filter((item) => {
-    if (filter === "packed") return item.isPacked;
-    if (filter === "missing") return !item.isPacked;
-    return true;
-  });
+    if (filter === "packed") return item.isPacked
+    if (filter === "missing") return !item.isPacked
+    return true
+  })
 
   // Undo Toast Trigger
   const triggerUndo = (message: string, itemsToRestore: RestorableItem[]) => {
-    setUndoToast({ message, items: itemsToRestore });
-  };
+    setUndoToast({ message, items: itemsToRestore })
+  }
 
   const handleExecuteUndo = async () => {
-    if (!undoToast || undoToast.items.length === 0) return;
+    if (!undoToast || undoToast.items.length === 0) return
     try {
-      await restoreItems({ items: undoToast.items });
-      setUndoToast(null);
+      await restoreItems({ items: undoToast.items })
+      setUndoToast(null)
     } catch (err) {
-      console.error("Failed to restore items", err);
+      console.error("Failed to restore items", err)
     }
-  };
+  }
 
   // Handlers
   const handleToggle = async (itemId: Id<"items">, currentPacked: boolean) => {
     try {
-      await toggleItem({ id: itemId, isPacked: !currentPacked });
+      await toggleItem({ id: itemId, isPacked: !currentPacked })
     } catch (err) {
-      console.error("Failed to toggle item", err);
+      console.error("Failed to toggle item", err)
     }
-  };
+  }
 
   const handleReset = async () => {
-    if (!effectiveRoutine) return;
+    if (!effectiveRoutine) return
     try {
-      await resetItems({ routine: effectiveRoutine });
+      await resetItems({ routine: effectiveRoutine })
     } catch (err) {
-      console.error("Failed to reset list", err);
+      console.error("Failed to reset list", err)
     }
-  };
+  }
 
   const handleClearList = () => {
-    if (!effectiveRoutine) return;
+    if (!effectiveRoutine) return
     setConfirmDialog({
       visible: true,
       title: "Clear All Items",
@@ -250,80 +317,90 @@ export default function DashboardScreen() {
             quantity: i.quantity,
             locationNote: i.locationNote,
             order: i.order,
-          }));
-          await deleteAllItems({ routine: effectiveRoutine });
+          }))
+          await deleteAllItems({ routine: effectiveRoutine })
           if (backupItems.length > 0) {
             triggerUndo(
               `Cleared ${backupItems.length} items from ${effectiveRoutine}`,
               backupItems
-            );
+            )
           }
         } catch (err) {
-          console.error("Failed to clear list", err);
+          console.error("Failed to clear list", err)
         }
       },
-    });
-  };
+    })
+  }
 
   const handleCreateRoutine = async (name: string, icon: string) => {
     try {
-      await addRoutine({ name, icon });
-      setSelectedRoutine(name);
+      await addRoutine({ name, icon })
+      setSelectedRoutine(name)
     } catch (err) {
-      console.error("Failed to create routine", err);
+      console.error("Failed to create routine", err)
     }
-  };
+  }
 
   const handleSaveRoutine = async (id: Id<"routines">, newName: string) => {
     try {
-      const routine = routines.find((r) => r._id === id);
-      if (!routine) return;
+      const routine = routines.find((r) => r._id === id)
+      if (!routine) return
       await updateRoutine({
         id,
         name: newName,
         icon: routine.icon || "tag",
         autoResetTime: routine.autoResetTime,
         autoResetDays: routine.autoResetDays,
-      });
-      if (selectedRoutine === routine.name || effectiveRoutine === routine.name) {
-        setSelectedRoutine(newName);
+      })
+      if (
+        selectedRoutine === routine.name ||
+        effectiveRoutine === routine.name
+      ) {
+        setSelectedRoutine(newName)
       }
     } catch (err) {
-      console.error("Failed to update routine", err);
+      console.error("Failed to update routine", err)
     }
-  };
+  }
 
   const handleDeleteRoutine = async (id: Id<"routines">) => {
     try {
-      const routineToDelete = routines.find((r) => r._id === id);
-      await deleteRoutine({ id });
-      if (routineToDelete && (selectedRoutine === routineToDelete.name || effectiveRoutine === routineToDelete.name)) {
-        const remaining = routines.filter((r) => r._id !== id);
-        setSelectedRoutine(remaining.length > 0 ? remaining[0].name : "");
+      const routineToDelete = routines.find((r) => r._id === id)
+      await deleteRoutine({ id })
+      if (
+        routineToDelete &&
+        (selectedRoutine === routineToDelete.name ||
+          effectiveRoutine === routineToDelete.name)
+      ) {
+        const remaining = routines.filter((r) => r._id !== id)
+        setSelectedRoutine(remaining.length > 0 ? remaining[0].name : "")
       }
     } catch (err) {
-      console.error("Failed to delete routine", err);
+      console.error("Failed to delete routine", err)
     }
-  };
+  }
 
   const handleMoveRoutine = async (id: Id<"routines">, direction: -1 | 1) => {
-    const index = routines.findIndex((r) => r._id === id);
-    if (index === -1) return;
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= routines.length) return;
+    const index = routines.findIndex((r) => r._id === id)
+    if (index === -1) return
+    const targetIndex = index + direction
+    if (targetIndex < 0 || targetIndex >= routines.length) return
     try {
-      const ids = routines.map((r) => r._id);
-      const [moved] = ids.splice(index, 1);
-      ids.splice(targetIndex, 0, moved);
-      await reorderRoutines({ ids });
+      const ids = routines.map((r) => r._id)
+      const [moved] = ids.splice(index, 1)
+      ids.splice(targetIndex, 0, moved)
+      await reorderRoutines({ ids })
     } catch (err) {
-      console.error("Failed to reorder routines", err);
+      console.error("Failed to reorder routines", err)
     }
-  };
+  }
 
-  const handleSelectPreset = async (preset: PresetRoutine, targetRoutine?: string) => {
-    const routineNameToUse = targetRoutine || preset.name;
-    setSelectedRoutine(routineNameToUse);
+  const handleSelectPreset = async (
+    preset: PresetRoutine,
+    targetRoutine?: string
+  ) => {
+    const routineNameToUse = targetRoutine || preset.name
+    setSelectedRoutine(routineNameToUse)
 
     try {
       const res = await applyPreset({
@@ -336,27 +413,30 @@ export default function DashboardScreen() {
           ...(i.locationNote ? { locationNote: i.locationNote } : {}),
         })),
         ...(targetRoutine ? { targetRoutine } : {}),
-      });
+      })
       if (res?.routineName) {
-        setSelectedRoutine(res.routineName);
+        setSelectedRoutine(res.routineName)
       }
     } catch (err) {
-      console.warn("applyPreset fallback:", err);
+      console.warn("applyPreset fallback:", err)
       const existingRoutine = routines.find(
-        (r) => r.name.toLowerCase().trim() === routineNameToUse.toLowerCase().trim()
-      );
+        (r) =>
+          r.name.toLowerCase().trim() === routineNameToUse.toLowerCase().trim()
+      )
       if (!existingRoutine) {
         await addRoutine({
           name: routineNameToUse,
           icon: preset.icon,
-        });
+        })
       }
-      setSelectedRoutine(routineNameToUse);
+      setSelectedRoutine(routineNameToUse)
 
-      const existingNames = new Set(items.map((i) => i.name.toLowerCase().trim()));
+      const existingNames = new Set(
+        items.map((i) => i.name.toLowerCase().trim())
+      )
       const newItems = preset.items.filter(
         (i) => !existingNames.has(i.name.toLowerCase().trim())
-      );
+      )
       if (newItems.length > 0) {
         await addItemsBatch({
           routine: routineNameToUse,
@@ -366,45 +446,92 @@ export default function DashboardScreen() {
             quantity: i.quantity,
             locationNote: i.locationNote,
           })),
-        });
+        })
       }
     }
-  };
+  }
+
+  const handleConfirmImport = async () => {
+    if (!pendingImportData) return
+    try {
+      const res = await applyPreset({
+        name: pendingImportData.name,
+        icon: pendingImportData.icon || "tag",
+        items: pendingImportData.items,
+      })
+      if (res?.routineName) {
+        setSelectedRoutine(res.routineName)
+      } else {
+        setSelectedRoutine(pendingImportData.name)
+      }
+    } catch (err) {
+      console.warn("applyPreset import fallback:", err)
+      const existingRoutine = routines.find(
+        (r) =>
+          r.name.toLowerCase().trim() ===
+          pendingImportData.name.toLowerCase().trim()
+      )
+      if (!existingRoutine) {
+        await addRoutine({
+          name: pendingImportData.name,
+          icon: pendingImportData.icon || "tag",
+        })
+      }
+      setSelectedRoutine(pendingImportData.name)
+
+      if (pendingImportData.items.length > 0) {
+        await addItemsBatch({
+          routine: pendingImportData.name,
+          items: pendingImportData.items.map((i) => ({
+            name: i.name,
+            emoji: i.emoji,
+            quantity: i.quantity,
+            locationNote: i.locationNote,
+          })),
+        })
+      }
+    } finally {
+      setShowImportModal(false)
+      setPendingImportData(null)
+    }
+  }
 
   const handleAddItem = async (name: string, iconKey?: string) => {
-    if (!effectiveRoutine) return;
+    if (!effectiveRoutine) return
     try {
       await addItem({
         routine: effectiveRoutine,
         name,
         emoji: iconKey || undefined,
-      });
-      setNewItemIconKey("");
+      })
+      setNewItemIconKey("")
     } catch (err) {
-      console.error("Failed to add item", err);
+      console.error("Failed to add item", err)
     }
-  };
+  }
 
-  const handleAddItemsBatch = async (batchItems: { name: string; emoji?: string }[]) => {
-    if (!effectiveRoutine || batchItems.length === 0) return;
+  const handleAddItemsBatch = async (
+    batchItems: { name: string; emoji?: string }[]
+  ) => {
+    if (!effectiveRoutine || batchItems.length === 0) return
     try {
       await addItemsBatch({
         routine: effectiveRoutine,
         items: batchItems,
-      });
-      setNewItemIconKey("");
+      })
+      setNewItemIconKey("")
     } catch (err) {
-      console.warn("addItemsBatch fallback", err);
+      console.warn("addItemsBatch fallback", err)
       for (const item of batchItems) {
         await addItem({
           routine: effectiveRoutine,
           name: item.name,
           emoji: item.emoji,
-        });
+        })
       }
-      setNewItemIconKey("");
+      setNewItemIconKey("")
     }
-  };
+  }
 
   const handleSaveItem = async (
     id: Id<"items">,
@@ -420,14 +547,14 @@ export default function DashboardScreen() {
         emoji: iconKey || undefined,
         quantity,
         locationNote,
-      });
+      })
     } catch (err) {
-      console.error("Failed to edit item", err);
+      console.error("Failed to edit item", err)
     }
-  };
+  }
 
   const handleDeleteItem = async (id: Id<"items">) => {
-    const itemToDelete = items.find((i) => i._id === id);
+    const itemToDelete = items.find((i) => i._id === id)
     try {
       if (itemToDelete) {
         const restorable: RestorableItem = {
@@ -438,35 +565,35 @@ export default function DashboardScreen() {
           quantity: itemToDelete.quantity,
           locationNote: itemToDelete.locationNote,
           order: itemToDelete.order,
-        };
-        await deleteItem({ id });
-        triggerUndo(`Deleted "${itemToDelete.name}"`, [restorable]);
+        }
+        await deleteItem({ id })
+        triggerUndo(`Deleted "${itemToDelete.name}"`, [restorable])
       } else {
-        await deleteItem({ id });
+        await deleteItem({ id })
       }
     } catch (err) {
-      console.error("Failed to delete item", err);
+      console.error("Failed to delete item", err)
     }
-  };
+  }
 
   const handleMoveItem = async (id: Id<"items">, direction: -1 | 1) => {
-    const index = items.findIndex((i) => i._id === id);
-    if (index === -1) return;
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= items.length) return;
+    const index = items.findIndex((i) => i._id === id)
+    if (index === -1) return
+    const targetIndex = index + direction
+    if (targetIndex < 0 || targetIndex >= items.length) return
     try {
-      const ids = items.map((i) => i._id);
-      const [moved] = ids.splice(index, 1);
-      ids.splice(targetIndex, 0, moved);
-      await reorderItems({ ids });
+      const ids = items.map((i) => i._id)
+      const [moved] = ids.splice(index, 1)
+      ids.splice(targetIndex, 0, moved)
+      await reorderItems({ ids })
     } catch (err) {
-      console.error("Failed to reorder items", err);
+      console.error("Failed to reorder items", err)
     }
-  };
+  }
 
   const handleSaveSchedule = async (time?: string, days?: number[]) => {
-    const target = scheduleTargetRoutine || currentRoutineObj;
-    if (!target) return;
+    const target = scheduleTargetRoutine || currentRoutineObj
+    if (!target) return
     try {
       await updateRoutine({
         id: target._id,
@@ -474,11 +601,11 @@ export default function DashboardScreen() {
         icon: target.icon || "tag",
         autoResetTime: time,
         autoResetDays: days,
-      });
+      })
     } catch (err) {
-      console.error("Failed to update routine schedule", err);
+      console.error("Failed to update routine schedule", err)
     }
-  };
+  }
 
   const handleSignOut = () => {
     setConfirmDialog({
@@ -490,14 +617,14 @@ export default function DashboardScreen() {
       variant: "destructive",
       onConfirm: async () => {
         try {
-          await signOut();
-          router.replace("/(auth)/sign-in");
+          await signOut()
+          router.replace("/(auth)/sign-in")
         } catch (err) {
-          console.error("Sign out error", err);
+          console.error("Sign out error", err)
         }
       },
-    });
-  };
+    })
+  }
 
   return (
     <SafeAreaView
@@ -516,7 +643,11 @@ export default function DashboardScreen() {
             <View
               style={[
                 styles.headerIconBox,
-                { borderColor: colors.border, borderWidth: 1, overflow: "hidden" },
+                {
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  overflow: "hidden",
+                },
               ]}
             >
               <Image
@@ -526,7 +657,8 @@ export default function DashboardScreen() {
               />
             </View>
             <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-              POCKET<Text style={{ color: colors.mutedForeground }}>CHECKER</Text>
+              POCKET
+              <Text style={{ color: colors.mutedForeground }}>CHECKER</Text>
             </Text>
           </View>
 
@@ -574,7 +706,10 @@ export default function DashboardScreen() {
                       { color: colors.primaryForeground },
                     ]}
                   >
-                    {(user?.fullName || user?.firstName || user?.primaryEmailAddress?.emailAddress || "U")[0].toUpperCase()}
+                    {(user?.fullName ||
+                      user?.firstName ||
+                      user?.primaryEmailAddress?.emailAddress ||
+                      "U")[0].toUpperCase()}
                   </Text>
                 </View>
               )}
@@ -612,8 +747,8 @@ export default function DashboardScreen() {
               onAddItem={handleAddItem}
               onAddItemsBatch={handleAddItemsBatch}
               onOpenIconPicker={() => {
-                setIconPickerTarget("newItem");
-                setShowIconPicker(true);
+                setIconPickerTarget("newItem")
+                setShowIconPicker(true)
               }}
               selectedIconKey={newItemIconKey}
               theme={theme}
@@ -650,10 +785,7 @@ export default function DashboardScreen() {
                   style={{ marginBottom: 8 }}
                 />
                 <Text
-                  style={[
-                    styles.emptyText,
-                    { color: colors.mutedForeground },
-                  ]}
+                  style={[styles.emptyText, { color: colors.mutedForeground }]}
                 >
                   Loading checklist...
                 </Text>
@@ -675,24 +807,33 @@ export default function DashboardScreen() {
                   style={{ marginBottom: 8 }}
                 />
                 <Text
-                  style={[
-                    styles.emptyText,
-                    { color: colors.mutedForeground },
-                  ]}
+                  style={[styles.emptyText, { color: colors.mutedForeground }]}
                 >
                   {filter === "all"
                     ? "No items added to this routine yet."
                     : filter === "packed"
-                    ? "No items packed yet. Tap items to pack them!"
-                    : "All items are packed! Great job!"}
+                      ? "No items packed yet. Tap items to pack them!"
+                      : "All items are packed! Great job!"}
                 </Text>
                 {filter === "all" && (
                   <TouchableOpacity
-                    style={[styles.presetQuickBtn, { backgroundColor: colors.primary, marginTop: 12 }]}
+                    style={[
+                      styles.presetQuickBtn,
+                      { backgroundColor: colors.primary, marginTop: 12 },
+                    ]}
                     onPress={() => setShowPresetsModal(true)}
                   >
-                    <Ionicons name="sparkles" size={14} color={colors.primaryForeground} />
-                    <Text style={[styles.presetQuickBtnText, { color: colors.primaryForeground }]}>
+                    <Ionicons
+                      name="sparkles"
+                      size={14}
+                      color={colors.primaryForeground}
+                    />
+                    <Text
+                      style={[
+                        styles.presetQuickBtnText,
+                        { color: colors.primaryForeground },
+                      ]}
+                    >
                       Browse Smart Presets
                     </Text>
                   </TouchableOpacity>
@@ -705,8 +846,8 @@ export default function DashboardScreen() {
                   item={item}
                   onToggle={handleToggle}
                   onOpenSettings={(itemToEdit) => {
-                    setManageItem(itemToEdit);
-                    setEditItemIconKey(itemToEdit.emoji ?? "");
+                    setManageItem(itemToEdit)
+                    setEditItemIconKey(itemToEdit.emoji ?? "")
                   }}
                   theme={theme}
                 />
@@ -719,15 +860,17 @@ export default function DashboardScreen() {
         <FloatingNavbar
           theme={theme}
           hasRoutine={!!effectiveRoutine}
-          onHome={() => scrollViewRef.current?.scrollTo({ y: 0, animated: true })}
+          onHome={() =>
+            scrollViewRef.current?.scrollTo({ y: 0, animated: true })
+          }
           onNewDestination={() => setShowNewDestinationModal(true)}
           onPresets={() => setShowPresetsModal(true)}
           onExport={() => setShowExportModal(true)}
           onShare={() => setShowShareModal(true)}
           onSchedule={() => {
             if (currentRoutineObj) {
-              setScheduleTargetRoutine(currentRoutineObj);
-              setShowScheduleModal(true);
+              setScheduleTargetRoutine(currentRoutineObj)
+              setShowScheduleModal(true)
             }
           }}
           onAbout={() => setShowAboutModal(true)}
@@ -749,9 +892,9 @@ export default function DashboardScreen() {
           }
           onSelectIcon={(key) => {
             if (iconPickerTarget === "newItem") {
-              setNewItemIconKey(key);
+              setNewItemIconKey(key)
             } else {
-              setEditItemIconKey(key);
+              setEditItemIconKey(key)
             }
           }}
           theme={theme}
@@ -766,12 +909,10 @@ export default function DashboardScreen() {
           onDelete={handleDeleteRoutine}
           onMove={handleMoveRoutine}
           onOpenSchedule={(r) => {
-            setScheduleTargetRoutine(r);
-            setShowScheduleModal(true);
+            setScheduleTargetRoutine(r)
+            setShowScheduleModal(true)
           }}
-          isFirst={
-            routines.findIndex((r) => r._id === manageRoutine?._id) <= 0
-          }
+          isFirst={routines.findIndex((r) => r._id === manageRoutine?._id) <= 0}
           isLast={
             routines.findIndex((r) => r._id === manageRoutine?._id) >=
             routines.length - 1
@@ -788,8 +929,8 @@ export default function DashboardScreen() {
           onDelete={handleDeleteItem}
           onMove={handleMoveItem}
           onOpenIconPicker={() => {
-            setIconPickerTarget("editItem");
-            setShowIconPicker(true);
+            setIconPickerTarget("editItem")
+            setShowIconPicker(true)
           }}
           selectedIconKey={editItemIconKey}
           isFirst={items.findIndex((i) => i._id === manageItem?._id) <= 0}
@@ -825,20 +966,37 @@ export default function DashboardScreen() {
           theme={theme}
         />
 
+        <ImportSharedModal
+          visible={showImportModal}
+          onClose={() => {
+            setShowImportModal(false)
+            setPendingImportData(null)
+          }}
+          data={pendingImportData}
+          onConfirmImport={handleConfirmImport}
+          theme={theme}
+        />
+
         <ScheduleModal
           key={
             showScheduleModal
-              ? scheduleTargetRoutine?._id ?? effectiveRoutine
+              ? (scheduleTargetRoutine?._id ?? effectiveRoutine)
               : "closed"
           }
           visible={showScheduleModal}
           onClose={() => {
-            setShowScheduleModal(false);
-            setScheduleTargetRoutine(null);
+            setShowScheduleModal(false)
+            setScheduleTargetRoutine(null)
           }}
           routineName={scheduleTargetRoutine?.name || effectiveRoutine}
-          initialTime={scheduleTargetRoutine?.autoResetTime || currentRoutineObj?.autoResetTime}
-          initialDays={scheduleTargetRoutine?.autoResetDays || currentRoutineObj?.autoResetDays}
+          initialTime={
+            scheduleTargetRoutine?.autoResetTime ||
+            currentRoutineObj?.autoResetTime
+          }
+          initialDays={
+            scheduleTargetRoutine?.autoResetDays ||
+            currentRoutineObj?.autoResetDays
+          }
           onSaveSchedule={handleSaveSchedule}
           theme={theme}
         />
@@ -857,8 +1015,8 @@ export default function DashboardScreen() {
           onOpenShare={() => setShowShareModal(true)}
           onOpenSchedule={() => {
             if (currentRoutineObj) {
-              setScheduleTargetRoutine(currentRoutineObj);
-              setShowScheduleModal(true);
+              setScheduleTargetRoutine(currentRoutineObj)
+              setShowScheduleModal(true)
             }
           }}
           onOpenAbout={() => setShowAboutModal(true)}
@@ -879,9 +1037,9 @@ export default function DashboardScreen() {
             visible={confirmDialog.visible}
             onClose={() => setConfirmDialog(null)}
             onConfirm={() => {
-              const action = confirmDialog.onConfirm;
-              setConfirmDialog(null);
-              action();
+              const action = confirmDialog.onConfirm
+              setConfirmDialog(null)
+              action()
             }}
             title={confirmDialog.title}
             message={confirmDialog.message}
@@ -903,7 +1061,7 @@ export default function DashboardScreen() {
         )}
       </View>
     </SafeAreaView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -1003,4 +1161,4 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
   },
-});
+})
