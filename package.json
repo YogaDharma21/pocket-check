@@ -15,5 +15,10 @@
     "prettier-plugin-tailwindcss": "^0.8.0",
     "turbo": "^2.11.10",
     "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "@expo/metro-runtime": "~6.1.2"
+    }
   }
 }
