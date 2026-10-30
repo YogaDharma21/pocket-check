@@ -8,7 +8,6 @@ import {
   useColorScheme,
   ActivityIndicator,
   Image,
-  type ScrollViewInstance,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useAuth, useUser } from "@clerk/clerk-expo"
@@ -147,7 +146,7 @@ export default function DashboardScreen() {
     onConfirm: () => void
   } | null>(null)
   const [avatarError, setAvatarError] = useState(false)
-  const scrollViewRef = useRef<ScrollViewInstance>(null)
+  const scrollViewRef = useRef<ScrollView>(null)
 
   // Undo Toast state
   const [undoToast, setUndoToast] = useState<{
@@ -902,7 +901,7 @@ export default function DashboardScreen() {
         />
 
         <RoutineSettingsModal
-          key={manageRoutine?._id ?? "none"}
+          key={manageRoutine ? `routine-${manageRoutine._id}` : "routine-none"}
           visible={!!manageRoutine}
           onClose={() => setManageRoutine(null)}
           routine={manageRoutine}
@@ -922,7 +921,7 @@ export default function DashboardScreen() {
         />
 
         <ItemSettingsModal
-          key={manageItem?._id ?? "none"}
+          key={manageItem ? `item-${manageItem._id}` : "item-none"}
           visible={!!manageItem}
           onClose={() => setManageItem(null)}
           item={manageItem}

@@ -4,13 +4,15 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import {
-  DarkTheme,
-  DefaultTheme,
   Stack,
-  ThemeProvider,
   useRouter,
   useSegments,
 } from "expo-router";
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import * as SystemUI from "expo-system-ui";
