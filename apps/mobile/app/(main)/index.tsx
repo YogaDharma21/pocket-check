@@ -901,7 +901,7 @@ export default function DashboardScreen() {
         />
 
         <RoutineSettingsModal
-          key={manageRoutine?._id ?? "none"}
+          key={manageRoutine ? `routine-${manageRoutine._id}` : "routine-none"}
           visible={!!manageRoutine}
           onClose={() => setManageRoutine(null)}
           routine={manageRoutine}
@@ -921,7 +921,7 @@ export default function DashboardScreen() {
         />
 
         <ItemSettingsModal
-          key={manageItem?._id ?? "none"}
+          key={manageItem ? `item-${manageItem._id}` : "item-none"}
           visible={!!manageItem}
           onClose={() => setManageItem(null)}
           item={manageItem}
