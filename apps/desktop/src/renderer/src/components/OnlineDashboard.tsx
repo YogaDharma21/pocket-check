@@ -45,11 +45,14 @@ import { ExportModal } from "@/components/ExportModal";
 import { ShareRoutineModal } from "@/components/ShareRoutineModal";
 import { RoutineScheduleModal } from "@/components/RoutineScheduleModal";
 import { ImportSharedModal } from "@/components/ImportSharedModal";
+import { ShortcutsModal } from "@/components/ShortcutsModal";
 import {
   parseMultiItemInput,
   detectIconForItem,
+  decodeRoutinePayload,
   PresetRoutine,
-} from "@/lib/presets";
+  SharedRoutinePayload,
+} from "@pocket-check/presets";
 import {
   playCheckSound,
   playUncheckSound,
@@ -109,6 +112,7 @@ export function OnlineDashboard({
   const [showExportModal, setShowExportModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -116,29 +120,14 @@ export function OnlineDashboard({
     }
     return false;
   });
-  const [sharedImportData] = useState<{
-    name: string;
-    icon: string;
-    items: Array<{
-      name: string;
-      emoji?: string;
-      quantity?: number;
-      locationNote?: string;
-    }>;
-  } | null>(() => {
+  const [sharedImportData] = useState<SharedRoutinePayload | null>(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const importParam = params.get("import");
       if (importParam) {
-        try {
-          const decoded = JSON.parse(
-            decodeURIComponent(escape(atob(decodeURIComponent(importParam))))
-          );
-          if (decoded && decoded.name && Array.isArray(decoded.items)) {
-            return decoded;
-          }
-        } catch {
-          // ignore
+        const decoded = decodeRoutinePayload(importParam);
+        if (decoded && decoded.name && Array.isArray(decoded.items)) {
+          return decoded;
         }
       }
     }
@@ -204,33 +193,39 @@ export function OnlineDashboard({
     void ensureInitialized();
   }, [ensureInitialized]);
 
-  // Auto-Reset Time check per routine
+  // Auto-Reset Time check across all routines (BUG-02 & BUG-04 / ADJ-05)
   useEffect(() => {
-    if (!currentRoutineObj || !currentRoutineObj.autoResetTime) return;
+    if (routinesList.length === 0) return;
 
     const checkSchedule = async () => {
       const now = new Date();
       const currentDay = now.getDay();
-      const activeDays = currentRoutineObj.autoResetDays ?? [1, 2, 3, 4, 5];
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const todayStr = `${year}-${month}-${day}`;
 
-      if (!activeDays.includes(currentDay)) return;
+      for (const routine of routinesList) {
+        if (!routine.autoResetTime) continue;
+        const activeDays = routine.autoResetDays ?? [1, 2, 3, 4, 5];
+        if (!activeDays.includes(currentDay)) continue;
 
-      const [hours, minutes] = currentRoutineObj.autoResetTime!.split(":").map(Number);
-      const scheduledTime = new Date();
-      scheduledTime.setHours(hours, minutes, 0, 0);
+        const [hours, minutes] = routine.autoResetTime.split(":").map(Number);
+        const scheduledTime = new Date();
+        scheduledTime.setHours(hours, minutes, 0, 0);
 
-      const todayStr = now.toISOString().split("T")[0];
-      if (now >= scheduledTime && currentRoutineObj.lastResetDate !== todayStr) {
-        try {
-          const res = await checkAndExecuteAutoReset({
-            routineId: currentRoutineObj._id,
-            currentDateStr: todayStr,
-          });
-          if (res?.reset) {
-            playResetSound();
+        if (now >= scheduledTime && routine.lastResetDate !== todayStr) {
+          try {
+            const res = await checkAndExecuteAutoReset({
+              routineId: routine._id,
+              currentDateStr: todayStr,
+            });
+            if (res?.reset) {
+              playResetSound();
+            }
+          } catch (err) {
+            console.warn("Auto-reset execution failed", err);
           }
-        } catch (err) {
-          console.warn("Auto-reset execution failed", err);
         }
       }
     };
@@ -238,7 +233,7 @@ export function OnlineDashboard({
     void checkSchedule();
     const timer = setInterval(checkSchedule, 30000);
     return () => clearInterval(timer);
-  }, [currentRoutineObj, checkAndExecuteAutoReset]);
+  }, [routinesList, checkAndExecuteAutoReset]);
 
   // Filtered items list
   const filteredItems = items.filter((item) => {
@@ -246,6 +241,7 @@ export function OnlineDashboard({
     if (filter === "missing") return !item.isPacked;
     return true;
   });
+  const canReorder = filter === "all";
 
   // Calculate metrics
   const totalItems = items.length;
@@ -362,6 +358,11 @@ export function OnlineDashboard({
         e.preventDefault();
         setSelectedRoutine(routinesList[num - 1].name);
       }
+
+      if (e.key === "?" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        setShowShortcutsModal(true);
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -454,7 +455,7 @@ export function OnlineDashboard({
   }
 
   const handleDropItem = async (targetId: Id<"items">) => {
-    if (!draggedItemId || draggedItemId === targetId) {
+    if (!canReorder || !draggedItemId || draggedItemId === targetId) {
       setDraggedItemId(null);
       setDragOverItemId(null);
       return;
@@ -603,6 +604,8 @@ export function OnlineDashboard({
           item.emoji ||
           detectIconForItem(item.name) ||
           "Tag",
+        quantity: item.quantity,
+        locationNote: item.locationNote,
       }));
 
       try {
@@ -617,6 +620,8 @@ export function OnlineDashboard({
             routine: effectiveRoutine,
             name: item.name,
             emoji: item.emoji,
+            quantity: item.quantity,
+            locationNote: item.locationNote,
           });
         }
       }
@@ -632,6 +637,8 @@ export function OnlineDashboard({
         routine: effectiveRoutine,
         name: single.name,
         emoji: detectedEmoji,
+        quantity: single.quantity,
+        locationNote: single.locationNote,
       });
     } catch (err) {
       console.error("Failed to add item", err);
@@ -1109,16 +1116,20 @@ export function OnlineDashboard({
                   return (
                     <div
                       key={item._id}
-                      draggable
-                      onDragStart={() => setDraggedItemId(item._id)}
+                      draggable={canReorder}
+                      onDragStart={() => {
+                        if (!canReorder) return;
+                        setDraggedItemId(item._id);
+                      }}
                       onDragOver={(e) => {
                         e.preventDefault();
-                        if (dragOverItemId !== item._id) {
+                        if (canReorder && dragOverItemId !== item._id) {
                           setDragOverItemId(item._id);
                         }
                       }}
                       onDrop={(e) => {
                         e.preventDefault();
+                        if (!canReorder) return;
                         void handleDropItem(item._id);
                       }}
                       onDragEnd={() => {
@@ -1137,9 +1148,13 @@ export function OnlineDashboard({
                       <div className="flex min-w-0 flex-1 items-center gap-3">
                         <button
                           type="button"
-                          className="cursor-grab text-muted-foreground opacity-30 group-hover:opacity-100 hover:text-foreground active:cursor-grabbing p-0.5"
+                          className={`p-0.5 ${
+                            canReorder
+                              ? "cursor-grab text-muted-foreground opacity-30 group-hover:opacity-100 hover:text-foreground active:cursor-grabbing"
+                              : "cursor-not-allowed text-muted-foreground/20"
+                          }`}
                           onClick={(e) => e.stopPropagation()}
-                          title="Drag to reorder"
+                          title={canReorder ? "Drag to reorder" : "Reordering disabled while filtered"}
                         >
                           <GripVertical className="h-4 w-4" />
                         </button>
@@ -1726,6 +1741,11 @@ export function OnlineDashboard({
           setSelectedRoutine(sharedImportData.name);
           setShowImportModal(false);
         }}
+      />
+
+      <ShortcutsModal
+        open={showShortcutsModal}
+        onOpenChange={setShowShortcutsModal}
       />
 
       {/* Floating quick-access navbar */}

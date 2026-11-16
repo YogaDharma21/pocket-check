@@ -10,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import * as SecureStore from "expo-secure-store";
 import { Colors } from "../constants/theme";
-import { WeatherData, fetchDailyWeather } from "../lib/weather";
+import { WeatherData, fetchDailyWeather } from "@pocket-check/weather";
 
 const LOCATION_STORAGE_KEY = "pocket_check_user_location";
 

@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Share2, Copy, Check, Link as LinkIcon, Sparkles } from "lucide-react"
+import { encodeRoutinePayload } from "@pocket-check/presets"
 
 interface ShareRoutineModalProps {
   open: boolean
@@ -48,9 +49,7 @@ export function ShareRoutineModal({
           locationNote: i.locationNote,
         })),
       }
-      const encoded = encodeURIComponent(
-        btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
-      )
+      const encoded = encodeRoutinePayload(payload)
       return `${window.location.origin}?import=${encoded}`
     } catch {
       return ""
@@ -74,7 +73,7 @@ export function ShareRoutineModal({
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
             Anyone with this link can preview and 1-click import this checklist
-            into their PocketChecker account.
+            into their PocketCheck account.
           </DialogDescription>
         </DialogHeader>
 

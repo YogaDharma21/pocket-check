@@ -15,7 +15,7 @@ import {
   renderRoutineIcon,
   renderItemIcon,
 } from "@/components/icon-picker-modal"
-import { SMART_PRESETS, PresetRoutine } from "@/lib/presets"
+import { SMART_PRESETS, PresetRoutine } from "@pocket-check/presets"
 
 interface SmartPresetsModalProps {
   open: boolean

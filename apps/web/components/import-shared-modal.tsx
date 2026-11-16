@@ -11,20 +11,12 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Sparkles, Download } from "lucide-react"
+import type { SharedRoutinePayload } from "@pocket-check/presets"
 
 interface ImportSharedModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  data: {
-    name: string
-    icon: string
-    items: Array<{
-      name: string
-      emoji?: string
-      quantity?: number
-      locationNote?: string
-    }>
-  } | null
+  data: SharedRoutinePayload | null
   onConfirmImport: () => Promise<void>
 }
 

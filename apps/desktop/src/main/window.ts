@@ -51,6 +51,65 @@ export function toggleWindowVisibility(): void {
   }
 }
 
+interface WindowState {
+  x?: number;
+  y?: number;
+  width: number;
+  height: number;
+  isMaximized: boolean;
+}
+
+function getWindowStateFile(): string {
+  return path.join(app.getPath('userData'), 'window-state.json');
+}
+
+function loadWindowState(): WindowState {
+  const defaultState: WindowState = {
+    width: 1100,
+    height: 750,
+    isMaximized: false,
+  };
+
+  try {
+    const filePath = getWindowStateFile();
+    if (fs.existsSync(filePath)) {
+      const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      if (typeof data.width === 'number' && typeof data.height === 'number') {
+        return {
+          x: typeof data.x === 'number' ? data.x : undefined,
+          y: typeof data.y === 'number' ? data.y : undefined,
+          width: Math.max(data.width, 800),
+          height: Math.max(data.height, 600),
+          isMaximized: Boolean(data.isMaximized),
+        };
+      }
+    }
+  } catch {
+    // Ignore read or parse errors
+  }
+  return defaultState;
+}
+
+function saveWindowState(window: BrowserWindow): void {
+  try {
+    const isMaximized = window.isMaximized();
+    let bounds = window.getNormalBounds();
+    if (!isMaximized) {
+      bounds = window.getBounds();
+    }
+    const state: WindowState = {
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: bounds.height,
+      isMaximized,
+    };
+    fs.writeFileSync(getWindowStateFile(), JSON.stringify(state, null, 2), 'utf-8');
+  } catch {
+    // Ignore write errors
+  }
+}
+
 export function createWindow(): BrowserWindow {
   if (mainWindow && !mainWindow.isDestroyed()) {
     return mainWindow;
@@ -73,15 +132,19 @@ export function createWindow(): BrowserWindow {
     preloadPath = path.join(app.getAppPath(), 'dist-electron/preload/index.mjs');
   }
 
+  const windowState = loadWindowState();
+
   mainWindow = new BrowserWindow({
-    width: 1100,
-    height: 750,
+    x: windowState.x,
+    y: windowState.y,
+    width: windowState.width,
+    height: windowState.height,
     minWidth: 800,
     minHeight: 600,
     frame: false,
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
     trafficLightPosition: { x: 12, y: 12 },
-    backgroundColor: '#09090b', // Matches dark mode zinc-950 to prevent launch flash
+    backgroundColor: '#08090b', // Matches dark mode canvas to prevent launch flash
     show: false,
     icon,
     webPreferences: {
@@ -94,6 +157,10 @@ export function createWindow(): BrowserWindow {
       backgroundThrottling: false,
     },
   });
+
+  if (windowState.isMaximized) {
+    mainWindow.maximize();
+  }
 
   // Sanitize userAgent to remove Electron identifiers so Google OAuth works seamlessly in Electron
   const cleanUserAgent = mainWindow.webContents.userAgent
@@ -108,17 +175,35 @@ export function createWindow(): BrowserWindow {
     mainWindow?.focus();
   });
 
+  let saveTimer: NodeJS.Timeout | null = null;
+  const debouncedSave = () => {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        saveWindowState(mainWindow);
+      }
+    }, 300);
+  };
+
+  mainWindow.on('resize', debouncedSave);
+  mainWindow.on('move', debouncedSave);
+
   // Maximize / Unmaximize event broadcasting to renderer
   mainWindow.on('maximize', () => {
+    debouncedSave();
     mainWindow?.webContents.send('window:maximize-change', true);
   });
 
   mainWindow.on('unmaximize', () => {
+    debouncedSave();
     mainWindow?.webContents.send('window:maximize-change', false);
   });
 
   // Intercept window close for minimize-to-tray functionality
   mainWindow.on('close', (event) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      saveWindowState(mainWindow);
+    }
     if (!isQuitting) {
       event.preventDefault();
       mainWindow?.hide();
