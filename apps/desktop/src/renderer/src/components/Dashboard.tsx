@@ -601,7 +601,7 @@ function OfflineDashboard({
                   <Button
                     variant="outline"
                     onClick={() => setShowPresetsModal(true)}
-                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider text-foreground uppercase hover:bg-muted"
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-medium tracking-wide text-foreground uppercase hover:bg-muted"
                   >
                     <Sparkles className="h-4 w-4" />
                     <span>Smart Presets</span>
@@ -614,7 +614,7 @@ function OfflineDashboard({
                       setCustomRoutineIcon("tag");
                       setShowNewRoutineModal(true);
                     }}
-                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider text-foreground uppercase hover:bg-muted"
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-medium tracking-wide text-foreground uppercase hover:bg-muted"
                   >
                     <Plus className="h-4 w-4" />
                     <span>New Destination</span>
@@ -659,14 +659,14 @@ function OfflineDashboard({
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h2 className="text-xl font-black text-foreground sm:text-2xl">
+                        <h2 className="text-lg font-semibold tracking-[-0.025em] text-foreground sm:text-xl">
                           {effectiveRoutine}
                         </h2>
-                        <Badge variant="secondary" className="text-xs font-black">
-                          {items.length} items
-                        </Badge>
+                        <span className="font-mono text-xs font-medium tabular-nums text-muted-foreground">
+                          ({items.length} items)
+                        </span>
                       </div>
-                      <p className="text-xs font-bold text-muted-foreground">
+                      <p className="text-xs font-normal text-muted-foreground tabular-nums">
                         {packedItems} packed &bull; {missingItems} remaining
                       </p>
                     </div>
@@ -684,7 +684,7 @@ function OfflineDashboard({
                           }
                           setShowScheduleModal(true);
                         }}
-                        className="h-8 text-xs font-bold gap-1 cursor-pointer border-border"
+                        className="h-8 text-xs font-medium gap-1 cursor-pointer border-border"
                         title="Schedule Auto-Reset for this Destination"
                       >
                         <Clock className="h-3.5 w-3.5" />
@@ -697,46 +697,46 @@ function OfflineDashboard({
                       <button
                         type="button"
                         onClick={() => setFilter("all")}
-                        className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
+                        className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
                           filter === "all"
                             ? "bg-card text-foreground shadow-xs ring-1 ring-border"
                             : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                         }`}
                       >
                         <span>All</span>
-                        <Badge variant="secondary" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold tabular-nums">
+                        <span className="rounded-md bg-muted px-1.5 py-0 text-[10px] font-medium tabular-nums text-foreground">
                           {items.length}
-                        </Badge>
+                        </span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setFilter("missing")}
-                        className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
+                        className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
                           filter === "missing"
                             ? "bg-card text-destructive shadow-xs ring-1 ring-destructive/30"
                             : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                         }`}
                       >
                         <span>Missing</span>
-                        <Badge variant="destructive" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold tabular-nums">
+                        <span className="rounded-md bg-destructive/15 px-1.5 py-0 text-[10px] font-medium tabular-nums text-destructive">
                           {missingItems}
-                        </Badge>
+                        </span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setFilter("packed")}
-                        className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
+                        className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
                           filter === "packed"
                             ? "bg-card text-primary shadow-xs ring-1 ring-primary/30"
                             : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                         }`}
                       >
                         <span>Packed</span>
-                        <Badge variant="default" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold tabular-nums">
+                        <span className="rounded-md bg-primary/15 px-1.5 py-0 text-[10px] font-medium tabular-nums text-primary">
                           {packedItems}
-                        </Badge>
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -909,7 +909,7 @@ function OfflineDashboard({
                               <div className="min-w-0 flex-1 space-y-0.5">
                                 <div className="flex items-center gap-2">
                                   <h4
-                                    className={`truncate text-sm font-extrabold sm:text-base ${
+                                    className={`truncate text-sm font-semibold sm:text-base ${
                                       item.isPacked ? "text-muted-foreground line-through opacity-80" : "text-foreground"
                                     }`}
                                   >
