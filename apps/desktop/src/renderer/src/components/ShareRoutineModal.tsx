@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Share2, Copy, Check, Link as LinkIcon, Sparkles } from "lucide-react";
+import { encodeRoutinePayload } from "@pocket-check/presets";
 
 interface ShareRoutineModalProps {
   open: boolean;
@@ -46,11 +47,10 @@ export function ShareRoutineModal({
           locationNote: i.locationNote,
         })),
       };
-      const json = JSON.stringify(payload);
-      const encoded = encodeURIComponent(
-        btoa(unescape(encodeURIComponent(json)))
-      );
-      return `${window.location.origin}?import=${encoded}`;
+      const encoded = encodeRoutinePayload(payload);
+      const webBaseUrl =
+        (import.meta as any).env?.VITE_WEB_APP_URL || "https://pocketchecker.my.id";
+      return `${webBaseUrl}?import=${encoded}`;
     } catch {
       return "";
     }

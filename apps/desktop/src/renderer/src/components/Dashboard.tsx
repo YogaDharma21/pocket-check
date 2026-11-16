@@ -44,8 +44,9 @@ import { ImportSharedModal } from "@/components/ImportSharedModal";
 import {
   parseMultiItemInput,
   detectIconForItem,
+  decodeRoutinePayload,
   PresetRoutine,
-} from "@/lib/presets";
+} from "@pocket-check/presets";
 import {
   playCheckSound,
   playUncheckSound,
@@ -125,14 +126,10 @@ function OfflineDashboard({
       const params = new URLSearchParams(window.location.search);
       const importParam = params.get("import");
       if (importParam) {
-        try {
-          const decoded = JSON.parse(
-            decodeURIComponent(escape(atob(decodeURIComponent(importParam))))
-          );
-          if (decoded && decoded.name && Array.isArray(decoded.items)) {
-            return decoded;
-          }
-        } catch {}
+        const decoded = decodeRoutinePayload(importParam);
+        if (decoded && decoded.name && Array.isArray(decoded.items)) {
+          return decoded;
+        }
       }
     }
     return null;
@@ -366,6 +363,8 @@ function OfflineDashboard({
       const itemsToInsert = parsed.map((item) => ({
         name: item.name,
         emoji: selectedTag || item.emoji || detectIconForItem(item.name) || "Tag",
+        quantity: item.quantity,
+        locationNote: item.locationNote,
       }));
       await db.addItemsBatch(userId, effectiveRoutine, itemsToInsert);
       return;
@@ -377,6 +376,8 @@ function OfflineDashboard({
       routine: effectiveRoutine,
       name: single.name,
       emoji: detectedEmoji,
+      quantity: single.quantity,
+      locationNote: single.locationNote,
     });
   };
 

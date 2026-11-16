@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/theme";
 import { renderItemIconHelper } from "./IconPicker";
 import { renderRoutineIconHelper } from "./RoutineSwitcher";
+import { encodeRoutinePayload } from "@pocket-check/presets";
 
 export interface ShareRoutineModalProps {
   visible: boolean;
@@ -50,15 +51,8 @@ export function ShareRoutineModal({
           locationNote: i.locationNote,
         })),
       };
-      // Base64 encoding compatible with Hermes / React Native
-      const jsonStr = JSON.stringify(payload);
-      let encoded = "";
-      try {
-        encoded = btoa(unescape(encodeURIComponent(jsonStr)));
-      } catch {
-        encoded = btoa(jsonStr);
-      }
-      return `https://pocketchecker.my.id?import=${encodeURIComponent(encoded)}`;
+      const encoded = encodeRoutinePayload(payload);
+      return `https://pocketchecker.my.id?import=${encoded}`;
     } catch {
       return `https://pocketchecker.my.id`;
     }
@@ -69,8 +63,8 @@ export function ShareRoutineModal({
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Check out my "${routineName}" packing checklist on PocketChecker: ${shareUrl}`,
-        title: `PocketChecker - Share ${routineName}`,
+        message: `Check out my "${routineName}" packing checklist on PocketCheck: ${shareUrl}`,
+        title: `PocketCheck - Share ${routineName}`,
       });
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);

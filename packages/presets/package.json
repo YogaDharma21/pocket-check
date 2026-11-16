@@ -12,6 +12,7 @@
     "@pocket-check/types": "workspace:*"
   },
   "scripts": {
+    "test": "node --experimental-strip-types --test test/presets.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

@@ -61,8 +61,9 @@ import {
   SMART_PRESETS,
   parseMultiItemInput,
   detectIconForItem,
+  decodeRoutinePayload,
   PresetRoutine,
-} from "@/lib/presets"
+} from "@pocket-check/presets"
 
 interface RestorableItem {
   routine: string
@@ -136,15 +137,9 @@ export function Dashboard() {
       const params = new URLSearchParams(window.location.search)
       const importParam = params.get("import")
       if (importParam) {
-        try {
-          const decoded = JSON.parse(
-            decodeURIComponent(escape(atob(decodeURIComponent(importParam))))
-          )
-          if (decoded && decoded.name && Array.isArray(decoded.items)) {
-            return decoded
-          }
-        } catch {
-          // ignore
+        const decoded = decodeRoutinePayload(importParam)
+        if (decoded && decoded.name && Array.isArray(decoded.items)) {
+          return decoded
         }
       }
     }
@@ -584,6 +579,8 @@ export function Dashboard() {
         name: item.name,
         emoji:
           selectedTag || item.emoji || detectIconForItem(item.name) || "Tag",
+        quantity: item.quantity,
+        locationNote: item.locationNote,
       }))
 
       try {
@@ -598,6 +595,8 @@ export function Dashboard() {
             routine: effectiveRoutine,
             name: item.name,
             emoji: item.emoji,
+            quantity: item.quantity,
+            locationNote: item.locationNote,
           })
         }
       }
@@ -614,6 +613,8 @@ export function Dashboard() {
         routine: effectiveRoutine,
         name: single.name,
         emoji: detectedEmoji,
+        quantity: single.quantity,
+        locationNote: single.locationNote,
       })
     } catch (err) {
       console.error("Failed to add item", err)
