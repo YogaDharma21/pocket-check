@@ -115,7 +115,7 @@ export function DialogTitle({
     <h2
       data-slot="dialog-title"
       className={cn(
-        "text-xl font-black leading-none tracking-tight text-foreground",
+        "text-lg font-semibold leading-none tracking-[-0.025em] text-foreground",
         className
       )}
       {...props}
@@ -130,7 +130,7 @@ export function DialogDescription({
   return (
     <p
       data-slot="dialog-description"
-      className={cn("text-sm font-bold text-muted-foreground", className)}
+      className={cn("text-sm font-normal text-muted-foreground", className)}
       {...props}
     />
   );

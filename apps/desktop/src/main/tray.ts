@@ -42,7 +42,7 @@ export function createTray(window: BrowserWindow): Tray {
   }
 
   tray = new Tray(icon);
-  tray.setToolTip('PocketCheck — Smart Routine Checklist');
+  tray.setToolTip('PocketCheck - Smart Routine Checklist');
 
   const contextMenu = Menu.buildFromTemplate([
     {

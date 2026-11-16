@@ -44,8 +44,9 @@ import { ImportSharedModal } from "@/components/ImportSharedModal";
 import {
   parseMultiItemInput,
   detectIconForItem,
+  decodeRoutinePayload,
   PresetRoutine,
-} from "@/lib/presets";
+} from "@pocket-check/presets";
 import {
   playCheckSound,
   playUncheckSound,
@@ -56,6 +57,8 @@ import {
 import { isOnlineBackendConfigured, useOfflineData } from "@/components/ConvexClientProvider";
 import { OnlineDashboard } from "@/components/OnlineDashboard";
 import { FloatingNavbar } from "@/components/FloatingNavbar";
+import { ShortcutsModal } from "@/components/ShortcutsModal";
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 
 interface RestorableItem {
   routine: string;
@@ -106,6 +109,7 @@ function OfflineDashboard({
   const [showExportModal, setShowExportModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [iconPickerTarget, setIconPickerTarget] = useState<
@@ -125,14 +129,10 @@ function OfflineDashboard({
       const params = new URLSearchParams(window.location.search);
       const importParam = params.get("import");
       if (importParam) {
-        try {
-          const decoded = JSON.parse(
-            decodeURIComponent(escape(atob(decodeURIComponent(importParam))))
-          );
-          if (decoded && decoded.name && Array.isArray(decoded.items)) {
-            return decoded;
-          }
-        } catch {}
+        const decoded = decodeRoutinePayload(importParam);
+        if (decoded && decoded.name && Array.isArray(decoded.items)) {
+          return decoded;
+        }
       }
     }
     return null;
@@ -151,29 +151,35 @@ function OfflineDashboard({
   const effectiveRoutine = activeRoutine || (routines.length > 0 ? routines[0].name : "");
   const currentRoutineObj = routines.find((r) => r.name === effectiveRoutine) || (routines.length > 0 ? routines[0] : null);
 
-  // Auto-Reset Check
+  // Auto-Reset Check across all routines (BUG-02 & BUG-04 / ADJ-05)
   useEffect(() => {
-    if (!currentRoutineObj || !currentRoutineObj.autoResetTime) return;
+    if (routines.length === 0) return;
 
     const checkSchedule = async () => {
       const now = new Date();
       const currentDay = now.getDay();
-      const activeDays = currentRoutineObj.autoResetDays ?? [1, 2, 3, 4, 5];
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const todayStr = `${year}-${month}-${day}`;
 
-      if (!activeDays.includes(currentDay)) return;
+      for (const routine of routines) {
+        if (!routine.autoResetTime) continue;
+        const activeDays = routine.autoResetDays ?? [1, 2, 3, 4, 5];
+        if (!activeDays.includes(currentDay)) continue;
 
-      const [hours, minutes] = currentRoutineObj.autoResetTime!.split(":").map(Number);
-      const scheduledTime = new Date();
-      scheduledTime.setHours(hours, minutes, 0, 0);
+        const [hours, minutes] = routine.autoResetTime.split(":").map(Number);
+        const scheduledTime = new Date();
+        scheduledTime.setHours(hours, minutes, 0, 0);
 
-      const todayStr = now.toISOString().split("T")[0];
-      if (now >= scheduledTime && currentRoutineObj.lastResetDate !== todayStr) {
-        const res = await db.checkAndExecuteAutoReset(userId, {
-          routineId: currentRoutineObj._id,
-          currentDateStr: todayStr,
-        });
-        if (res.reset) {
-          playResetSound();
+        if (now >= scheduledTime && routine.lastResetDate !== todayStr) {
+          const res = await db.checkAndExecuteAutoReset(userId, {
+            routineId: routine._id,
+            currentDateStr: todayStr,
+          });
+          if (res.reset) {
+            playResetSound();
+          }
         }
       }
     };
@@ -181,7 +187,7 @@ function OfflineDashboard({
     checkSchedule();
     const timer = setInterval(checkSchedule, 30000);
     return () => clearInterval(timer);
-  }, [currentRoutineObj, db, userId]);
+  }, [routines, db, userId]);
 
   // Handle tray actions from Electron main process
   useEffect(() => {
@@ -202,6 +208,7 @@ function OfflineDashboard({
     if (filter === "missing") return !item.isPacked;
     return true;
   });
+  const canReorder = filter === "all";
 
   const totalItems = items.length;
   const packedItems = items.filter((i) => i.isPacked).length;
@@ -237,6 +244,34 @@ function OfflineDashboard({
     playResetSound();
     await db.resetItems(userId, effectiveRoutine);
   }, [db, userId, effectiveRoutine]);
+
+  useKeyboardNavigation({
+    totalItems: filteredItems.length,
+    totalRoutines: routines.length,
+    focusedIndex: focusedItemIndex,
+    setFocusedIndex: setFocusedItemIndex,
+    onToggleItem: (idx) => {
+      const item = filteredItems[idx];
+      if (item) void handleToggle(item._id, item.isPacked);
+    },
+    onSelectRoutineIndex: (idx) => {
+      if (routines[idx]) setActiveRoutine(routines[idx].name);
+    },
+    onResetRoutine: () => void handleReset(),
+    onFocusQuickAdd: () => {
+      itemInputRef.current?.focus();
+      itemInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    },
+    onOpenShortcuts: () => setShowShortcutsModal(true),
+    isModalOpen:
+      showPresetsModal ||
+      showExportModal ||
+      showShareModal ||
+      showScheduleModal ||
+      showNewRoutineModal ||
+      showShortcutsModal ||
+      showImportModal,
+  });
 
   const triggerUndo = (message: string, itemsToRestore: RestorableItem[]) => {
     if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
@@ -289,7 +324,7 @@ function OfflineDashboard({
   };
 
   const handleDropItem = async (targetId: string) => {
-    if (!draggedItemId || draggedItemId === targetId) {
+    if (!canReorder || !draggedItemId || draggedItemId === targetId) {
       setDraggedItemId(null);
       setDragOverItemId(null);
       return;
@@ -366,6 +401,8 @@ function OfflineDashboard({
       const itemsToInsert = parsed.map((item) => ({
         name: item.name,
         emoji: selectedTag || item.emoji || detectIconForItem(item.name) || "Tag",
+        quantity: item.quantity,
+        locationNote: item.locationNote,
       }));
       await db.addItemsBatch(userId, effectiveRoutine, itemsToInsert);
       return;
@@ -377,6 +414,8 @@ function OfflineDashboard({
       routine: effectiveRoutine,
       name: single.name,
       emoji: detectedEmoji,
+      quantity: single.quantity,
+      locationNote: single.locationNote,
     });
   };
 
@@ -593,7 +632,7 @@ function OfflineDashboard({
                   <Button
                     variant="outline"
                     onClick={() => setShowPresetsModal(true)}
-                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider text-foreground uppercase hover:bg-muted"
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-medium tracking-wide text-foreground uppercase hover:bg-muted"
                   >
                     <Sparkles className="h-4 w-4" />
                     <span>Smart Presets</span>
@@ -606,7 +645,7 @@ function OfflineDashboard({
                       setCustomRoutineIcon("tag");
                       setShowNewRoutineModal(true);
                     }}
-                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider text-foreground uppercase hover:bg-muted"
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-medium tracking-wide text-foreground uppercase hover:bg-muted"
                   >
                     <Plus className="h-4 w-4" />
                     <span>New Destination</span>
@@ -651,14 +690,14 @@ function OfflineDashboard({
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h2 className="text-xl font-black text-foreground sm:text-2xl">
+                        <h2 className="text-lg font-semibold tracking-[-0.025em] text-foreground sm:text-xl">
                           {effectiveRoutine}
                         </h2>
-                        <Badge variant="secondary" className="text-xs font-black">
-                          {items.length} items
-                        </Badge>
+                        <span className="font-mono text-xs font-medium tabular-nums text-muted-foreground">
+                          ({items.length} items)
+                        </span>
                       </div>
-                      <p className="text-xs font-bold text-muted-foreground">
+                      <p className="text-xs font-normal text-muted-foreground tabular-nums">
                         {packedItems} packed &bull; {missingItems} remaining
                       </p>
                     </div>
@@ -676,7 +715,7 @@ function OfflineDashboard({
                           }
                           setShowScheduleModal(true);
                         }}
-                        className="h-8 text-xs font-bold gap-1 cursor-pointer border-border"
+                        className="h-8 text-xs font-medium gap-1 cursor-pointer border-border"
                         title="Schedule Auto-Reset for this Destination"
                       >
                         <Clock className="h-3.5 w-3.5" />
@@ -689,46 +728,46 @@ function OfflineDashboard({
                       <button
                         type="button"
                         onClick={() => setFilter("all")}
-                        className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
+                        className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
                           filter === "all"
                             ? "bg-card text-foreground shadow-xs ring-1 ring-border"
                             : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                         }`}
                       >
                         <span>All</span>
-                        <Badge variant="secondary" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold tabular-nums">
+                        <span className="rounded-md bg-muted px-1.5 py-0 text-[10px] font-medium tabular-nums text-foreground">
                           {items.length}
-                        </Badge>
+                        </span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setFilter("missing")}
-                        className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
+                        className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
                           filter === "missing"
                             ? "bg-card text-destructive shadow-xs ring-1 ring-destructive/30"
                             : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                         }`}
                       >
                         <span>Missing</span>
-                        <Badge variant="destructive" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold tabular-nums">
+                        <span className="rounded-md bg-destructive/15 px-1.5 py-0 text-[10px] font-medium tabular-nums text-destructive">
                           {missingItems}
-                        </Badge>
+                        </span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setFilter("packed")}
-                        className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
+                        className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
                           filter === "packed"
                             ? "bg-card text-primary shadow-xs ring-1 ring-primary/30"
                             : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                         }`}
                       >
                         <span>Packed</span>
-                        <Badge variant="default" className="rounded-md px-1.5 py-0 text-[10px] font-extrabold tabular-nums">
+                        <span className="rounded-md bg-primary/15 px-1.5 py-0 text-[10px] font-medium tabular-nums text-primary">
                           {packedItems}
-                        </Badge>
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -835,15 +874,16 @@ function OfflineDashboard({
                       return (
                         <Card
                           key={item._id}
-                          draggable
+                          draggable={canReorder}
                           onDragStart={(e) => {
+                            if (!canReorder) return;
                             setDraggedItemId(item._id);
                             e.dataTransfer.effectAllowed = "move";
                             e.dataTransfer.setData("text/plain", item._id);
                           }}
                           onDragOver={(e) => {
                             e.preventDefault();
-                            if (draggedItemId && draggedItemId !== item._id) {
+                            if (canReorder && draggedItemId && draggedItemId !== item._id) {
                               setDragOverItemId(item._id);
                             }
                           }}
@@ -852,6 +892,7 @@ function OfflineDashboard({
                           }}
                           onDrop={(e) => {
                             e.preventDefault();
+                            if (!canReorder) return;
                             void handleDropItem(item._id);
                           }}
                           onDragEnd={() => {
@@ -871,8 +912,12 @@ function OfflineDashboard({
                           <CardContent className="flex flex-row items-center justify-between gap-3 p-3.5">
                             <div className="flex min-w-0 flex-1 items-center gap-3 select-none">
                               <div
-                                className="shrink-0 cursor-grab rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground active:cursor-grabbing"
-                                title="Drag to reorder"
+                                className={`shrink-0 rounded-lg p-1.5 transition-colors ${
+                                  canReorder
+                                    ? "cursor-grab text-muted-foreground hover:bg-muted/80 hover:text-foreground active:cursor-grabbing"
+                                    : "cursor-not-allowed text-muted-foreground/30"
+                                }`}
+                                title={canReorder ? "Drag to reorder" : "Reordering disabled while filtered"}
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <GripVertical className="h-4 w-4" />
@@ -895,7 +940,7 @@ function OfflineDashboard({
                               <div className="min-w-0 flex-1 space-y-0.5">
                                 <div className="flex items-center gap-2">
                                   <h4
-                                    className={`truncate text-sm font-extrabold sm:text-base ${
+                                    className={`truncate text-sm font-semibold sm:text-base ${
                                       item.isPacked ? "text-muted-foreground line-through opacity-80" : "text-foreground"
                                     }`}
                                   >
@@ -986,6 +1031,11 @@ function OfflineDashboard({
         routineName={effectiveRoutine}
         routineIcon={currentRoutineObj?.icon || "tag"}
         items={items}
+      />
+
+      <ShortcutsModal
+        open={showShortcutsModal}
+        onOpenChange={setShowShortcutsModal}
       />
 
       <ImportSharedModal

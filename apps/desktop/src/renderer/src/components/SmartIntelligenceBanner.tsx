@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { renderItemIcon } from "@/components/IconPickerModal";
-import { SMART_PRESETS } from "@/lib/presets";
+import { SMART_PRESETS } from "@pocket-check/presets";
 
 interface ChecklistItemData {
   _id: string;

@@ -10,6 +10,7 @@ interface UseKeyboardNavigationProps {
   onSelectRoutineIndex: (index: number) => void;
   onResetRoutine: () => void;
   onFocusQuickAdd: () => void;
+  onOpenShortcuts?: () => void;
   isModalOpen?: boolean;
 }
 
@@ -22,6 +23,7 @@ export function useKeyboardNavigation({
   onSelectRoutineIndex,
   onResetRoutine,
   onFocusQuickAdd,
+  onOpenShortcuts,
   isModalOpen = false,
 }: UseKeyboardNavigationProps) {
   const { toggleTheme } = useTheme();
@@ -36,6 +38,7 @@ export function useKeyboardNavigation({
     onSelectRoutineIndex,
     onResetRoutine,
     onFocusQuickAdd,
+    onOpenShortcuts,
     isModalOpen,
     toggleTheme,
   });
@@ -49,6 +52,7 @@ export function useKeyboardNavigation({
     onSelectRoutineIndex,
     onResetRoutine,
     onFocusQuickAdd,
+    onOpenShortcuts,
     isModalOpen,
     toggleTheme,
   };
@@ -91,6 +95,13 @@ export function useKeyboardNavigation({
         if (event.key === "Escape") {
           target.blur();
         }
+        return;
+      }
+
+      // Shortcuts cheat sheet: '?'
+      if (event.key === "?" && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        event.preventDefault();
+        propsRef.current.onOpenShortcuts?.();
         return;
       }
 

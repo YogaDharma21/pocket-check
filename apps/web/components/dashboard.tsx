@@ -57,12 +57,15 @@ import { ExportModal } from "@/components/export-modal"
 import { ShareRoutineModal } from "@/components/share-routine-modal"
 import { RoutineScheduleModal } from "@/components/routine-schedule-modal"
 import { ImportSharedModal } from "@/components/import-shared-modal"
+import { ShortcutsModal } from "@/components/shortcuts-modal"
 import {
   SMART_PRESETS,
   parseMultiItemInput,
   detectIconForItem,
+  decodeRoutinePayload,
   PresetRoutine,
-} from "@/lib/presets"
+  SharedRoutinePayload,
+} from "@pocket-check/presets"
 
 interface RestorableItem {
   routine: string
@@ -115,6 +118,7 @@ export function Dashboard() {
   const [showExportModal, setShowExportModal] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search)
@@ -122,29 +126,14 @@ export function Dashboard() {
     }
     return false
   })
-  const [sharedImportData] = useState<{
-    name: string
-    icon: string
-    items: Array<{
-      name: string
-      emoji?: string
-      quantity?: number
-      locationNote?: string
-    }>
-  } | null>(() => {
+  const [sharedImportData] = useState<SharedRoutinePayload | null>(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search)
       const importParam = params.get("import")
       if (importParam) {
-        try {
-          const decoded = JSON.parse(
-            decodeURIComponent(escape(atob(decodeURIComponent(importParam))))
-          )
-          if (decoded && decoded.name && Array.isArray(decoded.items)) {
-            return decoded
-          }
-        } catch {
-          // ignore
+        const decoded = decodeRoutinePayload(importParam)
+        if (decoded && decoded.name && Array.isArray(decoded.items)) {
+          return decoded
         }
       }
     }
@@ -212,35 +201,36 @@ export function Dashboard() {
     void ensureInitialized()
   }, [ensureInitialized])
 
-  // Auto-Reset Time check per routine
+  // Auto-Reset Time check across all routines (BUG-02 & BUG-04 / ADJ-05)
   useEffect(() => {
-    if (!currentRoutineObj || !currentRoutineObj.autoResetTime) return
+    if (routinesList.length === 0) return
 
     const checkSchedule = async () => {
       const now = new Date()
       const currentDay = now.getDay()
-      const activeDays = currentRoutineObj.autoResetDays ?? [1, 2, 3, 4, 5]
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, "0")
+      const day = String(now.getDate()).padStart(2, "0")
+      const todayStr = `${year}-${month}-${day}`
 
-      if (!activeDays.includes(currentDay)) return
+      for (const routine of routinesList) {
+        if (!routine.autoResetTime) continue
+        const activeDays = routine.autoResetDays ?? [1, 2, 3, 4, 5]
+        if (!activeDays.includes(currentDay)) continue
 
-      const [hours, minutes] = currentRoutineObj
-        .autoResetTime!.split(":")
-        .map(Number)
-      const scheduledTime = new Date()
-      scheduledTime.setHours(hours, minutes, 0, 0)
+        const [hours, minutes] = routine.autoResetTime.split(":").map(Number)
+        const scheduledTime = new Date()
+        scheduledTime.setHours(hours, minutes, 0, 0)
 
-      const todayStr = now.toISOString().split("T")[0]
-      if (
-        now >= scheduledTime &&
-        currentRoutineObj.lastResetDate !== todayStr
-      ) {
-        try {
-          await checkAndExecuteAutoReset({
-            routineId: currentRoutineObj._id,
-            currentDateStr: todayStr,
-          })
-        } catch (err) {
-          console.warn("Auto-reset execution failed", err)
+        if (now >= scheduledTime && routine.lastResetDate !== todayStr) {
+          try {
+            await checkAndExecuteAutoReset({
+              routineId: routine._id,
+              currentDateStr: todayStr,
+            })
+          } catch (err) {
+            console.warn("Auto-reset execution failed", err)
+          }
         }
       }
     }
@@ -248,7 +238,7 @@ export function Dashboard() {
     void checkSchedule()
     const timer = setInterval(checkSchedule, 30000)
     return () => clearInterval(timer)
-  }, [currentRoutineObj, checkAndExecuteAutoReset])
+  }, [routinesList, checkAndExecuteAutoReset])
 
   // Filtered items list
   const filteredItems = items.filter((item) => {
@@ -256,6 +246,7 @@ export function Dashboard() {
     if (filter === "missing") return !item.isPacked
     return true
   })
+  const canReorder = filter === "all"
 
   // Handlers
   const handleToggle = useCallback(
@@ -340,6 +331,12 @@ export function Dashboard() {
       if (!isNaN(num) && num >= 1 && num <= routinesList.length) {
         e.preventDefault()
         setSelectedRoutine(routinesList[num - 1].name)
+      }
+
+      // ?: Open keyboard shortcuts cheat sheet (ADJ-08)
+      if (e.key === "?" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault()
+        setShowShortcutsModal(true)
       }
     }
 
@@ -438,7 +435,7 @@ export function Dashboard() {
   }
 
   const handleDropItem = async (targetId: Id<"items">) => {
-    if (!draggedItemId || draggedItemId === targetId) {
+    if (!canReorder || !draggedItemId || draggedItemId === targetId) {
       setDraggedItemId(null)
       setDragOverItemId(null)
       return
@@ -584,6 +581,8 @@ export function Dashboard() {
         name: item.name,
         emoji:
           selectedTag || item.emoji || detectIconForItem(item.name) || "Tag",
+        quantity: item.quantity,
+        locationNote: item.locationNote,
       }))
 
       try {
@@ -598,6 +597,8 @@ export function Dashboard() {
             routine: effectiveRoutine,
             name: item.name,
             emoji: item.emoji,
+            quantity: item.quantity,
+            locationNote: item.locationNote,
           })
         }
       }
@@ -614,6 +615,8 @@ export function Dashboard() {
         routine: effectiveRoutine,
         name: single.name,
         emoji: detectedEmoji,
+        quantity: single.quantity,
+        locationNote: single.locationNote,
       })
     } catch (err) {
       console.error("Failed to add item", err)
@@ -643,7 +646,7 @@ export function Dashboard() {
               />
             </div>
             <div>
-              <h1 className="text-base leading-none font-black tracking-tight text-foreground sm:text-xl md:text-2xl">
+              <h1 className="text-base leading-none font-bold tracking-tight text-foreground sm:text-xl md:text-2xl">
                 POCKET<span className="text-primary">CHECKER</span>
               </h1>
             </div>
@@ -723,21 +726,16 @@ export function Dashboard() {
                       </div>
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-black tracking-wider text-muted-foreground uppercase">
-                            Pocket Status
+                          <span className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                            Progress
                           </span>
-                          <Badge
-                            variant={
-                              percentage === 100 ? "default" : "secondary"
-                            }
-                            className="px-2 py-0.5 text-[10px] font-black tabular-nums"
-                          >
-                            {Math.round(percentage)}% Packed
-                          </Badge>
+                          <span className="font-mono text-xs font-medium tabular-nums text-foreground">
+                            {Math.round(percentage)}%
+                          </span>
                         </div>
                         <h2
                           id="status-headline"
-                          className="text-base leading-snug font-extrabold tracking-tight text-card-foreground sm:text-lg"
+                          className="text-base leading-snug font-semibold tracking-[-0.015em] text-card-foreground sm:text-lg"
                         >
                           {headline}
                         </h2>
@@ -746,9 +744,9 @@ export function Dashboard() {
 
                     <div className="space-y-2">
                       <Progress value={percentage} className="h-2.5" />
-                      <div className="flex items-center justify-between text-xs font-bold text-muted-foreground tabular-nums">
+                      <div className="flex items-center justify-between text-xs font-medium text-muted-foreground tabular-nums">
                         <span id="progress-text">
-                          <strong className="font-black text-foreground">
+                          <strong className="font-semibold text-foreground">
                             {packedItems}
                           </strong>{" "}
                           of {totalItems} items packed
@@ -764,7 +762,7 @@ export function Dashboard() {
                         size="sm"
                         disabled={!effectiveRoutine || totalItems === 0}
                         onClick={() => void handleReset()}
-                        className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-primary uppercase hover:text-primary/80 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-medium tracking-wide text-primary uppercase hover:text-primary/80 disabled:cursor-not-allowed disabled:opacity-40"
                         title="Reset items in this routine to Missing position (Shift+U)"
                       >
                         <RotateCcw className="h-3.5 w-3.5" /> Uncheck All
@@ -774,7 +772,7 @@ export function Dashboard() {
                         size="sm"
                         disabled={!effectiveRoutine || totalItems === 0}
                         onClick={() => setShowDeleteAllConfirm(true)}
-                        className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-black tracking-wider text-destructive uppercase hover:text-destructive/80 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="h-8 cursor-pointer gap-1.5 rounded-lg px-2.5 text-[11px] font-medium tracking-wide text-destructive uppercase hover:text-destructive/80 disabled:cursor-not-allowed disabled:opacity-40"
                         title="Delete all created items in this routine"
                       >
                         <Trash2 className="h-3.5 w-3.5" /> Clear List
@@ -789,19 +787,19 @@ export function Dashboard() {
             <Card className="border-border shadow-xs">
               <CardHeader className="flex flex-row items-center justify-between p-4 pb-3">
                 <div className="space-y-0.5">
-                  <h3 className="text-xs font-black tracking-wider text-muted-foreground uppercase">
+                  <h3 className="text-[10px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
                     Destinations
                   </h3>
-                  <p className="text-sm font-black text-foreground">
+                  <p className="text-sm font-semibold text-foreground">
                     Where are you heading?
                   </p>
                 </div>
                 {isRoutinesLoading ? (
                   <Skeleton className="h-5 w-12 rounded-full" />
                 ) : (
-                  <Badge variant="outline" className="text-xs font-black tabular-nums">
+                  <span className="font-mono text-xs font-medium tabular-nums text-muted-foreground">
                     {routinesList.length} lists
-                  </Badge>
+                  </span>
                 )}
               </CardHeader>
               <CardContent className="space-y-2 p-3 pt-0">
@@ -835,8 +833,8 @@ export function Dashboard() {
                             }}
                             className={`group flex cursor-pointer items-center justify-between rounded-2xl border p-2.5 transition-all ${
                               isActive
-                                ? "border-primary bg-primary font-black text-primary-foreground shadow-xs"
-                                : "border-border bg-card font-bold text-foreground hover:bg-muted/60"
+                                ? "border-primary bg-primary font-semibold text-primary-foreground shadow-xs"
+                                : "border-border bg-card font-medium text-foreground hover:bg-muted/60"
                             }`}
                           >
                             <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -956,7 +954,7 @@ export function Dashboard() {
                   <Button
                     variant="outline"
                     onClick={() => setShowPresetsModal(true)}
-                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider text-primary uppercase hover:bg-primary/10"
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-medium tracking-wide text-primary uppercase hover:bg-primary/10"
                     title="Choose from smart presets (Campus, Work, Travel)"
                   >
                     <Sparkles className="h-4 w-4" />
@@ -970,7 +968,7 @@ export function Dashboard() {
                       setCustomRoutineIcon("tag")
                       setShowNewRoutineModal(true)
                     }}
-                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-black tracking-wider uppercase hover:bg-accent hover:text-foreground"
+                    className="h-10 w-full cursor-pointer justify-center gap-2 rounded-lg text-xs font-medium tracking-wide uppercase hover:bg-accent hover:text-foreground"
                   >
                     <Plus className="h-4 w-4" />
                     <span>New Destination</span>
@@ -1041,7 +1039,7 @@ export function Dashboard() {
                   <div className="flex flex-wrap items-center justify-center gap-3">
                     <Button
                       onClick={() => setShowPresetsModal(true)}
-                      className="h-10 cursor-pointer bg-primary px-5 text-xs font-black tracking-wider text-primary-foreground uppercase hover:bg-primary/90"
+                      className="h-10 cursor-pointer bg-primary px-5 text-xs font-medium tracking-wide text-primary-foreground uppercase hover:bg-primary/90"
                     >
                       <Sparkles className="mr-1.5 h-4 w-4" />
                       Browse Smart Presets
@@ -1053,7 +1051,7 @@ export function Dashboard() {
                         setCustomRoutineIcon("tag")
                         setShowNewRoutineModal(true)
                       }}
-                      className="h-10 cursor-pointer px-5 text-xs font-black tracking-wider uppercase"
+                      className="h-10 cursor-pointer px-5 text-xs font-medium tracking-wide uppercase"
                     >
                       <Plus className="mr-1.5 h-4 w-4" />
                       Create Custom Destination
@@ -1073,17 +1071,14 @@ export function Dashboard() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <h2 className="truncate text-lg font-black text-foreground sm:text-2xl">
+                        <h2 className="truncate text-lg font-semibold tracking-[-0.025em] text-foreground sm:text-xl">
                           {effectiveRoutine}
                         </h2>
-                        <Badge
-                          variant="secondary"
-                          className="shrink-0 text-xs font-black"
-                        >
-                          {items.length} items
-                        </Badge>
+                        <span className="shrink-0 font-mono text-xs font-medium tabular-nums text-muted-foreground">
+                          ({items.length} items)
+                        </span>
                       </div>
-                      <p className="text-xs font-bold text-muted-foreground">
+                      <p className="text-xs font-normal text-muted-foreground tabular-nums">
                         {packedItems} packed &bull; {missingItems} remaining
                       </p>
                     </div>
@@ -1094,55 +1089,46 @@ export function Dashboard() {
                     <button
                       type="button"
                       onClick={() => setFilter("all")}
-                      className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
+                      className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
                         filter === "all"
                           ? "bg-card text-foreground shadow-xs ring-1 ring-border"
                           : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                       }`}
                     >
                       <span>All</span>
-                      <Badge
-                        variant="secondary"
-                        className="rounded-md px-1.5 py-0 text-[10px] font-extrabold tabular-nums"
-                      >
+                      <span className="rounded-md bg-muted px-1.5 py-0 text-[10px] font-medium tabular-nums text-foreground">
                         {items.length}
-                      </Badge>
+                      </span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setFilter("missing")}
-                      className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
+                      className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
                         filter === "missing"
                           ? "bg-card text-destructive shadow-xs ring-1 ring-destructive/30"
                           : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                       }`}
                     >
                       <span>Missing</span>
-                      <Badge
-                        variant="destructive"
-                        className="rounded-md px-1.5 py-0 text-[10px] font-extrabold tabular-nums"
-                      >
+                      <span className="rounded-md bg-destructive/15 px-1.5 py-0 text-[10px] font-medium tabular-nums text-destructive">
                         {missingItems}
-                      </Badge>
+                      </span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setFilter("packed")}
-                      className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-black transition-all ${
+                      className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
                         filter === "packed"
                           ? "bg-card text-primary shadow-xs ring-1 ring-primary/30"
                           : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                       }`}
                     >
                       <span>Packed</span>
-                      <Badge
-                        variant="default"
-                        className="rounded-md px-1.5 py-0 text-[10px] font-extrabold tabular-nums"
-                      >
+                      <span className="rounded-md bg-primary/15 px-1.5 py-0 text-[10px] font-medium tabular-nums text-primary">
                         {packedItems}
-                      </Badge>
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -1327,8 +1313,9 @@ export function Dashboard() {
                           return (
                             <Card
                               key={item._id}
-                              draggable
+                              draggable={canReorder}
                               onDragStart={(e) => {
+                                if (!canReorder) return
                                 setDraggedItemId(item._id)
                                 e.dataTransfer.effectAllowed = "move"
                                 e.dataTransfer.setData("text/plain", item._id)
@@ -1336,6 +1323,7 @@ export function Dashboard() {
                               onDragOver={(e) => {
                                 e.preventDefault()
                                 if (
+                                  canReorder &&
                                   draggedItemId &&
                                   draggedItemId !== item._id
                                 ) {
@@ -1349,6 +1337,7 @@ export function Dashboard() {
                               }}
                               onDrop={(e) => {
                                 e.preventDefault()
+                                if (!canReorder) return
                                 void handleDropItem(item._id)
                               }}
                               onDragEnd={() => {
@@ -1381,8 +1370,16 @@ export function Dashboard() {
                                 <div className="flex min-w-0 flex-1 items-center gap-3 select-none">
                                   {/* Drag Handle */}
                                   <div
-                                    className="shrink-0 cursor-grab rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground active:cursor-grabbing"
-                                    title="Drag to reorder"
+                                    className={`shrink-0 rounded-lg p-1.5 transition-colors ${
+                                      canReorder
+                                        ? "cursor-grab text-muted-foreground hover:bg-muted/80 hover:text-foreground active:cursor-grabbing"
+                                        : "cursor-not-allowed text-muted-foreground/30"
+                                    }`}
+                                    title={
+                                      canReorder
+                                        ? "Drag to reorder"
+                                        : "Reordering disabled while filtered"
+                                    }
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <GripVertical className="h-4 w-4" />
@@ -1405,7 +1402,7 @@ export function Dashboard() {
                                   <div className="min-w-0 flex-1 space-y-0.5 select-none">
                                     <div className="flex items-center gap-2">
                                       <p
-                                        className={`item-name flex items-center truncate text-base font-extrabold select-none sm:text-lg ${
+                                        className={`item-name flex items-center truncate text-base font-semibold select-none sm:text-lg ${
                                           item.isPacked
                                             ? "text-muted-foreground line-through decoration-muted-foreground decoration-2"
                                             : "text-foreground"
@@ -2157,6 +2154,12 @@ export function Dashboard() {
             setEditModalIconTag(key)
           }
         }}
+      />
+
+      {/* Shortcuts cheat sheet modal (ADJ-08) */}
+      <ShortcutsModal
+        open={showShortcutsModal}
+        onOpenChange={setShowShortcutsModal}
       />
 
       {/* Floating quick-access navbar */}

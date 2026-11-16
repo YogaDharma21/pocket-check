@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/theme";
-import { SMART_PRESETS, PresetRoutine } from "../lib/presets";
+import { SMART_PRESETS, PresetRoutine } from "@pocket-check/presets";
 import { renderItemIconHelper } from "./IconPicker";
 import { renderRoutineIconHelper } from "./RoutineSwitcher";
 

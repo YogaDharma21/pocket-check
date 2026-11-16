@@ -10,7 +10,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/theme";
 import { renderItemIconHelper } from "./IconPicker";
-import { parseMultiItemInput, detectIconForItem } from "../lib/presets";
+import { parseMultiItemInput, detectIconForItem } from "@pocket-check/presets";
 
 interface AddItemFormProps {
   onAddItem: (name: string, iconKey?: string) => void;

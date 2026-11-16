@@ -9,11 +9,19 @@ import {
   Loader2,
   Sparkles,
 } from "lucide-react";
-import { WeatherData, fetchDailyWeather, reverseGeocode } from "@/lib/weather";
+import {
+  WeatherData,
+  fetchDailyWeather,
+  reverseGeocode,
+  isWeatherCacheFresh,
+  getRoundedCoordsKey,
+  type WeatherCacheEntry,
+} from "@pocket-check/weather";
 import { Button } from "@/components/ui/button";
 import { useDesktopNotifications } from "@/hooks/useDesktopNotifications";
 
 const LOCATION_STORAGE_KEY = "pocket_check_user_location";
+const WEATHER_CACHE_KEY = "pocket_check_weather_cache_v1";
 
 interface WeatherAlertBannerProps {
   currentRoutineItems: Array<{ name: string; isPacked: boolean }>;
@@ -49,24 +57,47 @@ export function WeatherAlertBanner({
     [sendNotification]
   );
 
-  // On mount: check if the user previously saved their location
+  // On mount: hydrate from persistent weather cache immediately (SWR), then revalidate if needed
   React.useEffect(() => {
     let isMounted = true;
 
     try {
-      const stored = localStorage.getItem(LOCATION_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
+      const storedLocation = localStorage.getItem(LOCATION_STORAGE_KEY);
+      const storedCache = localStorage.getItem(WEATHER_CACHE_KEY);
+
+      let cacheFresh = false;
+      if (storedCache) {
+        const parsedCache: WeatherCacheEntry = JSON.parse(storedCache);
+        if (parsedCache && parsedCache.data) {
+          setWeather(parsedCache.data);
+          setHasLocation(true);
+          triggerNotification(parsedCache.data);
+          cacheFresh = isWeatherCacheFresh(parsedCache);
+        }
+      }
+
+      if (storedLocation && !cacheFresh) {
+        const parsedLoc = JSON.parse(storedLocation);
         if (
-          typeof parsed.lat === "number" &&
-          typeof parsed.lon === "number"
+          typeof parsedLoc.lat === "number" &&
+          typeof parsedLoc.lon === "number"
         ) {
-          fetchDailyWeather(parsed.lat, parsed.lon, parsed.locationName).then(
+          fetchDailyWeather(parsedLoc.lat, parsedLoc.lon, parsedLoc.locationName).then(
             (data) => {
               if (isMounted && data) {
                 setWeather(data);
                 setHasLocation(true);
                 triggerNotification(data);
+                try {
+                  const newEntry: WeatherCacheEntry = {
+                    data,
+                    timestamp: Date.now(),
+                    coordsKey: getRoundedCoordsKey(parsedLoc.lat, parsedLoc.lon),
+                  };
+                  localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(newEntry));
+                } catch {
+                  // Ignore localStorage errors
+                }
               }
             }
           );
@@ -106,6 +137,12 @@ export function WeatherAlertBanner({
               LOCATION_STORAGE_KEY,
               JSON.stringify({ lat, lon, locationName: locName })
             );
+            const newEntry: WeatherCacheEntry = {
+              data,
+              timestamp: Date.now(),
+              coordsKey: getRoundedCoordsKey(lat, lon),
+            };
+            localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(newEntry));
           } catch {
             // Ignore localStorage errors
           }

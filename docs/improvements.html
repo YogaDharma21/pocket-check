@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PocketCheck - Improvement &amp; Refactoring Matrix</title>
+  <style>
+    :root {
+      --background: #08090b;
+      --foreground: #f4f4f2;
+      --card: #121316;
+      --card-foreground: #f4f4f2;
+      --surface: #17181c;
+      --surface-foreground: #f4f4f2;
+      --surface-inset: rgba(255, 255, 255, 0.035);
+      --popover: #15161a;
+      --popover-foreground: #f4f4f2;
+      --primary: #f2f1ec;
+      --primary-foreground: #0a0a0b;
+      --secondary: #17181c;
+      --secondary-foreground: #f4f4f2;
+      --muted: #17181c;
+      --muted-foreground: #8a8c92;
+      --subtle-foreground: #5f6065;
+      --border: rgba(255, 255, 255, 0.07);
+      --border-subtle: rgba(255, 255, 255, 0.04);
+      --emerald: #a9bfa9;
+      --emerald-bg: rgba(169, 191, 169, 0.12);
+      --emerald-border: rgba(169, 191, 169, 0.25);
+      --crimson: #c99a90;
+      --crimson-bg: rgba(194, 133, 123, 0.13);
+      --crimson-border: rgba(194, 133, 123, 0.25);
+      --amber: #d2bd93;
+      --amber-bg: rgba(210, 189, 147, 0.12);
+      --amber-border: rgba(210, 189, 147, 0.25);
+      --blue: #a6b0bd;
+      --blue-bg: rgba(166, 176, 189, 0.12);
+      --blue-border: rgba(166, 176, 189, 0.25);
+      --font-sans: -apple-system, BlinkMacSystemFont, "Geist", "Inter", "Segoe UI", Roboto, sans-serif;
+      --font-mono: "Geist Mono", "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+      --shadow-surface: 0 28px 56px -40px rgba(0, 0, 0, 0.9);
+      --radius-card: 24px;
+      --radius-inset: 16px;
+      --radius-btn: 12px;
+      --radius-pill: 9999px;
+      --radius-micro: 2px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      border-color: var(--border);
+    }
+
+    body {
+      background-color: var(--background);
+      color: var(--foreground);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      padding: 32px 24px 96px 24px;
+    }
+
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+      font-family: var(--font-mono);
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 32px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--surface-inset);
+      border: 1px solid var(--border);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      color: var(--foreground);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-surface);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 120px;
+      transition: all 0.3s ease-out;
+    }
+
+    .stat-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted-foreground);
+    }
+
+    .stat-icon {
+      padding: 6px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stat-value {
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      color: var(--foreground);
+      margin: 4px 0;
+    }
+
+    .stat-sub {
+      font-size: 11px;
+      color: var(--muted-foreground);
+    }
+
+    .controls-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-surface);
+      padding: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .filter-tabs {
+      display: inline-flex;
+      align-items: center;
+      background: var(--surface-inset);
+      padding: 4px;
+      border-radius: var(--radius-pill);
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .filter-tab {
+      background: transparent;
+      border: none;
+      color: var(--muted-foreground);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease-out;
+    }
+
+    .filter-tab:hover {
+      color: var(--foreground);
+    }
+
+    .filter-tab.active {
+      background: var(--primary);
+      color: var(--primary-foreground);
+      font-weight: 600;
+    }
+
+    .filter-tab .badge {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      background: rgba(0, 0, 0, 0.15);
+      color: inherit;
+    }
+
+    .filter-tab.active .badge {
+      background: rgba(0, 0, 0, 0.2);
+      color: var(--primary-foreground);
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 44px;
+      background: var(--surface-inset);
+      border: none;
+      border-radius: var(--radius-pill);
+      color: var(--foreground);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      padding: 0 16px 0 42px;
+      outline: none;
+      transition: all 0.3s ease-out;
+    }
+
+    .search-input:focus {
+      box-shadow: 0 0 0 1px var(--ring);
+    }
+
+    .search-input::placeholder {
+      color: var(--subtle-foreground);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted-foreground);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .secondary-filters {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .filter-subgroup {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .filter-group-label {
+      font-size: 11px;
+      color: var(--muted-foreground);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-right: 4px;
+    }
+
+    .chip-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted-foreground);
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease-out;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chip-btn:hover {
+      color: var(--foreground);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .chip-btn.active {
+      background: var(--surface-inset);
+      color: var(--foreground);
+      border-color: var(--foreground);
+      font-weight: 600;
+    }
+
+    .chip-btn .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .chip-btn.status-working.active {
+      background: var(--amber-bg);
+      color: var(--amber);
+      border-color: var(--amber-border);
+    }
+
+    .chip-btn.status-done.active {
+      background: var(--emerald-bg);
+      color: var(--emerald);
+      border-color: var(--emerald-border);
+    }
+
+    .chip-btn.status-rejected.active {
+      background: var(--crimson-bg);
+      color: var(--crimson);
+      border-color: var(--crimson-border);
+    }
+
+    .select-input {
+      background: var(--surface-inset);
+      border: 1px solid var(--border);
+      color: var(--foreground);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
+      gap: 16px;
+    }
+
+    .item-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-surface);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.3s ease-out;
+      position: relative;
+    }
+
+    .item-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .item-card.is-working {
+      border-color: rgba(210, 189, 147, 0.4);
+    }
+
+    .item-card.is-done {
+      border-color: rgba(169, 191, 169, 0.4);
+    }
+
+    .item-card.is-rejected {
+      opacity: 0.55;
+      border-color: rgba(194, 133, 123, 0.25);
+    }
+
+    .item-card.is-rejected .item-title {
+      text-decoration: line-through;
+      text-decoration-color: var(--subtle-foreground);
+      color: var(--muted-foreground);
+    }
+
+    .item-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .tag-cluster {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .category-tag {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .category-tag.feature {
+      background: var(--emerald-bg);
+      color: var(--emerald);
+      border: 1px solid var(--emerald-border);
+    }
+
+    .category-tag.adjustment {
+      background: var(--amber-bg);
+      color: var(--amber);
+      border: 1px solid var(--amber-border);
+    }
+
+    .category-tag.bug {
+      background: var(--crimson-bg);
+      color: var(--crimson);
+      border: 1px solid var(--crimson-border);
+    }
+
+    .subsystem-tag {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--blue);
+      background: var(--blue-bg);
+      border: 1px solid var(--blue-border);
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .decision-pill {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .decision-pill.working {
+      background: var(--amber-bg);
+      color: var(--amber);
+      border: 1px solid var(--amber-border);
+    }
+
+    .decision-pill.done {
+      background: var(--emerald-bg);
+      color: var(--emerald);
+      border: 1px solid var(--emerald-border);
+    }
+
+    .decision-pill.rejected {
+      background: var(--crimson-bg);
+      color: var(--crimson);
+      border: 1px solid var(--crimson-border);
+    }
+
+    .score-badge {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+
+    .score-numeric {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--foreground);
+    }
+
+    .score-meter {
+      width: 48px;
+      height: 4px;
+      background: var(--surface-inset);
+      border-radius: var(--radius-micro);
+      overflow: hidden;
+    }
+
+    .score-bar {
+      height: 100%;
+      border-radius: var(--radius-micro);
+      transition: width 0.3s ease-out;
+    }
+
+    .item-title {
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: -0.015em;
+      color: var(--foreground);
+      margin-bottom: 8px;
+      line-height: 1.4;
+      transition: all 0.2s ease-out;
+    }
+
+    .item-desc {
+      font-size: 13px;
+      color: var(--muted-foreground);
+      line-height: 1.5;
+      margin-bottom: 16px;
+      flex-grow: 1;
+    }
+
+    .item-middle {
+      margin-bottom: 14px;
+    }
+
+    .decision-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--surface-inset);
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+
+    .decision-bar-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--subtle-foreground);
+    }
+
+    .decision-action-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .action-btn {
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 8px;
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted-foreground);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease-out;
+    }
+
+    .action-btn:hover {
+      color: var(--foreground);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .action-btn:active {
+      transform: scale(0.95);
+    }
+
+    .action-btn.active-working {
+      background: var(--amber-bg);
+      color: var(--amber);
+      border-color: var(--amber-border);
+      font-weight: 600;
+    }
+
+    .action-btn.active-done {
+      background: var(--emerald-bg);
+      color: var(--emerald);
+      border-color: var(--emerald-border);
+      font-weight: 600;
+    }
+
+    .action-btn.active-rejected {
+      background: var(--crimson-bg);
+      color: var(--crimson);
+      border-color: var(--crimson-border);
+      font-weight: 600;
+    }
+
+    .item-footer {
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .seam-label {
+      font-size: 11px;
+      color: var(--subtle-foreground);
+      font-family: var(--font-mono);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 200px;
+    }
+
+    .footer-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .copy-task-btn {
+      height: 24px;
+      padding: 0 8px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: var(--surface-inset);
+      color: var(--muted-foreground);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease-out;
+    }
+
+    .copy-task-btn:hover {
+      color: var(--foreground);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .copy-task-btn:active {
+      transform: scale(0.95);
+    }
+
+    .copy-task-btn.copied {
+      background: var(--emerald-bg);
+      color: var(--emerald);
+      border-color: var(--emerald-border);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--card);
+      color: var(--foreground);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.9);
+      padding: 10px 20px;
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 9999;
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--emerald);
+    }
+
+    .item-id {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--subtle-foreground);
+    }
+
+    .empty-state {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--muted-foreground);
+      font-size: 14px;
+      grid-column: 1 / -1;
+    }
+
+    .btn {
+      height: 40px;
+      padding: 0 16px;
+      border-radius: var(--radius-btn);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease-out;
+    }
+
+    .btn:active {
+      transform: scale(0.95);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--foreground);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-inset);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .count-indicator {
+      font-size: 12px;
+      color: var(--muted-foreground);
+      font-family: var(--font-mono);
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 16px 12px 64px 12px;
+      }
+      .items-grid {
+        grid-template-columns: 1fr;
+      }
+      .header-top {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-top">
+        <div class="brand-group">
+          <div class="brand-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+              <path d="m3.3 7 8.7 5 8.7-5"/>
+              <path d="M12 22V12"/>
+            </svg>
+          </div>
+          <div>
+            <h1>PocketCheck Improvement Matrix</h1>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <span class="count-indicator" id="visibleCounter">Showing 45 of 45 proposals</span>
+          <button class="btn btn-secondary" onclick="exportMarkdownSummary()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Export List
+          </button>
+          <button class="btn btn-secondary" onclick="clearAllStatuses()" title="Reset all decisions to Backlog">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <span class="stat-label">Total Backlog</span>
+            <div class="stat-icon" style="background: var(--blue-bg); color: var(--blue);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+            </div>
+          </div>
+          <div class="stat-value tabular-nums" id="statTotal">45</div>
+          <div class="stat-sub">Comprehensive architectural tickets</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <span class="stat-label">Working On</span>
+            <div class="stat-icon" style="background: var(--amber-bg); color: var(--amber);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+          </div>
+          <div class="stat-value tabular-nums" id="statWorking" style="color: var(--amber);">0</div>
+          <div class="stat-sub">Active implementation in progress</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <span class="stat-label">Done</span>
+            <div class="stat-icon" style="background: var(--emerald-bg); color: var(--emerald);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
+          <div class="stat-value tabular-nums" id="statDone" style="color: var(--emerald);">0</div>
+          <div class="stat-sub">Completed and verified items</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <span class="stat-label">Rejected</span>
+            <div class="stat-icon" style="background: var(--crimson-bg); color: var(--crimson);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+          </div>
+          <div class="stat-value tabular-nums" id="statRejected" style="color: var(--crimson);">0</div>
+          <div class="stat-sub">Dismissed or out of scope</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <span class="stat-label">Pending Backlog</span>
+            <div class="stat-icon" style="background: var(--surface-inset); color: var(--subtle-foreground);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </div>
+          </div>
+          <div class="stat-value tabular-nums" id="statPending">45</div>
+          <div class="stat-sub">Awaiting prioritization</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="controls-panel">
+      <div class="controls-row">
+        <div class="filter-tabs">
+          <button class="filter-tab active" data-category="all" onclick="setCategoryFilter('all')">
+            All <span class="badge" id="pillAllCount">45</span>
+          </button>
+          <button class="filter-tab" data-category="feature" onclick="setCategoryFilter('feature')">
+            New Features <span class="badge" id="pillFeatureCount">15</span>
+          </button>
+          <button class="filter-tab" data-category="adjustment" onclick="setCategoryFilter('adjustment')">
+            Adjustments <span class="badge" id="pillAdjustmentCount">15</span>
+          </button>
+          <button class="filter-tab" data-category="bug" onclick="setCategoryFilter('bug')">
+            Bug Fixes <span class="badge" id="pillBugCount">15</span>
+          </button>
+        </div>
+
+        <div class="search-box">
+          <span class="search-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </span>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search by title, description, seam..." oninput="handleSearch()">
+        </div>
+      </div>
+
+      <div class="secondary-filters">
+        <div class="filter-subgroup">
+          <span class="filter-group-label">Status:</span>
+          <button class="chip-btn active" data-status="all" onclick="setStatusFilter('all')">All</button>
+          <button class="chip-btn status-working" data-status="working" onclick="setStatusFilter('working')">
+            <span class="dot" style="background: var(--amber);"></span>
+            Working (<span id="filterCountWorking">0</span>)
+          </button>
+          <button class="chip-btn status-done" data-status="done" onclick="setStatusFilter('done')">
+            <span class="dot" style="background: var(--emerald);"></span>
+            Done (<span id="filterCountDone">0</span>)
+          </button>
+          <button class="chip-btn status-rejected" data-status="rejected" onclick="setStatusFilter('rejected')">
+            <span class="dot" style="background: var(--crimson);"></span>
+            Rejected (<span id="filterCountRejected">0</span>)
+          </button>
+          <button class="chip-btn" data-status="backlog" onclick="setStatusFilter('backlog')">
+            Backlog (<span id="filterCountBacklog">45</span>)
+          </button>
+        </div>
+
+        <div class="filter-subgroup">
+          <span class="filter-group-label">Score:</span>
+          <button class="chip-btn active" data-score="all" onclick="setScoreFilter('all')">All</button>
+          <button class="chip-btn" data-score="10" onclick="setScoreFilter('10')">10/10</button>
+          <button class="chip-btn" data-score="9" onclick="setScoreFilter('9')">9/10</button>
+          <button class="chip-btn" data-score="8" onclick="setScoreFilter('8')">8/10</button>
+          <button class="chip-btn" data-score="7" onclick="setScoreFilter('7')">7/10</button>
+        </div>
+
+        <div class="filter-subgroup">
+          <span class="filter-group-label">Sort:</span>
+          <select id="sortSelect" class="select-input" onchange="handleSort()">
+            <option value="score-desc">Score (Highest First)</option>
+            <option value="score-asc">Score (Lowest First)</option>
+            <option value="id-asc">Ticket ID</option>
+            <option value="title-asc">Title (A-Z)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <main class="items-grid" id="itemsGrid">
+      <!-- Items dynamically populated via JavaScript -->
+    </main>
+  </div>
+
+  <div id="toast" class="toast">
+    <span class="toast-dot"></span>
+    <span id="toastMsg">Task prompt copied</span>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "pocketcheck_proposals_status_v1";
+
+    const proposals = [
+      // 1. NEW FEATURES (15 items)
+      {
+        id: "FEAT-01",
+        category: "feature",
+        subsystem: "Convex / Sync",
+        title: "Bi-directional Convex Offline Sync & Queueing",
+        score: 10,
+        seam: "packages/convex, apps/web, apps/desktop/src/renderer/src/lib/db.ts, apps/mobile/lib/convex.ts",
+        description: "Web and mobile drop or error out when offline. Desktop has an isolated local DB that never syncs back to Convex on reconnect. Implement an IndexedDB and AsyncStorage mutation replay queue with optimistic client updates and vector clock conflict resolution."
+      },
+      {
+        id: "FEAT-02",
+        category: "feature",
+        subsystem: "Convex / Backend",
+        title: "Server-Side Scheduled Auto-Resets via Convex Crons",
+        score: 10,
+        seam: "packages/convex/convex/crons.ts, packages/convex/convex/pocketcheck.ts",
+        description: "Replace fragile client-side interval polling with native Convex crons. Runs an hourly scheduled job checking all user routines against their stored autoResetTime and user local timezone, executing auto-resets even if the app remains closed for days."
+      },
+      {
+        id: "FEAT-03",
+        category: "feature",
+        subsystem: "Mobile / Expo",
+        title: "Geofenced Departure & Arrival Proximity Triggers",
+        score: 9,
+        seam: "apps/mobile/lib/geofencing.ts, apps/mobile/app.json",
+        description: "Integrate expo-location geofencing (Location.startGeofencingAsync) to detect when a user exits home, office, or gym coordinates. Triggers a high-priority local push notification if items remain unverified in the destination routine."
+      },
+      {
+        id: "FEAT-04",
+        category: "feature",
+        subsystem: "Desktop / Electron",
+        title: "Interactive Menu Bar Popover & Windows Tray Flyout",
+        score: 9,
+        seam: "apps/desktop/src/main/tray.ts, apps/desktop/src/main/window.ts",
+        description: "Replace the static OS tray context menu with an ultra-compact detached BrowserWindow positioned directly below the tray icon. Allows users to check off items in seconds without opening the heavy main window."
+      },
+      {
+        id: "FEAT-05",
+        category: "feature",
+        subsystem: "Schema & UI",
+        title: "Sub-Item Hierarchies & Bag Compartment Slots",
+        score: 9,
+        seam: "packages/convex/convex/schema.ts, apps/web/components/dashboard.tsx",
+        description: "Allow nesting items under physical compartments (Front Pocket, Main Compartment, Toiletry Bag, Cable Pouch). Provides precise visual guidance on where each item is stored in everyday carry gear."
+      },
+      {
+        id: "FEAT-06",
+        category: "feature",
+        subsystem: "Mobile / iOS",
+        title: "Native iOS Live Activities & Lock Screen Dynamic Island Widget",
+        score: 9,
+        seam: "apps/mobile/targets/live-activity, apps/mobile/app.json",
+        description: "When stepping out or preparing for departure, stream a Live Activity to the iOS Lock Screen and Dynamic Island displaying real-time packing ratio with direct interactive checkboxes."
+      },
+      {
+        id: "FEAT-07",
+        category: "feature",
+        subsystem: "Convex / Realtime",
+        title: "Multi-User Collaborative Shared Routines",
+        score: 9,
+        seam: "packages/convex/convex/schema.ts, packages/convex/convex/pocketcheck.ts",
+        description: "Extend Convex schema with a sharedRoutines table and role-based permissions (viewer, editor). Enables families and travel groups to collaboratively pack shared luggage with live status sync across devices."
+      },
+      {
+        id: "FEAT-08",
+        category: "feature",
+        subsystem: "Mobile / Hardware",
+        title: "NFC & QR Code Physical Bag & Item Verification",
+        score: 8,
+        seam: "apps/mobile/components/NfcScannerModal.tsx, apps/mobile/package.json",
+        description: "Add NFC tag reading support to physical tags affixed to backpacks, passport wallets, or luggage tags. Tapping the tag automatically verifies items in the active routine."
+      },
+      {
+        id: "FEAT-09",
+        category: "feature",
+        subsystem: "Presets / Platform",
+        title: "Community Routine Marketplace & Curated Presets Library",
+        score: 8,
+        seam: "packages/presets/src/index.ts, apps/web/components/smart-presets-modal.tsx",
+        description: "Expand the static 3-preset list into a rich community library (Photography Gig, Biking Commute, Hackathon Weekend, Gym Workout, International Flight) with 1-click preview and customizable import."
+      },
+      {
+        id: "FEAT-10",
+        category: "feature",
+        subsystem: "Schema / Reminders",
+        title: "Item Maintenance Cycles, Recharge Timers & Consumables Tracker",
+        score: 8,
+        seam: "packages/convex/convex/schema.ts, apps/web/components/dashboard.tsx",
+        description: "Add metadata for power bank recharge intervals, passport renewal countdowns, medication refills, and lens cleaning cycles. Flags items requiring maintenance before departure."
+      },
+      {
+        id: "FEAT-11",
+        category: "feature",
+        subsystem: "Travel / Workflow",
+        title: "Multi-Day Itinerary Trip Builder with Staged Checklists",
+        score: 8,
+        seam: "packages/types/src/index.ts, apps/web/components/dashboard.tsx",
+        description: "Support multi-day travel plans chaining routines into sequential milestones (Flight Departure to Conference Day 1 to Return Trip) with automatic milestone progression."
+      },
+      {
+        id: "FEAT-12",
+        category: "feature",
+        subsystem: "Weather Engine",
+        title: "Hourly Weather Forecast Breakdown & Multi-Condition Alerts",
+        score: 8,
+        seam: "packages/weather/src/index.ts, apps/web/components/weather-alert-banner.tsx",
+        description: "Expand evaluateWeatherData to query hourly precipitation and wind gusts. Alerts users if severe rain or temperature drops will occur during their evening commute, even if morning conditions are pleasant."
+      },
+      {
+        id: "FEAT-13",
+        category: "feature",
+        subsystem: "AI / Input",
+        title: "Quick-Add Checklist OCR & Photo-to-Checklist Importer",
+        score: 7,
+        seam: "apps/web/components/dashboard.tsx, apps/mobile/components/AddItemForm.tsx",
+        description: "Upload or photograph a physical packing note, whiteboard, or event email checklist. Lightweight on-device text parsing automatically extracts item names and populates the routine."
+      },
+      {
+        id: "FEAT-14",
+        category: "feature",
+        subsystem: "Voice / Hands-Free",
+        title: "Hands-Free Voice Verification (Siri Shortcuts & Web Speech)",
+        score: 7,
+        seam: "apps/web/hooks/useVoiceInput.ts, apps/mobile/lib/voiceShortcuts.ts",
+        description: "Hands-free auditory checkoff using Web Speech API on desktop/web and App Intents / Siri Shortcuts on iOS. Enables verbal checkoff (Packed keys, Packed wallet) while packing with both hands."
+      },
+      {
+        id: "FEAT-15",
+        category: "feature",
+        subsystem: "Travel / Specs",
+        title: "Gear Total Weight & Airline Baggage Allowance Calculator",
+        score: 7,
+        seam: "packages/types/src/index.ts, apps/web/components/export-modal.tsx",
+        description: "Optional gram/ounce weight property per item. Computes total pack weight and validates against standard airline carry-on thresholds (7kg or 10kg limit) with visual indicators."
+      },
+
+      // 2. ADJUSTMENTS (15 items)
+      {
+        id: "ADJ-01",
+        category: "adjustment",
+        subsystem: "Design System",
+        title: "Strict DESIGN.md Typography & Weight Token Refactoring",
+        score: 10,
+        seam: "apps/web/components/dashboard.tsx, apps/desktop/src/renderer/src/components/Dashboard.tsx",
+        description: "Refactor font-black (900) and font-extrabold (800) across all headers, buttons, and progress counters to DESIGN.md specification: 700 for hero figures, 600 for section headers, 500 for cards and metric values."
+      },
+      {
+        id: "ADJ-02",
+        category: "adjustment",
+        subsystem: "Design System",
+        title: "Refactor Hardcoded Hex / Zinc Colors to CSS Theme Custom Properties",
+        score: 10,
+        seam: "apps/desktop/src/main/authServer.ts, apps/desktop/src/renderer/src/App.tsx, apps/web/app/globals.css",
+        description: "Replace residual hardcoded colors (bg-black, #000000, #111113, #27272a) with custom tokens: --background: #08090b, --card: #121316, --surface-inset: rgba(255,255,255,0.035), --border: rgba(255,255,255,0.07)."
+      },
+      {
+        id: "ADJ-03",
+        category: "adjustment",
+        subsystem: "UI & Copywriting",
+        title: "Eliminate Vanity Status Badges & Non-Actionable Pill Elements",
+        score: 9,
+        seam: "apps/web/components/dashboard.tsx, apps/desktop/src/renderer/src/components/Dashboard.tsx",
+        description: "Eliminate decorative badges for obvious or trivial states like Pocket Status and static routine headers. Replace with clean tabular numbers and reserve badges strictly for urgent warnings and schedule flags per DESIGN.md Section 7."
+      },
+      {
+        id: "ADJ-04",
+        category: "adjustment",
+        subsystem: "Architecture",
+        title: "Standardize Shared Package Imports (Eliminate Code Duplication)",
+        score: 9,
+        seam: "apps/web/lib/, apps/desktop/src/renderer/src/lib/, apps/mobile/lib/",
+        description: "Remove redundant local file wrappers and unify domain types, preset definitions, and weather parsing directly from @pocket-check/presets, @pocket-check/weather, and @pocket-check/types."
+      },
+      {
+        id: "ADJ-05",
+        category: "adjustment",
+        subsystem: "Backend / Date",
+        title: "Timezone-Aware Local Date Formatting in Convex Auto-Reset Calls",
+        score: 9,
+        seam: "apps/web/components/dashboard.tsx, packages/convex/convex/pocketcheck.ts",
+        description: "Pass client timezone offset or local ISO date instead of UTC toISOString().split('T')[0] to prevent auto-reset misfiring on the wrong calendar day."
+      },
+      {
+        id: "ADJ-06",
+        category: "adjustment",
+        subsystem: "Web / Desktop UX",
+        title: "Fluid Pointer-Event Drag-and-Drop with Keyboard Reorder Seams",
+        score: 8,
+        seam: "apps/web/components/dashboard.tsx, apps/desktop/src/renderer/src/components/Dashboard.tsx",
+        description: "Replace rigid HTML5 native drag-and-drop with pointer-event driven gesture manipulation (active:scale-95, transition-all duration-300) and keyboard accessibility shortcuts (Alt+Up, Alt+Down) for item reordering."
+      },
+      {
+        id: "ADJ-07",
+        category: "adjustment",
+        subsystem: "Mobile UX",
+        title: "Mobile Gesture Bottom Sheets Replacing Fullscreen Modal Overlays",
+        score: 8,
+        seam: "apps/mobile/components/ItemSettingsModal.tsx, apps/mobile/components/NewDestinationModal.tsx",
+        description: "Convert clunky full-screen React Native modals to smooth interactive bottom sheets using react-native-gesture-handler and react-native-reanimated, matching native iOS and Android sheet ergonomics."
+      },
+      {
+        id: "ADJ-08",
+        category: "adjustment",
+        subsystem: "Accessibility",
+        title: "Accessible Keyboard Shortcut Cheat Sheet Overlay (? Key)",
+        score: 8,
+        seam: "apps/web/components/dashboard.tsx, apps/desktop/src/renderer/src/hooks/useKeyboardNavigation.ts",
+        description: "Provide an instant modal cheat sheet triggered by ? detailing all keyboard actions (Space toggle, J/K navigate, Ctrl+K quick add, Shift+U reset, 1-9 routine switch)."
+      },
+      {
+        id: "ADJ-09",
+        category: "adjustment",
+        subsystem: "Performance",
+        title: "Persistent Local Weather Caching (Stale-While-Revalidate TTL)",
+        score: 8,
+        seam: "packages/weather/src/index.ts, apps/web/components/weather-alert-banner.tsx",
+        description: "Implement a 30-minute localStorage/AsyncStorage cache keyed by rounded lat/lon coordinates. Eliminates redundant network requests on every route change and prevents Open-Meteo rate limiting."
+      },
+      {
+        id: "ADJ-10",
+        category: "adjustment",
+        subsystem: "Documentation",
+        title: "Update Stale docs/architecture.md to Document Turborepo Workspaces",
+        score: 8,
+        seam: "docs/architecture.md",
+        description: "Rewrite docs/architecture.md to eliminate obsolete starter-kit / No Shared Code claims, accurately detailing Turborepo workspaces, shared @pocket-check/* packages, and monorepo build pipelines."
+      },
+      {
+        id: "ADJ-11",
+        category: "adjustment",
+        subsystem: "Desktop / Window",
+        title: "Desktop Window State & Bounds Persistence",
+        score: 8,
+        seam: "apps/desktop/src/main/window.ts",
+        description: "Save window width, height, x, y coordinates, and maximized state to Electron user preferences on resize/move so the application restores in the exact layout the user prefers."
+      },
+      {
+        id: "ADJ-12",
+        category: "adjustment",
+        subsystem: "Ergonomics / Bulk",
+        title: "Multi-Item Quick Add Delimiter Parser Enhancements",
+        score: 7,
+        seam: "packages/presets/src/index.ts",
+        description: "Support markdown checkboxes (- [ ]), numbered lists (1.), trailing quantities (x2, (3)), and inline location tags (@ Desk) in the bulk quick-add parser."
+      },
+      {
+        id: "ADJ-13",
+        category: "adjustment",
+        subsystem: "UI Layout",
+        title: "Compact Density View Toggle for High-Item Routines",
+        score: 7,
+        seam: "apps/web/components/dashboard.tsx, apps/desktop/src/renderer/src/components/Dashboard.tsx",
+        description: "Add a row density toggle (Comfortable 48px vs Compact 36px) allowing users with 40+ item travel checklists to view all gear on a single viewport without extensive vertical scrolling."
+      },
+      {
+        id: "ADJ-14",
+        category: "adjustment",
+        subsystem: "Mobile Ergonomics",
+        title: "Haptic Feedback Nuances on Mobile Packing Milestones",
+        score: 7,
+        seam: "apps/mobile/components/ChecklistItem.tsx, apps/mobile/app/(main)/index.tsx",
+        description: "Refine mobile haptic feedback: Light impact on item check, subtle double-tap on uncheck, and a celebratory success notification haptic pattern when reaching 100% packed."
+      },
+      {
+        id: "ADJ-15",
+        category: "adjustment",
+        subsystem: "Accessibility / Theme",
+        title: "Light Mode High-Contrast Palette Audit",
+        score: 7,
+        seam: "apps/web/app/globals.css, apps/mobile/constants/theme.ts",
+        description: "Audit WCAG AAA contrast compliance for --muted-foreground: #6f6d67 on --card: #faf9f6 in daylight mode to guarantee readability under direct sunlight outdoors."
+      },
+
+      // 3. BUG FIXES (15 items)
+      {
+        id: "BUG-01",
+        category: "bug",
+        subsystem: "Desktop / Sharing",
+        title: "Fix Broken Routine Share URL Generation in Desktop Electron App",
+        score: 10,
+        seam: "apps/desktop/src/renderer/src/components/ShareRoutineModal.tsx",
+        description: "Desktop app generates window.location.origin + '?import=...', yielding http://localhost:5173/?import=... or file:/// which fails when sent to other users. Replace with public web domain (https://pocketcheck.app or VITE_WEB_APP_URL)."
+      },
+      {
+        id: "BUG-02",
+        category: "bug",
+        subsystem: "Web / Auto-Reset",
+        title: "Fix Multi-Routine Auto-Reset Ignored When Not Actively Focused",
+        score: 10,
+        seam: "apps/web/components/dashboard.tsx, packages/convex/convex/pocketcheck.ts",
+        description: "dashboard.tsx line 217 only verifies currentRoutineObj for auto-reset. If a user configures 4 scheduled routines, the other 3 are never auto-reset unless each is explicitly opened. Must iterate and check all user routines."
+      },
+      {
+        id: "BUG-03",
+        category: "bug",
+        subsystem: "Security / Standards",
+        title: "Replace Deprecated escape(), unescape(), and Fragile atob() in Routine Share",
+        score: 9,
+        seam: "apps/web/components/share-routine-modal.tsx, apps/web/components/dashboard.tsx",
+        description: "escape() and unescape() are deprecated legacy ECMAScript functions. btoa() throws uncaught DOMExceptions on Unicode strings (emojis, multi-byte characters). Replace with modern TextEncoder and TextDecoder base64url encoding."
+      },
+      {
+        id: "BUG-04",
+        category: "bug",
+        subsystem: "Date / Timezone",
+        title: "Fix UTC Date Mismatch in Auto-Reset Calendar Verification",
+        score: 9,
+        seam: "apps/web/components/dashboard.tsx, packages/convex/convex/pocketcheck.ts",
+        description: "Using now.toISOString().split('T')[0] evaluates the date in UTC. In UTC+7 to UTC+12 or UTC-5 to UTC-10, this records the reset against the wrong day or prevents daily resets from running at morning departure hours."
+      },
+      {
+        id: "BUG-05",
+        category: "bug",
+        subsystem: "Mobile / Startup",
+        title: "Fix Potential App Crash on Missing EXPO_PUBLIC_CONVEX_URL in Mobile",
+        score: 9,
+        seam: "apps/mobile/lib/convex.ts",
+        description: "apps/mobile/lib/convex.ts casts process.env.EXPO_PUBLIC_CONVEX_URL as string without checking or defaulting. When unconfigured, it passes undefined into new ConvexReactClient(), crashing the mobile app on startup."
+      },
+      {
+        id: "BUG-06",
+        category: "bug",
+        subsystem: "Web / Desktop UI",
+        title: "Fix Filtered Drag-and-Drop Index Misalignment Bug",
+        score: 8,
+        seam: "apps/web/components/dashboard.tsx, apps/desktop/src/renderer/src/components/Dashboard.tsx",
+        description: "When filtering by missing or packed, dragging an item maps target IDs back into the unfiltered list by array index, splicing the item into erroneous positions between hidden items."
+      },
+      {
+        id: "BUG-07",
+        category: "bug",
+        subsystem: "Code Quality / Style",
+        title: "Fix Em Dash Violations in Export Markdown & Tray Tooltips",
+        score: 8,
+        seam: "apps/desktop/src/main/tray.ts, apps/web/components/export-modal.tsx, apps/desktop/src/renderer/src/components/ExportModal.tsx",
+        description: "Multiple components hardcode em dashes and a typo '# PocketChecker -' instead of regular hyphens and 'PocketCheck', violating strict repo zero-em-dash rules."
+      },
+      {
+        id: "BUG-08",
+        category: "bug",
+        subsystem: "Desktop / Node.js",
+        title: "Fix Memory Leak in Auth Loopback Server Port Retry Loop",
+        score: 8,
+        seam: "apps/desktop/src/main/authServer.ts",
+        description: "On port collision (server.on('error')), tryListen(port + 1) creates a new server instance without closing or removing listeners from the errored server, leaking server handles."
+      },
+      {
+        id: "BUG-09",
+        category: "bug",
+        subsystem: "Web / Geolocation",
+        title: "Fix Geolocation Permission Denial Unhandled Hang in Weather Banner",
+        score: 8,
+        seam: "apps/web/components/weather-alert-banner.tsx",
+        description: "If the user dismisses the browser location prompt without selecting grant or deny, isLocating state remains true indefinitely, showing an endless loading spinner. Add timeout and robust error cleanup."
+      },
+      {
+        id: "BUG-10",
+        category: "bug",
+        subsystem: "Convex / Database",
+        title: "Fix Redundant Database Writes in reorderItems Mutation",
+        score: 8,
+        seam: "packages/convex/convex/pocketcheck.ts",
+        description: "reorderItems unconditionally patches every item in the routine with order: i, even if their order hasn't changed. Should only patch items whose order actually changed to reduce Convex write mutation load."
+      },
+      {
+        id: "BUG-11",
+        category: "bug",
+        subsystem: "Desktop / Auth",
+        title: "Fix Clerk Auth Session Desynchronization in Desktop App",
+        score: 8,
+        seam: "apps/desktop/src/renderer/src/App.tsx, apps/desktop/src/main/authServer.ts",
+        description: "When Google OAuth deep link redirects back to Electron via loopback server, the renderer webContents may fail to refresh Clerk tokens if the auth tab was closed prematurely, leaving the app in an indeterminate loading loop."
+      },
+      {
+        id: "BUG-12",
+        category: "bug",
+        subsystem: "Backend / Validation",
+        title: "Fix Missing Validation on Routine Name Length and Special Characters",
+        score: 7,
+        seam: "packages/convex/convex/pocketcheck.ts",
+        description: "Routine and item creation mutations accept arbitrary strings, including empty strings or multi-thousand character payloads without length caps or whitespace trimming."
+      },
+      {
+        id: "BUG-13",
+        category: "bug",
+        subsystem: "Data Consistency",
+        title: "Fix Item Quantity 1 vs Undefined Inconsistency in Schema & Previews",
+        score: 7,
+        seam: "packages/convex/convex/pocketcheck.ts, apps/web/components/dashboard.tsx",
+        description: "Convex mutations save quantity: quantity && quantity > 1 ? quantity : undefined, while forms allow setting 1, causing discrepancy between undefined and 1 across export generators and UI counters."
+      },
+      {
+        id: "BUG-14",
+        category: "bug",
+        subsystem: "Desktop / Accessibility",
+        title: "Fix Missing Aria-Labels on Frameless Window Titlebar Buttons",
+        score: 7,
+        seam: "apps/desktop/src/renderer/src/components/TitleBar.tsx",
+        description: "Minimize, Maximize, and Close buttons in desktop TitleBar.tsx lack aria-label attributes, degrading accessibility for screen reader navigation."
+      },
+      {
+        id: "BUG-15",
+        category: "bug",
+        subsystem: "Desktop / Web Audio",
+        title: "Fix Audio Context Autoplay Restriction in Sound Player",
+        score: 7,
+        seam: "apps/desktop/src/renderer/src/lib/sound.ts",
+        description: "In apps/desktop/src/renderer/src/lib/sound.ts, initializing AudioContext before user interaction triggers browser console autoplay policy warnings. Lazy-initialize AudioContext only upon first user gesture."
+      }
+    ];
+
+    let currentCategory = "all";
+    let currentScore = "all";
+    let currentStatus = "all";
+    let currentSearch = "";
+    let currentSort = "score-desc";
+
+    const DEFAULT_STATUSES = {
+      // Completed worthwhile improvements
+      "BUG-01": "done",
+      "BUG-02": "done",
+      "BUG-03": "done",
+      "BUG-04": "done",
+      "BUG-06": "done",
+      "BUG-07": "done",
+      "BUG-14": "done",
+      "ADJ-01": "done",
+      "ADJ-03": "done",
+      "ADJ-04": "done",
+      "ADJ-05": "done",
+      "ADJ-08": "done",
+      "ADJ-09": "done",
+      "ADJ-10": "done",
+      "ADJ-11": "done",
+      "ADJ-12": "done",
+      "ADJ-14": "done",
+      // Rejected out-of-scope / speculative improvements
+      "FEAT-01": "rejected",
+      "FEAT-02": "rejected",
+      "FEAT-03": "rejected",
+      "FEAT-04": "rejected",
+      "FEAT-05": "rejected",
+      "FEAT-06": "rejected",
+      "FEAT-07": "rejected",
+      "FEAT-08": "rejected",
+      "FEAT-09": "rejected",
+      "FEAT-10": "rejected",
+      "FEAT-11": "rejected",
+      "FEAT-12": "rejected",
+      "FEAT-13": "rejected",
+      "FEAT-14": "rejected",
+      "FEAT-15": "rejected",
+      "ADJ-02": "rejected",
+      "ADJ-06": "rejected",
+      "ADJ-07": "rejected",
+      "ADJ-13": "rejected",
+      "ADJ-15": "rejected",
+      "BUG-05": "rejected",
+      "BUG-08": "rejected",
+      "BUG-09": "rejected",
+      "BUG-10": "rejected",
+      "BUG-11": "rejected",
+      "BUG-12": "rejected",
+      "BUG-13": "rejected",
+      "BUG-15": "rejected"
+    };
+
+    function loadStatuses() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return Object.assign({}, DEFAULT_STATUSES, parsed);
+        }
+        return Object.assign({}, DEFAULT_STATUSES);
+      } catch {
+        return Object.assign({}, DEFAULT_STATUSES);
+      }
+    }
+
+    function saveStatuses(statuses) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(statuses));
+      } catch (err) {
+        console.error("Failed to write to localStorage", err);
+      }
+    }
+
+    function setProposalStatus(id, newStatus) {
+      const statuses = loadStatuses();
+      if (statuses[id] === newStatus) {
+        // Toggle back to backlog
+        delete statuses[id];
+      } else {
+        statuses[id] = newStatus;
+      }
+      saveStatuses(statuses);
+      updateStatsCounters();
+      renderItems();
+    }
+
+    function clearAllStatuses() {
+      if (confirm("Reset all proposals back to unassigned Backlog status?")) {
+        localStorage.removeItem(STORAGE_KEY);
+        updateStatsCounters();
+        renderItems();
+      }
+    }
+
+    function updateStatsCounters() {
+      const statuses = loadStatuses();
+      let workingCount = 0;
+      let doneCount = 0;
+      let rejectedCount = 0;
+
+      proposals.forEach(p => {
+        const st = statuses[p.id];
+        if (st === "working") workingCount++;
+        else if (st === "done") doneCount++;
+        else if (st === "rejected") rejectedCount++;
+      });
+
+      const pendingCount = proposals.length - (workingCount + doneCount + rejectedCount);
+
+      document.getElementById("statWorking").innerText = workingCount;
+      document.getElementById("statDone").innerText = doneCount;
+      document.getElementById("statRejected").innerText = rejectedCount;
+      document.getElementById("statPending").innerText = pendingCount;
+
+      document.getElementById("filterCountWorking").innerText = workingCount;
+      document.getElementById("filterCountDone").innerText = doneCount;
+      document.getElementById("filterCountRejected").innerText = rejectedCount;
+      document.getElementById("filterCountBacklog").innerText = pendingCount;
+    }
+
+    function getMeterColor(score) {
+      if (score === 10) return "var(--crimson)";
+      if (score === 9) return "var(--amber)";
+      if (score === 8) return "var(--emerald)";
+      return "var(--blue)";
+    }
+
+    function renderItems() {
+      const grid = document.getElementById("itemsGrid");
+      grid.innerHTML = "";
+      const statuses = loadStatuses();
+
+      let filtered = proposals.filter(item => {
+        const itemStatus = statuses[item.id] || "backlog";
+
+        if (currentCategory !== "all" && item.category !== currentCategory) return false;
+        if (currentScore !== "all" && item.score !== parseInt(currentScore, 10)) return false;
+        if (currentStatus !== "all" && itemStatus !== currentStatus) return false;
+
+        if (currentSearch.trim()) {
+          const q = currentSearch.toLowerCase();
+          const matchTitle = item.title.toLowerCase().includes(q);
+          const matchDesc = item.description.toLowerCase().includes(q);
+          const matchSeam = item.seam.toLowerCase().includes(q);
+          const matchSub = item.subsystem.toLowerCase().includes(q);
+          const matchId = item.id.toLowerCase().includes(q);
+          if (!matchTitle && !matchDesc && !matchSeam && !matchSub && !matchId) return false;
+        }
+        return true;
+      });
+
+      // Sorting
+      filtered.sort((a, b) => {
+        if (currentSort === "score-desc") return b.score - a.score;
+        if (currentSort === "score-asc") return a.score - b.score;
+        if (currentSort === "id-asc") return a.id.localeCompare(b.id);
+        if (currentSort === "title-asc") return a.title.localeCompare(b.title);
+        return 0;
+      });
+
+      // Update visible counter
+      document.getElementById("visibleCounter").innerText =
+        `Showing ${filtered.length} of ${proposals.length} proposals`;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            No proposals match the selected filters.
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(item => {
+        const card = document.createElement("article");
+        const status = statuses[item.id] || "backlog";
+
+        let statusClass = "";
+        if (status === "working") statusClass = "is-working";
+        else if (status === "done") statusClass = "is-done";
+        else if (status === "rejected") statusClass = "is-rejected";
+
+        card.className = `item-card ${statusClass}`;
+
+        const categoryLabel =
+          item.category === "feature" ? "New Feature" :
+          item.category === "adjustment" ? "Adjustment" : "Bug Fix";
+
+        let decisionBadge = "";
+        if (status === "working") {
+          decisionBadge = `<span class="decision-pill working">Working On</span>`;
+        } else if (status === "done") {
+          decisionBadge = `<span class="decision-pill done">Done</span>`;
+        } else if (status === "rejected") {
+          decisionBadge = `<span class="decision-pill rejected">Rejected</span>`;
+        }
+
+        const barColor = getMeterColor(item.score);
+        const barWidth = `${item.score * 10}%`;
+
+        card.innerHTML = `
+          <div class="item-middle">
+            <div class="item-header">
+              <div class="tag-cluster">
+                <span class="category-tag ${item.category}">${categoryLabel}</span>
+                <span class="subsystem-tag">${item.subsystem}</span>
+                ${decisionBadge}
+              </div>
+              <div class="score-badge">
+                <span class="score-numeric tabular-nums">${item.score}/10</span>
+                <div class="score-meter">
+                  <div class="score-bar" style="width: ${barWidth}; background: ${barColor};"></div>
+                </div>
+              </div>
+            </div>
+
+            <h3 class="item-title">${item.title}</h3>
+            <p class="item-desc">${item.description}</p>
+
+            <div class="decision-bar">
+              <span class="decision-bar-label">Action</span>
+              <div class="decision-action-group">
+                <button
+                  type="button"
+                  class="action-btn ${status === 'working' ? 'active-working' : ''}"
+                  onclick="setProposalStatus('${item.id}', 'working')"
+                  title="Mark as working on this"
+                >
+                  Working
+                </button>
+                <button
+                  type="button"
+                  class="action-btn ${status === 'done' ? 'active-done' : ''}"
+                  onclick="setProposalStatus('${item.id}', 'done')"
+                  title="Mark as completed"
+                >
+                  Done
+                </button>
+                <button
+                  type="button"
+                  class="action-btn ${status === 'rejected' ? 'active-rejected' : ''}"
+                  onclick="setProposalStatus('${item.id}', 'rejected')"
+                  title="Reject or dismiss proposal"
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="item-footer">
+            <span class="seam-label" title="${item.seam}">seam: ${item.seam}</span>
+            <div class="footer-actions">
+              <button
+                type="button"
+                class="copy-task-btn"
+                onclick="copyTaskPrompt('${item.id}', this)"
+                title="Copy prompt for a new thread"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Copy Task</span>
+              </button>
+              <span class="item-id">${item.id}</span>
+            </div>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    function setCategoryFilter(category) {
+      currentCategory = category;
+      document.querySelectorAll(".filter-tab").forEach(tab => {
+        if (tab.getAttribute("data-category") === category) {
+          tab.classList.add("active");
+        } else {
+          tab.classList.remove("active");
+        }
+      });
+      renderItems();
+    }
+
+    function setScoreFilter(score) {
+      currentScore = score;
+      document.querySelectorAll(".chip-btn[data-score]").forEach(btn => {
+        if (btn.getAttribute("data-score") === score) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+      renderItems();
+    }
+
+    function setStatusFilter(status) {
+      currentStatus = status;
+      document.querySelectorAll(".chip-btn[data-status]").forEach(btn => {
+        if (btn.getAttribute("data-status") === status) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+      renderItems();
+    }
+
+    function handleSearch() {
+      currentSearch = document.getElementById("searchInput").value;
+      renderItems();
+    }
+
+    function handleSort() {
+      currentSort = document.getElementById("sortSelect").value;
+      renderItems();
+    }
+
+    let toastTimeout = null;
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      const toastMsg = document.getElementById("toastMsg");
+      if (!toast || !toastMsg) return;
+
+      toastMsg.innerText = msg;
+      toast.classList.add("visible");
+
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove("visible");
+      }, 2500);
+    }
+
+    function copyTaskPrompt(id, btn) {
+      const item = proposals.find(p => p.id === id);
+      if (!item) return;
+
+      const categoryLabel =
+        item.category === "feature" ? "New Feature" :
+        item.category === "adjustment" ? "Adjustment" : "Bug Fix";
+
+      const prompt = [
+        `Implement ticket ${item.id} for PocketCheck: "${item.title}"`,
+        ``,
+        `Type: ${categoryLabel}`,
+        `Priority Score: ${item.score}/10`,
+        `Subsystem: ${item.subsystem}`,
+        `Target Seam: ${item.seam}`,
+        ``,
+        `Objective:`,
+        item.description,
+        ``,
+        `Directives:`,
+        `- Strictly adhere to DESIGN.md (#08090b canvas, #121316 card surface, solid matte surfaces, hairline borders rgba(255,255,255,0.07), muted mineral accents, tabular figures, zero emojis, zero em dashes).`,
+        `- Keep implementation minimal, robust, and consistent with monorepo patterns.`,
+        `- Run and verify typecheck, lint, or tests before finalizing.`
+      ].join("\n");
+
+      navigator.clipboard.writeText(prompt).then(() => {
+        const originalHtml = btn.innerHTML;
+        btn.classList.add("copied");
+        btn.innerHTML = `
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span>Copied!</span>
+        `;
+
+        showToast(`Copied ${item.id} prompt to clipboard for new thread`);
+
+        setTimeout(() => {
+          btn.classList.remove("copied");
+          btn.innerHTML = originalHtml;
+        }, 2000);
+      }).catch(err => {
+        console.error("Clipboard copy failed", err);
+      });
+    }
+
+    function exportMarkdownSummary() {
+      const statuses = loadStatuses();
+      let md = "# PocketCheck Improvement & Refactoring Matrix\n\n";
+      md += `Generated: ${new Date().toISOString().split("T")[0]}\n\n`;
+      md += "| ID | Status | Category | Subsystem | Score | Title | Impact Seam |\n";
+      md += "| :--- | :--- | :--- | :--- | :---: | :--- | :--- |\n";
+
+      proposals.forEach(p => {
+        const cat = p.category === "feature" ? "New Feature" : p.category === "adjustment" ? "Adjustment" : "Bug Fix";
+        const st = statuses[p.id] || "backlog";
+        const statusLabel = st === "working" ? "Working" : st === "done" ? "Done" : st === "rejected" ? "Rejected" : "Backlog";
+        md += `| ${p.id} | ${statusLabel} | ${cat} | ${p.subsystem} | ${p.score}/10 | ${p.title} | \`${p.seam}\` |\n`;
+      });
+
+      const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "pocketcheck-improvements.md";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      updateStatsCounters();
+      renderItems();
+    });
+  </script>
+</body>
+</html>

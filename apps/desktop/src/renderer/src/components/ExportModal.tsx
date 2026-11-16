@@ -32,12 +32,12 @@ export function ExportModal({
   const [copied, setCopied] = React.useState(false);
 
   const generateMarkdown = () => {
-    let md = `# PocketChecker — ${routineName} Checklist\n\n`;
+    let md = `# PocketCheck - ${routineName} Checklist\n\n`;
     md += `*Exported on ${new Date().toLocaleDateString()}*\n\n`;
     items.forEach((item) => {
       const check = item.isPacked ? "[x]" : "[ ]";
       const qty = item.quantity && item.quantity > 1 ? ` (${item.quantity}x)` : "";
-      const note = item.locationNote ? ` — *${item.locationNote}*` : "";
+      const note = item.locationNote ? ` - *${item.locationNote}*` : "";
       md += `- ${check} ${item.name}${qty}${note}\n`;
     });
     return md;
