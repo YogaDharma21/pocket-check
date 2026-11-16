@@ -57,6 +57,8 @@ import {
 import { isOnlineBackendConfigured, useOfflineData } from "@/components/ConvexClientProvider";
 import { OnlineDashboard } from "@/components/OnlineDashboard";
 import { FloatingNavbar } from "@/components/FloatingNavbar";
+import { ShortcutsModal } from "@/components/ShortcutsModal";
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 
 interface RestorableItem {
   routine: string;
@@ -107,6 +109,7 @@ function OfflineDashboard({
   const [showExportModal, setShowExportModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [iconPickerTarget, setIconPickerTarget] = useState<
@@ -241,6 +244,34 @@ function OfflineDashboard({
     playResetSound();
     await db.resetItems(userId, effectiveRoutine);
   }, [db, userId, effectiveRoutine]);
+
+  useKeyboardNavigation({
+    totalItems: filteredItems.length,
+    totalRoutines: routines.length,
+    focusedIndex: focusedItemIndex,
+    setFocusedIndex: setFocusedItemIndex,
+    onToggleItem: (idx) => {
+      const item = filteredItems[idx];
+      if (item) void handleToggle(item._id, item.isPacked);
+    },
+    onSelectRoutineIndex: (idx) => {
+      if (routines[idx]) setActiveRoutine(routines[idx].name);
+    },
+    onResetRoutine: () => void handleReset(),
+    onFocusQuickAdd: () => {
+      itemInputRef.current?.focus();
+      itemInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    },
+    onOpenShortcuts: () => setShowShortcutsModal(true),
+    isModalOpen:
+      showPresetsModal ||
+      showExportModal ||
+      showShareModal ||
+      showScheduleModal ||
+      showNewRoutineModal ||
+      showShortcutsModal ||
+      showImportModal,
+  });
 
   const triggerUndo = (message: string, itemsToRestore: RestorableItem[]) => {
     if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
@@ -1000,6 +1031,11 @@ function OfflineDashboard({
         routineName={effectiveRoutine}
         routineIcon={currentRoutineObj?.icon || "tag"}
         items={items}
+      />
+
+      <ShortcutsModal
+        open={showShortcutsModal}
+        onOpenChange={setShowShortcutsModal}
       />
 
       <ImportSharedModal

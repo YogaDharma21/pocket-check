@@ -57,6 +57,7 @@ import { ExportModal } from "@/components/export-modal"
 import { ShareRoutineModal } from "@/components/share-routine-modal"
 import { RoutineScheduleModal } from "@/components/routine-schedule-modal"
 import { ImportSharedModal } from "@/components/import-shared-modal"
+import { ShortcutsModal } from "@/components/shortcuts-modal"
 import {
   SMART_PRESETS,
   parseMultiItemInput,
@@ -116,6 +117,7 @@ export function Dashboard() {
   const [showExportModal, setShowExportModal] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search)
@@ -337,6 +339,12 @@ export function Dashboard() {
       if (!isNaN(num) && num >= 1 && num <= routinesList.length) {
         e.preventDefault()
         setSelectedRoutine(routinesList[num - 1].name)
+      }
+
+      // ?: Open keyboard shortcuts cheat sheet (ADJ-08)
+      if (e.key === "?" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault()
+        setShowShortcutsModal(true)
       }
     }
 
@@ -2154,6 +2162,12 @@ export function Dashboard() {
             setEditModalIconTag(key)
           }
         }}
+      />
+
+      {/* Shortcuts cheat sheet modal (ADJ-08) */}
+      <ShortcutsModal
+        open={showShortcutsModal}
+        onOpenChange={setShowShortcutsModal}
       />
 
       {/* Floating quick-access navbar */}

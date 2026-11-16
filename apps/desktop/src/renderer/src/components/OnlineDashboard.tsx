@@ -45,6 +45,7 @@ import { ExportModal } from "@/components/ExportModal";
 import { ShareRoutineModal } from "@/components/ShareRoutineModal";
 import { RoutineScheduleModal } from "@/components/RoutineScheduleModal";
 import { ImportSharedModal } from "@/components/ImportSharedModal";
+import { ShortcutsModal } from "@/components/ShortcutsModal";
 import {
   parseMultiItemInput,
   detectIconForItem,
@@ -110,6 +111,7 @@ export function OnlineDashboard({
   const [showExportModal, setShowExportModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -363,6 +365,11 @@ export function OnlineDashboard({
       if (!isNaN(num) && num >= 1 && num <= routinesList.length) {
         e.preventDefault();
         setSelectedRoutine(routinesList[num - 1].name);
+      }
+
+      if (e.key === "?" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        setShowShortcutsModal(true);
       }
     };
 
@@ -1742,6 +1749,11 @@ export function OnlineDashboard({
           setSelectedRoutine(sharedImportData.name);
           setShowImportModal(false);
         }}
+      />
+
+      <ShortcutsModal
+        open={showShortcutsModal}
+        onOpenChange={setShowShortcutsModal}
       />
 
       {/* Floating quick-access navbar */}

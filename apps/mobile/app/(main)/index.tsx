@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth, useUser } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
+import * as Haptics from "expo-haptics";
 import { useQuery, useMutation } from "convex/react";
 import { Ionicons } from "@expo/vector-icons";
 import { api, type Id } from "@pocket-check/convex";
@@ -144,30 +145,36 @@ export default function DashboardScreen() {
     void ensureInitialized();
   }, [ensureInitialized]);
 
-  // Auto-Reset Time check per routine (background check interval)
+  // Auto-Reset Time check across all routines (BUG-02 & BUG-04 / ADJ-05)
   useEffect(() => {
-    if (!currentRoutineObj || !currentRoutineObj.autoResetTime) return;
+    if (routinesList.length === 0) return;
 
     const checkSchedule = async () => {
       const now = new Date();
       const currentDay = now.getDay();
-      const activeDays = currentRoutineObj.autoResetDays ?? [1, 2, 3, 4, 5];
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const todayStr = `${year}-${month}-${day}`;
 
-      if (!activeDays.includes(currentDay)) return;
+      for (const routine of routinesList) {
+        if (!routine.autoResetTime) continue;
+        const activeDays = routine.autoResetDays ?? [1, 2, 3, 4, 5];
+        if (!activeDays.includes(currentDay)) continue;
 
-      const [hours, minutes] = currentRoutineObj.autoResetTime!.split(":").map(Number);
-      const scheduledTime = new Date();
-      scheduledTime.setHours(hours, minutes, 0, 0);
+        const [hours, minutes] = routine.autoResetTime.split(":").map(Number);
+        const scheduledTime = new Date();
+        scheduledTime.setHours(hours, minutes, 0, 0);
 
-      const todayStr = now.toISOString().split("T")[0];
-      if (now >= scheduledTime && currentRoutineObj.lastResetDate !== todayStr) {
-        try {
-          await checkAndExecuteAutoReset({
-            routineId: currentRoutineObj._id,
-            currentDateStr: todayStr,
-          });
-        } catch (err) {
-          console.warn("Auto-reset execution failed", err);
+        if (now >= scheduledTime && routine.lastResetDate !== todayStr) {
+          try {
+            await checkAndExecuteAutoReset({
+              routineId: routine._id,
+              currentDateStr: todayStr,
+            });
+          } catch (err) {
+            console.warn("Auto-reset execution failed", err);
+          }
         }
       }
     };
@@ -175,7 +182,7 @@ export default function DashboardScreen() {
     void checkSchedule();
     const timer = setInterval(checkSchedule, 30000);
     return () => clearInterval(timer);
-  }, [currentRoutineObj, checkAndExecuteAutoReset]);
+  }, [routinesList, checkAndExecuteAutoReset]);
 
   const items: ItemData[] = (rawItems ?? []).map((i) => ({
     _id: i._id,
@@ -214,10 +221,20 @@ export default function DashboardScreen() {
     }
   };
 
-  // Handlers
+  // Handlers (ADJ-14: Haptic feedback)
   const handleToggle = async (itemId: Id<"items">, currentPacked: boolean) => {
+    const nextPacked = !currentPacked;
+    if (nextPacked) {
+      if (packedItems + 1 === totalItems && totalItems > 0) {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+    } else {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     try {
-      await toggleItem({ id: itemId, isPacked: !currentPacked });
+      await toggleItem({ id: itemId, isPacked: nextPacked });
     } catch (err) {
       console.error("Failed to toggle item", err);
     }
