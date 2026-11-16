@@ -148,29 +148,35 @@ function OfflineDashboard({
   const effectiveRoutine = activeRoutine || (routines.length > 0 ? routines[0].name : "");
   const currentRoutineObj = routines.find((r) => r.name === effectiveRoutine) || (routines.length > 0 ? routines[0] : null);
 
-  // Auto-Reset Check
+  // Auto-Reset Check across all routines (BUG-02 & BUG-04 / ADJ-05)
   useEffect(() => {
-    if (!currentRoutineObj || !currentRoutineObj.autoResetTime) return;
+    if (routines.length === 0) return;
 
     const checkSchedule = async () => {
       const now = new Date();
       const currentDay = now.getDay();
-      const activeDays = currentRoutineObj.autoResetDays ?? [1, 2, 3, 4, 5];
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const todayStr = `${year}-${month}-${day}`;
 
-      if (!activeDays.includes(currentDay)) return;
+      for (const routine of routines) {
+        if (!routine.autoResetTime) continue;
+        const activeDays = routine.autoResetDays ?? [1, 2, 3, 4, 5];
+        if (!activeDays.includes(currentDay)) continue;
 
-      const [hours, minutes] = currentRoutineObj.autoResetTime!.split(":").map(Number);
-      const scheduledTime = new Date();
-      scheduledTime.setHours(hours, minutes, 0, 0);
+        const [hours, minutes] = routine.autoResetTime.split(":").map(Number);
+        const scheduledTime = new Date();
+        scheduledTime.setHours(hours, minutes, 0, 0);
 
-      const todayStr = now.toISOString().split("T")[0];
-      if (now >= scheduledTime && currentRoutineObj.lastResetDate !== todayStr) {
-        const res = await db.checkAndExecuteAutoReset(userId, {
-          routineId: currentRoutineObj._id,
-          currentDateStr: todayStr,
-        });
-        if (res.reset) {
-          playResetSound();
+        if (now >= scheduledTime && routine.lastResetDate !== todayStr) {
+          const res = await db.checkAndExecuteAutoReset(userId, {
+            routineId: routine._id,
+            currentDateStr: todayStr,
+          });
+          if (res.reset) {
+            playResetSound();
+          }
         }
       }
     };
@@ -178,7 +184,7 @@ function OfflineDashboard({
     checkSchedule();
     const timer = setInterval(checkSchedule, 30000);
     return () => clearInterval(timer);
-  }, [currentRoutineObj, db, userId]);
+  }, [routines, db, userId]);
 
   // Handle tray actions from Electron main process
   useEffect(() => {
@@ -199,6 +205,7 @@ function OfflineDashboard({
     if (filter === "missing") return !item.isPacked;
     return true;
   });
+  const canReorder = filter === "all";
 
   const totalItems = items.length;
   const packedItems = items.filter((i) => i.isPacked).length;
@@ -286,7 +293,7 @@ function OfflineDashboard({
   };
 
   const handleDropItem = async (targetId: string) => {
-    if (!draggedItemId || draggedItemId === targetId) {
+    if (!canReorder || !draggedItemId || draggedItemId === targetId) {
       setDraggedItemId(null);
       setDragOverItemId(null);
       return;
@@ -836,15 +843,16 @@ function OfflineDashboard({
                       return (
                         <Card
                           key={item._id}
-                          draggable
+                          draggable={canReorder}
                           onDragStart={(e) => {
+                            if (!canReorder) return;
                             setDraggedItemId(item._id);
                             e.dataTransfer.effectAllowed = "move";
                             e.dataTransfer.setData("text/plain", item._id);
                           }}
                           onDragOver={(e) => {
                             e.preventDefault();
-                            if (draggedItemId && draggedItemId !== item._id) {
+                            if (canReorder && draggedItemId && draggedItemId !== item._id) {
                               setDragOverItemId(item._id);
                             }
                           }}
@@ -853,6 +861,7 @@ function OfflineDashboard({
                           }}
                           onDrop={(e) => {
                             e.preventDefault();
+                            if (!canReorder) return;
                             void handleDropItem(item._id);
                           }}
                           onDragEnd={() => {
@@ -872,8 +881,12 @@ function OfflineDashboard({
                           <CardContent className="flex flex-row items-center justify-between gap-3 p-3.5">
                             <div className="flex min-w-0 flex-1 items-center gap-3 select-none">
                               <div
-                                className="shrink-0 cursor-grab rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground active:cursor-grabbing"
-                                title="Drag to reorder"
+                                className={`shrink-0 rounded-lg p-1.5 transition-colors ${
+                                  canReorder
+                                    ? "cursor-grab text-muted-foreground hover:bg-muted/80 hover:text-foreground active:cursor-grabbing"
+                                    : "cursor-not-allowed text-muted-foreground/30"
+                                }`}
+                                title={canReorder ? "Drag to reorder" : "Reordering disabled while filtered"}
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <GripVertical className="h-4 w-4" />

@@ -199,33 +199,39 @@ export function OnlineDashboard({
     void ensureInitialized();
   }, [ensureInitialized]);
 
-  // Auto-Reset Time check per routine
+  // Auto-Reset Time check across all routines (BUG-02 & BUG-04 / ADJ-05)
   useEffect(() => {
-    if (!currentRoutineObj || !currentRoutineObj.autoResetTime) return;
+    if (routinesList.length === 0) return;
 
     const checkSchedule = async () => {
       const now = new Date();
       const currentDay = now.getDay();
-      const activeDays = currentRoutineObj.autoResetDays ?? [1, 2, 3, 4, 5];
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const todayStr = `${year}-${month}-${day}`;
 
-      if (!activeDays.includes(currentDay)) return;
+      for (const routine of routinesList) {
+        if (!routine.autoResetTime) continue;
+        const activeDays = routine.autoResetDays ?? [1, 2, 3, 4, 5];
+        if (!activeDays.includes(currentDay)) continue;
 
-      const [hours, minutes] = currentRoutineObj.autoResetTime!.split(":").map(Number);
-      const scheduledTime = new Date();
-      scheduledTime.setHours(hours, minutes, 0, 0);
+        const [hours, minutes] = routine.autoResetTime.split(":").map(Number);
+        const scheduledTime = new Date();
+        scheduledTime.setHours(hours, minutes, 0, 0);
 
-      const todayStr = now.toISOString().split("T")[0];
-      if (now >= scheduledTime && currentRoutineObj.lastResetDate !== todayStr) {
-        try {
-          const res = await checkAndExecuteAutoReset({
-            routineId: currentRoutineObj._id,
-            currentDateStr: todayStr,
-          });
-          if (res?.reset) {
-            playResetSound();
+        if (now >= scheduledTime && routine.lastResetDate !== todayStr) {
+          try {
+            const res = await checkAndExecuteAutoReset({
+              routineId: routine._id,
+              currentDateStr: todayStr,
+            });
+            if (res?.reset) {
+              playResetSound();
+            }
+          } catch (err) {
+            console.warn("Auto-reset execution failed", err);
           }
-        } catch (err) {
-          console.warn("Auto-reset execution failed", err);
         }
       }
     };
@@ -233,7 +239,7 @@ export function OnlineDashboard({
     void checkSchedule();
     const timer = setInterval(checkSchedule, 30000);
     return () => clearInterval(timer);
-  }, [currentRoutineObj, checkAndExecuteAutoReset]);
+  }, [routinesList, checkAndExecuteAutoReset]);
 
   // Filtered items list
   const filteredItems = items.filter((item) => {
@@ -241,6 +247,7 @@ export function OnlineDashboard({
     if (filter === "missing") return !item.isPacked;
     return true;
   });
+  const canReorder = filter === "all";
 
   // Calculate metrics
   const totalItems = items.length;
@@ -449,7 +456,7 @@ export function OnlineDashboard({
   }
 
   const handleDropItem = async (targetId: Id<"items">) => {
-    if (!draggedItemId || draggedItemId === targetId) {
+    if (!canReorder || !draggedItemId || draggedItemId === targetId) {
       setDraggedItemId(null);
       setDragOverItemId(null);
       return;
@@ -1110,16 +1117,20 @@ export function OnlineDashboard({
                   return (
                     <div
                       key={item._id}
-                      draggable
-                      onDragStart={() => setDraggedItemId(item._id)}
+                      draggable={canReorder}
+                      onDragStart={() => {
+                        if (!canReorder) return;
+                        setDraggedItemId(item._id);
+                      }}
                       onDragOver={(e) => {
                         e.preventDefault();
-                        if (dragOverItemId !== item._id) {
+                        if (canReorder && dragOverItemId !== item._id) {
                           setDragOverItemId(item._id);
                         }
                       }}
                       onDrop={(e) => {
                         e.preventDefault();
+                        if (!canReorder) return;
                         void handleDropItem(item._id);
                       }}
                       onDragEnd={() => {
@@ -1138,9 +1149,13 @@ export function OnlineDashboard({
                       <div className="flex min-w-0 flex-1 items-center gap-3">
                         <button
                           type="button"
-                          className="cursor-grab text-muted-foreground opacity-30 group-hover:opacity-100 hover:text-foreground active:cursor-grabbing p-0.5"
+                          className={`p-0.5 ${
+                            canReorder
+                              ? "cursor-grab text-muted-foreground opacity-30 group-hover:opacity-100 hover:text-foreground active:cursor-grabbing"
+                              : "cursor-not-allowed text-muted-foreground/20"
+                          }`}
                           onClick={(e) => e.stopPropagation()}
-                          title="Drag to reorder"
+                          title={canReorder ? "Drag to reorder" : "Reordering disabled while filtered"}
                         >
                           <GripVertical className="h-4 w-4" />
                         </button>

@@ -207,35 +207,36 @@ export function Dashboard() {
     void ensureInitialized()
   }, [ensureInitialized])
 
-  // Auto-Reset Time check per routine
+  // Auto-Reset Time check across all routines (BUG-02 & BUG-04 / ADJ-05)
   useEffect(() => {
-    if (!currentRoutineObj || !currentRoutineObj.autoResetTime) return
+    if (routinesList.length === 0) return
 
     const checkSchedule = async () => {
       const now = new Date()
       const currentDay = now.getDay()
-      const activeDays = currentRoutineObj.autoResetDays ?? [1, 2, 3, 4, 5]
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, "0")
+      const day = String(now.getDate()).padStart(2, "0")
+      const todayStr = `${year}-${month}-${day}`
 
-      if (!activeDays.includes(currentDay)) return
+      for (const routine of routinesList) {
+        if (!routine.autoResetTime) continue
+        const activeDays = routine.autoResetDays ?? [1, 2, 3, 4, 5]
+        if (!activeDays.includes(currentDay)) continue
 
-      const [hours, minutes] = currentRoutineObj
-        .autoResetTime!.split(":")
-        .map(Number)
-      const scheduledTime = new Date()
-      scheduledTime.setHours(hours, minutes, 0, 0)
+        const [hours, minutes] = routine.autoResetTime.split(":").map(Number)
+        const scheduledTime = new Date()
+        scheduledTime.setHours(hours, minutes, 0, 0)
 
-      const todayStr = now.toISOString().split("T")[0]
-      if (
-        now >= scheduledTime &&
-        currentRoutineObj.lastResetDate !== todayStr
-      ) {
-        try {
-          await checkAndExecuteAutoReset({
-            routineId: currentRoutineObj._id,
-            currentDateStr: todayStr,
-          })
-        } catch (err) {
-          console.warn("Auto-reset execution failed", err)
+        if (now >= scheduledTime && routine.lastResetDate !== todayStr) {
+          try {
+            await checkAndExecuteAutoReset({
+              routineId: routine._id,
+              currentDateStr: todayStr,
+            })
+          } catch (err) {
+            console.warn("Auto-reset execution failed", err)
+          }
         }
       }
     }
@@ -243,7 +244,7 @@ export function Dashboard() {
     void checkSchedule()
     const timer = setInterval(checkSchedule, 30000)
     return () => clearInterval(timer)
-  }, [currentRoutineObj, checkAndExecuteAutoReset])
+  }, [routinesList, checkAndExecuteAutoReset])
 
   // Filtered items list
   const filteredItems = items.filter((item) => {
@@ -251,6 +252,7 @@ export function Dashboard() {
     if (filter === "missing") return !item.isPacked
     return true
   })
+  const canReorder = filter === "all"
 
   // Handlers
   const handleToggle = useCallback(
@@ -433,7 +435,7 @@ export function Dashboard() {
   }
 
   const handleDropItem = async (targetId: Id<"items">) => {
-    if (!draggedItemId || draggedItemId === targetId) {
+    if (!canReorder || !draggedItemId || draggedItemId === targetId) {
       setDraggedItemId(null)
       setDragOverItemId(null)
       return
@@ -1328,8 +1330,9 @@ export function Dashboard() {
                           return (
                             <Card
                               key={item._id}
-                              draggable
+                              draggable={canReorder}
                               onDragStart={(e) => {
+                                if (!canReorder) return
                                 setDraggedItemId(item._id)
                                 e.dataTransfer.effectAllowed = "move"
                                 e.dataTransfer.setData("text/plain", item._id)
@@ -1337,6 +1340,7 @@ export function Dashboard() {
                               onDragOver={(e) => {
                                 e.preventDefault()
                                 if (
+                                  canReorder &&
                                   draggedItemId &&
                                   draggedItemId !== item._id
                                 ) {
@@ -1350,6 +1354,7 @@ export function Dashboard() {
                               }}
                               onDrop={(e) => {
                                 e.preventDefault()
+                                if (!canReorder) return
                                 void handleDropItem(item._id)
                               }}
                               onDragEnd={() => {
@@ -1382,8 +1387,16 @@ export function Dashboard() {
                                 <div className="flex min-w-0 flex-1 items-center gap-3 select-none">
                                   {/* Drag Handle */}
                                   <div
-                                    className="shrink-0 cursor-grab rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground active:cursor-grabbing"
-                                    title="Drag to reorder"
+                                    className={`shrink-0 rounded-lg p-1.5 transition-colors ${
+                                      canReorder
+                                        ? "cursor-grab text-muted-foreground hover:bg-muted/80 hover:text-foreground active:cursor-grabbing"
+                                        : "cursor-not-allowed text-muted-foreground/30"
+                                    }`}
+                                    title={
+                                      canReorder
+                                        ? "Drag to reorder"
+                                        : "Reordering disabled while filtered"
+                                    }
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <GripVertical className="h-4 w-4" />
