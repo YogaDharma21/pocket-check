@@ -64,6 +64,7 @@ import {
   detectIconForItem,
   decodeRoutinePayload,
   PresetRoutine,
+  SharedRoutinePayload,
 } from "@pocket-check/presets"
 
 interface RestorableItem {
@@ -125,16 +126,7 @@ export function Dashboard() {
     }
     return false
   })
-  const [sharedImportData] = useState<{
-    name: string
-    icon: string
-    items: Array<{
-      name: string
-      emoji?: string
-      quantity?: number
-      locationNote?: string
-    }>
-  } | null>(() => {
+  const [sharedImportData] = useState<SharedRoutinePayload | null>(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search)
       const importParam = params.get("import")

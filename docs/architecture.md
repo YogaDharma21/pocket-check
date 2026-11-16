@@ -1,55 +1,73 @@
-# Architecture Documentation
+# PocketCheck Architecture
 
-## Project Structure
+## Overview
+
+PocketCheck is an everyday carry (EDC) and departure checklist application built as a TypeScript monorepo orchestrated with **Turborepo** and **pnpm workspaces**. It delivers cross-platform applications across Web, Desktop, and Mobile, powered by shared TypeScript domain libraries and a Convex backend.
 
 ```
-starter-kit/
-├── apps/           # Individual projects (web, mobile, desktop, backend, cli)
-├── docker/         # Docker configurations
-├── docs/           # Documentation
-├── scripts/        # Utility scripts
-└── .github/        # GitHub workflows
+pocket-check/
+├── apps/
+│   ├── web/            # Next.js 15 web application (React 19, Tailwind CSS v4)
+│   ├── desktop/        # Electron desktop application (React 19, Vite, offline-first)
+│   └── mobile/         # Mobile application (Expo, React Native, Expo Router)
+├── packages/
+│   ├── presets/        # @pocket-check/presets (smart routines, multi-item parser, URL codecs)
+│   ├── weather/        # @pocket-check/weather (Open-Meteo client, advisories, SWR cache)
+│   ├── types/          # @pocket-check/types (shared TypeScript interfaces & models)
+│   └── convex/         # @pocket-check/convex (backend schema, mutations, queries)
+├── docs/               # Architecture and project specifications
+└── turbo.json          # Turborepo task pipeline configuration
 ```
 
-## Polyglot Monorepo Principles
+---
 
-### No Shared Code
-Each app in `/apps` is completely independent:
-- No shared components
-- No shared utilities
-- No shared libraries
-- Each app has its own dependencies
+## Workspaces and Applications
 
-### Each App Lives Alone
-Every project in `/apps/*` is self-contained:
-- Own package manager (pnpm, pip, cargo, go mod, etc.)
-- Own dependencies
-- Own build system
-- Own configuration files
+### Apps (`apps/`)
 
-### Language Freedom
-Apps can use any language/framework:
-- `/apps/web` - React, Vue, Svelte, Next.js, Nuxt, etc.
-- `/apps/mobile` - React Native, Flutter, Swift, Kotlin, etc.
-- `/apps/desktop` - Electron, Tauri, Qt, etc.
-- `/apps/backend` - Express, FastAPI, Go, Rust, etc.
-- `/apps/cli` - Any CLI framework
+- **`apps/web`**: Next.js 15 App Router application with React 19, Tailwind CSS v4, Radix UI primitives, Lucide icons, and Convex real-time subscriptions.
+- **`apps/desktop`**: Electron cross-platform desktop wrapper with a React 19 + Vite renderer. Features persistent window state bounds, system tray support, global keyboard shortcuts, and offline-first local storage with Convex synchronization.
+- **`apps/mobile`**: Universal iOS and Android client powered by Expo and React Native, featuring native haptic feedback, Expo Router file-based navigation, and offline persistence.
 
-## Adding a New App
+### Shared Packages (`packages/`)
 
-1. Create a new folder under `/apps/<category>/`
-2. Initialize the project with its own package manager
-3. Add the appropriate CI job in `.github/workflows/`
-4. Update `docker/docker-compose.yml` if needed
+PocketCheck shares domain logic, types, and services across all clients via internal packages linked through `workspace:*` dependencies:
 
-## CI/CD
+- **`@pocket-check/presets`**:
+  - Curated routine presets (Work, Gym, Campus, Travel, Errand, Night Out, Hike).
+  - Multi-item quick-add parser supporting comma, newline, semicolon, and bullet delimiters with trailing whitespace trimming and empty token filtering.
+  - Automatic keyword-based icon detection.
+  - URL-safe base64 routine payload encoder and decoder (`encodeRoutinePayload`, `decodeRoutinePayload`) with unpadded base64url compatibility and structured schema validation.
 
-The monorepo uses path-based filtering to run only relevant jobs:
-- Changes to `apps/web/**` trigger the web build
-- Changes to `apps/backend/**` trigger the backend build
-- etc.
+- **`@pocket-check/weather`**:
+  - Open-Meteo API weather forecasting and packing advisory rules (rain, wind, extreme cold/heat).
+  - Persistent stale-while-revalidate (SWR) cache with 30-minute TTL, coordinate rounding (2 decimals), and cross-platform storage adapter (localStorage / AsyncStorage).
 
-## Docker
+- **`@pocket-check/types`**:
+  - Shared TypeScript data contracts for routines, items, schedules, preferences, and sync payloads.
 
-Use `/docker/docker-compose.yml` to orchestrate multiple apps locally.
-Each app should have its own `Dockerfile` if containerization is needed.
+- **`@pocket-check/convex`**:
+  - Backend schema definitions, Convex queries, mutations, and generated API types (`Id<"items">`, `Id<"routines">`).
+
+---
+
+## Dependency Management & Import Architecture
+
+Apps consume domain packages directly via their package names:
+```typescript
+import { SMART_PRESETS, parseMultiItemInput, encodeRoutinePayload } from "@pocket-check/presets";
+import { getWeatherWithCache, getWeatherAdvisory } from "@pocket-check/weather";
+```
+
+Local re-export wrappers (`lib/presets.ts`, `lib/weather.ts`) have been eliminated in favor of direct `@pocket-check/*` package references, ensuring a single source of truth and predictable bundler tree-shaking across Vite, Next.js, and Metro.
+
+---
+
+## Build Pipelines & Tooling
+
+Turborepo orchestrates build, lint, typecheck, and test tasks across the workspace:
+
+- **`pnpm run build`**: Runs `turbo run build`, compiling shared packages and building production bundles for web, desktop, and mobile.
+- **`pnpm run typecheck`**: Runs `tsc --noEmit` across all workspaces topologically.
+- **`pnpm run test`**: Executes unit test suites (Vitest / Jest) across shared packages and apps.
+- **`pnpm run lint`**: Runs ESLint across all packages and applications.

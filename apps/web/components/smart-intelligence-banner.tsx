@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { renderItemIcon } from "@/components/icon-picker-modal"
-import { SMART_PRESETS } from "@/lib/presets"
+import { SMART_PRESETS } from "@pocket-check/presets"
 import type { Id } from "@pocket-check/convex"
 
 interface ChecklistItemData {

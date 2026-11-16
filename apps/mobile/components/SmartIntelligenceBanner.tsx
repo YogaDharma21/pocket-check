@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "../constants/theme";
 import type { Id } from "@pocket-check/convex";
-import { SMART_PRESETS } from "../lib/presets";
+import { SMART_PRESETS } from "@pocket-check/presets";
 import { renderItemIconHelper } from "./IconPicker";
 
 export interface SmartIntelligenceBannerProps {

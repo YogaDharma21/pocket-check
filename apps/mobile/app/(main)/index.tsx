@@ -38,7 +38,7 @@ import { UndoToast } from "../../components/UndoToast";
 import { FloatingNavbar } from "../../components/FloatingNavbar";
 import { UserProfileModal } from "../../components/UserProfileModal";
 import { ConfirmModal } from "../../components/ConfirmModal";
-import { PresetRoutine } from "../../lib/presets";
+import { PresetRoutine } from "@pocket-check/presets";
 
 interface RestorableItem {
   routine: string;
@@ -147,7 +147,7 @@ export default function DashboardScreen() {
 
   // Auto-Reset Time check across all routines (BUG-02 & BUG-04 / ADJ-05)
   useEffect(() => {
-    if (routinesList.length === 0) return;
+    if (routines.length === 0) return;
 
     const checkSchedule = async () => {
       const now = new Date();
@@ -157,7 +157,7 @@ export default function DashboardScreen() {
       const day = String(now.getDate()).padStart(2, "0");
       const todayStr = `${year}-${month}-${day}`;
 
-      for (const routine of routinesList) {
+      for (const routine of routines) {
         if (!routine.autoResetTime) continue;
         const activeDays = routine.autoResetDays ?? [1, 2, 3, 4, 5];
         if (!activeDays.includes(currentDay)) continue;
@@ -182,7 +182,7 @@ export default function DashboardScreen() {
     void checkSchedule();
     const timer = setInterval(checkSchedule, 30000);
     return () => clearInterval(timer);
-  }, [routinesList, checkAndExecuteAutoReset]);
+  }, [routines, checkAndExecuteAutoReset]);
 
   const items: ItemData[] = (rawItems ?? []).map((i) => ({
     _id: i._id,

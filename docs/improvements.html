@@ -1373,12 +1373,66 @@
     let currentSearch = "";
     let currentSort = "score-desc";
 
+    const DEFAULT_STATUSES = {
+      // Completed worthwhile improvements
+      "BUG-01": "done",
+      "BUG-02": "done",
+      "BUG-03": "done",
+      "BUG-04": "done",
+      "BUG-06": "done",
+      "BUG-07": "done",
+      "BUG-14": "done",
+      "ADJ-01": "done",
+      "ADJ-03": "done",
+      "ADJ-04": "done",
+      "ADJ-05": "done",
+      "ADJ-08": "done",
+      "ADJ-09": "done",
+      "ADJ-10": "done",
+      "ADJ-11": "done",
+      "ADJ-12": "done",
+      "ADJ-14": "done",
+      // Rejected out-of-scope / speculative improvements
+      "FEAT-01": "rejected",
+      "FEAT-02": "rejected",
+      "FEAT-03": "rejected",
+      "FEAT-04": "rejected",
+      "FEAT-05": "rejected",
+      "FEAT-06": "rejected",
+      "FEAT-07": "rejected",
+      "FEAT-08": "rejected",
+      "FEAT-09": "rejected",
+      "FEAT-10": "rejected",
+      "FEAT-11": "rejected",
+      "FEAT-12": "rejected",
+      "FEAT-13": "rejected",
+      "FEAT-14": "rejected",
+      "FEAT-15": "rejected",
+      "ADJ-02": "rejected",
+      "ADJ-06": "rejected",
+      "ADJ-07": "rejected",
+      "ADJ-13": "rejected",
+      "ADJ-15": "rejected",
+      "BUG-05": "rejected",
+      "BUG-08": "rejected",
+      "BUG-09": "rejected",
+      "BUG-10": "rejected",
+      "BUG-11": "rejected",
+      "BUG-12": "rejected",
+      "BUG-13": "rejected",
+      "BUG-15": "rejected"
+    };
+
     function loadStatuses() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : {};
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return Object.assign({}, DEFAULT_STATUSES, parsed);
+        }
+        return Object.assign({}, DEFAULT_STATUSES);
       } catch {
-        return {};
+        return Object.assign({}, DEFAULT_STATUSES);
       }
     }
 

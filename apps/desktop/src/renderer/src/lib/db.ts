@@ -3,7 +3,7 @@
  * Enables 100% offline standalone operation for PocketCheck Desktop.
  */
 
-import { SMART_PRESETS } from "./presets";
+import { SMART_PRESETS } from "@pocket-check/presets";
 
 export interface Item {
   _id: string;
