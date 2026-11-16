@@ -80,6 +80,26 @@ export function evaluateWeatherData(
   };
 }
 
+export interface WeatherCacheEntry {
+  data: WeatherData;
+  timestamp: number;
+  coordsKey: string;
+}
+
+export const WEATHER_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+export function getRoundedCoordsKey(lat: number, lon: number): string {
+  return `${lat.toFixed(2)},${lon.toFixed(2)}`;
+}
+
+export function isWeatherCacheFresh(
+  entry: WeatherCacheEntry | null | undefined,
+  ttlMs: number = WEATHER_CACHE_TTL_MS
+): boolean {
+  if (!entry || !entry.data || typeof entry.timestamp !== "number") return false;
+  return Date.now() - entry.timestamp < ttlMs;
+}
+
 export async function fetchDailyWeather(
   lat: number = -6.2088,
   lon: number = 106.8456,
@@ -97,3 +117,4 @@ export async function fetchDailyWeather(
     return null;
   }
 }
+
